@@ -1,0 +1,86 @@
+// path: types/contracts/index.ts
+import type { AccountingService } from './accounting';
+import type { ApprovalService } from './approval';
+import type { AuditService } from './audit';
+import type { AuthService } from './auth';
+import type { ClientService } from './client';
+import type { ConsentService } from './consent';
+import type { EmailService } from './email';
+import type { EncryptionService } from './encryption';
+import type { EntitlementService } from './entitlement';
+import type { EventService } from './events';
+import type { FxService } from './fx';
+import type { IdempotencyService } from './idempotency';
+import type { InvoiceService } from './invoice';
+import type { JobService } from './jobs';
+import type { KycService } from './kyc';
+import type { LockService } from './locks';
+import type { NotificationService } from './notification';
+import type { PaymentService } from './payment';
+import type { PdfService } from './pdf';
+import type { PermissionService } from './permissions';
+import type { SecurityService } from './security';
+import type { StorageService } from './storage';
+import type { TenantService } from './tenant';
+import type { TokenService } from './tokens';
+import type { WalletService } from './wallet';
+
+/** Maps every service id in the container to its contract. Ids are listed in docs/execution/CONTRACTS.md. */
+export interface ServiceMap {
+  tenant: TenantService;
+  audit: AuditService;
+  permissions: PermissionService;
+  approval: ApprovalService;
+  events: EventService;
+  jobs: JobService;
+  locks: LockService;
+  consent: ConsentService;
+  auth: AuthService;
+  security: SecurityService;
+  idempotency: IdempotencyService;
+  tokens: TokenService;
+  encryption: EncryptionService;
+  storage: StorageService;
+  email: EmailService;
+  notification: NotificationService;
+  pdf: PdfService;
+  clients: ClientService;
+  invoices: InvoiceService;
+  payments: PaymentService;
+  entitlement: EntitlementService;
+  wallet: WalletService;
+  kyc: KycService;
+  accounting: AccountingService;
+  fx: FxService;
+}
+
+export type ServiceId = keyof ServiceMap;
+
+export * from './accounting';
+export * from './approval';
+export * from './audit';
+export * from './auth';
+export * from './client';
+export * from './common';
+export * from './consent';
+export * from './email';
+export * from './encryption';
+export * from './entitlement';
+export * from './events';
+export * from './fx';
+export * from './idempotency';
+export * from './invoice';
+export * from './jobs';
+export * from './kyc';
+export * from './locks';
+export * from './middleware';
+export * from './notification';
+export * from './payment';
+export * from './payment-adapter';
+export * from './pdf';
+export * from './permissions';
+export * from './security';
+export * from './storage';
+export * from './tenant';
+export * from './tokens';
+export * from './wallet';
