@@ -1,3 +1,4 @@
 # STEP 02 decisions
 
 - D1 (2026-10-15): The owner instructed to start STEP 02 while the security jobs on `integration` were still being repaired. The fixes (commit 11723d8) live on the session branch, which contains `integration`. STEP 02 is built on this branch.
+- D2 (02.4): PostgREST cannot keep a PostgreSQL transaction open across calls and no PostgreSQL driver is in the dependency baseline. The locks contract is therefore implemented with lease rows (`lock_leases`, service role only; functions `kd_acquire_lease` and `kd_release_lease`) and one SQL function for versioned updates (`kd_update_with_version`). Multi-statement atomic work is written as SQL functions called with rpc; `withTransaction` retries serialization failures and deadlocks. The table `lock_leases` is added to the STEP 02 table list (OWNERSHIP_MAP section 4 update requested from the Integrator in HANDOFF).
