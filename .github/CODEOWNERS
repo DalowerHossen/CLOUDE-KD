@@ -1,0 +1,24 @@
+# Mirrors docs/execution/OWNERSHIP_MAP.md. STEP ownership itself is enforced by scripts/check-ownership.sh.
+# Review of every change is required from the project owner.
+*                                  @DalowerHossen
+
+# Shared files owned by the Integrator (STEP 01)
+/package.json                      @DalowerHossen
+/package-lock.json                 @DalowerHossen
+/tsconfig.json                     @DalowerHossen
+/next.config.js                    @DalowerHossen
+/netlify.toml                      @DalowerHossen
+/.github/                          @DalowerHossen
+/scripts/                          @DalowerHossen
+/config/ownership.json             @DalowerHossen
+/types/contracts/                  @DalowerHossen
+/docs/execution/                   @DalowerHossen
+
+# Security-critical areas (STEPs 02 to 05, 10)
+/lib/security/                     @DalowerHossen
+/lib/auth/                         @DalowerHossen
+/lib/encryption/                   @DalowerHossen
+/lib/payment/                      @DalowerHossen
+/services/payment/                 @DalowerHossen
+/migrations/                       @DalowerHossen
+/sql/                              @DalowerHossen
