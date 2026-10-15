@@ -79,6 +79,14 @@ export const strings = {
     administration: 'Administration',
     adminBadge: 'Admin',
     previewBadge: 'Preview',
+    more: 'More',
+    details: 'Details',
+    collapseSidebar: 'Collapse sidebar',
+    expandSidebar: 'Expand sidebar',
+    searchShortcut: 'Search',
+    openSearch: 'Open search',
+    switchTheme: 'Theme',
+    switchContrast: 'Contrast',
   },
   errors: {
     notFoundTitle: 'Page not found',
@@ -104,7 +112,8 @@ export const strings = {
   },
   gallery: {
     title: 'Interface preview',
-    intro: 'This page shows the shared interface elements for design review. It is available only in development.',
+    intro:
+      'This page shows the shared interface elements for design review. It is available only in development.',
     sectionStates: 'Page states',
     sectionButtons: 'Buttons and badges',
     sectionForms: 'Form controls',

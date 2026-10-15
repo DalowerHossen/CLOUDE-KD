@@ -1,4 +1,4 @@
 // path: lib/logger/index.ts
-export * from './correlation';
+// Browser-safe exports. Server code imports request context helpers from '@/lib/logger/correlation'.
 export * from './logger';
 export * from './redact';

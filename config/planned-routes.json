@@ -1,0 +1,8 @@
+{
+  "comment": "Routes that belong to later STEPs and are linked from STEP 01 shells. The dead-link guard tolerates them unless it runs with --strict (Release Gate).",
+  "routes": {
+    "/": "06",
+    "/dashboard": "09",
+    "/admin": "07"
+  }
+}

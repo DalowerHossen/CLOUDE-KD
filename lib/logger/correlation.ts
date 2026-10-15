@@ -2,6 +2,7 @@
 // Request context (correlation id, tenant, actor) carried through async calls.
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { uuidv7 } from '@/lib/utils/uuid';
+import { setLogContextProvider } from './logger';
 
 export interface RequestContext {
   correlationId: string;
@@ -10,6 +11,8 @@ export interface RequestContext {
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();
+
+setLogContextProvider(() => storage.getStore());
 
 const INCOMING_ID = /^[A-Za-z0-9_-]{8,64}$/;
 

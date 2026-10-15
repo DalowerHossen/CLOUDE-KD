@@ -21,7 +21,8 @@ import {
   fromZodError,
   normalizeError,
 } from '@/lib/errors';
-import { createLogger, resolveCorrelationId, runWithContext, updateContext, type Logger } from '@/lib/logger';
+import { resolveCorrelationId, runWithContext, updateContext } from '@/lib/logger/correlation';
+import { createLogger, type Logger } from '@/lib/logger';
 import { sha256Hex } from '@/lib/utils/hash';
 import { idempotencyKeySchema } from '@/schemas/common';
 import type {
@@ -40,7 +41,11 @@ const HARD_MAX_BODY_BYTES = 10_485_760;
 
 export type ApiScope = 'public' | 'tenant' | 'platform';
 
-export interface ApiOptions<B extends z.ZodTypeAny, Q extends z.ZodTypeAny, P extends z.ZodTypeAny> {
+export interface ApiOptions<
+  B extends z.ZodTypeAny,
+  Q extends z.ZodTypeAny,
+  P extends z.ZodTypeAny,
+> {
   /** Stable name of the route, used for rate limit keys and idempotency scope, for example "invoices.create". */
   id: string;
   /** public: no login. tenant: login plus tenant context. platform: login as super_admin, ceo or admin_staff. */
@@ -91,13 +96,23 @@ export interface RouteContext {
 
 function assertStrict(schema: z.ZodTypeAny | undefined, label: string, id: string): void {
   if (schema instanceof z.ZodObject && schema._def.unknownKeys !== 'strict') {
-    throw new Error(`API route "${id}": ${label} schema must be strict (use .strict() or strictObject).`);
+    throw new Error(
+      `API route "${id}": ${label} schema must be strict (use .strict() or strictObject).`,
+    );
   }
 }
 
-async function readBody(request: NextRequest, limit: number): Promise<{ text: string; json: unknown }> {
+async function readBody(
+  request: NextRequest,
+  limit: number,
+): Promise<{ text: string; json: unknown }> {
   const declared = request.headers.get('content-length');
-  if (declared !== null && /^\d+$/.test(declared) && declared.length < 12 && Number.parseInt(declared, 10) > limit) {
+  if (
+    declared !== null &&
+    /^\d+$/.test(declared) &&
+    declared.length < 12 &&
+    Number.parseInt(declared, 10) > limit
+  ) {
     throw new PayloadTooLargeError();
   }
   const text = await request.text();
@@ -132,7 +147,10 @@ export function withApi<
   return async (request, routeContext) => {
     const correlationId = resolveCorrelationId(request.headers.get('x-correlation-id'));
     return runWithContext({ correlationId }, async () => {
-      const responseHeaders = new Headers({ 'x-correlation-id': correlationId, 'cache-control': 'no-store' });
+      const responseHeaders = new Headers({
+        'x-correlation-id': correlationId,
+        'cache-control': 'no-store',
+      });
       let idempotencyScope: string | null = null;
       let idempotencyKey: string | null = null;
       try {
@@ -146,7 +164,10 @@ export function withApi<
           const network = await security.checkNetwork(ip, options.networkContext);
           if (!network.allowed) throw new NetworkBlockedError();
         }
-        const rate = await security.rateLimit(`${options.id}:${ip}`, options.rateLimitPolicy ?? 'api-default');
+        const rate = await security.rateLimit(
+          `${options.id}:${ip}`,
+          options.rateLimitPolicy ?? 'api-default',
+        );
         if (!rate.allowed) throw new RateLimitError(rate.retryAfterSeconds);
 
         let actor: Actor | null = null;
@@ -156,7 +177,8 @@ export function withApi<
           if (!actor) throw new UnauthorizedError();
           updateContext({ actorId: actor.userId, companyId: actor.companyId });
           if (options.roles && !options.roles.includes(actor.role)) throw new ForbiddenError();
-          if (options.scope === 'platform' && !PLATFORM_ROLES.includes(actor.role)) throw new NotFoundError();
+          if (options.scope === 'platform' && !PLATFORM_ROLES.includes(actor.role))
+            throw new NotFoundError();
           if (options.stepUp) await getService('auth').requireStepUp(actor, options.stepUp);
           if (options.scope === 'tenant') {
             tenant = await getService('tenant').getTenantContext();
@@ -166,34 +188,58 @@ export function withApi<
             const allowed = await getService('permissions').can(
               actor,
               options.permission.action,
-              options.permission.resourceType ? { type: options.permission.resourceType } : undefined,
+              options.permission.resourceType
+                ? { type: options.permission.resourceType }
+                : undefined,
             );
             if (!allowed) throw new ForbiddenError();
           }
         }
 
-        const rawBody = options.body || mutating ? await readBody(request, maxBody) : { text: '', json: undefined };
-        const clean = <V,>(value: V): V => security.sanitize(value);
-        const body = (options.body ? options.body.parse(clean(rawBody.json)) : undefined) as z.output<B>;
-        const query = (options.query
-          ? options.query.parse(clean(Object.fromEntries(request.nextUrl.searchParams.entries())))
-          : undefined) as z.output<Q>;
-        const params = (options.params ? options.params.parse(clean(routeContext.params ?? {})) : undefined) as z.output<P>;
+        const rawBody =
+          options.body || mutating
+            ? await readBody(request, maxBody)
+            : { text: '', json: undefined };
+        const clean = <V>(value: V): V => security.sanitize(value);
+        const body = (
+          options.body ? options.body.parse(clean(rawBody.json)) : undefined
+        ) as z.output<B>;
+        const query = (
+          options.query
+            ? options.query.parse(clean(Object.fromEntries(request.nextUrl.searchParams.entries())))
+            : undefined
+        ) as z.output<Q>;
+        const params = (
+          options.params ? options.params.parse(clean(routeContext.params ?? {})) : undefined
+        ) as z.output<P>;
 
         if (options.idempotent) {
           const header = request.headers.get('idempotency-key');
           const parsedKey = idempotencyKeySchema.safeParse(header);
-          if (!parsedKey.success) throw new ValidationError('A valid Idempotency-Key header is required.');
+          if (!parsedKey.success)
+            throw new ValidationError('A valid Idempotency-Key header is required.');
           idempotencyKey = parsedKey.data;
           idempotencyScope = `${tenant?.companyId ?? actor?.userId ?? 'public'}:${options.id}`;
-          const requestHash = await sha256Hex(`${method}\n${request.nextUrl.pathname}\n${request.nextUrl.search}\n${rawBody.text}`);
-          const begin = await getService('idempotency').begin({ scope: idempotencyScope, key: idempotencyKey, requestHash });
+          const requestHash = await sha256Hex(
+            `${method}\n${request.nextUrl.pathname}\n${request.nextUrl.search}\n${rawBody.text}`,
+          );
+          const begin = await getService('idempotency').begin({
+            scope: idempotencyScope,
+            key: idempotencyKey,
+            requestHash,
+          });
           if (begin.state === 'conflict') throw new IdempotencyConflictError();
-          if (begin.state === 'in_progress') throw new IdempotencyConflictError('A request with this idempotency key is still running.');
+          if (begin.state === 'in_progress')
+            throw new IdempotencyConflictError(
+              'A request with this idempotency key is still running.',
+            );
           if (begin.state === 'replay') {
             responseHeaders.set('idempotent-replayed', 'true');
             responseHeaders.set('content-type', begin.response.contentType);
-            return new Response(begin.response.body, { status: begin.response.status, headers: responseHeaders });
+            return new Response(begin.response.body, {
+              status: begin.response.status,
+              headers: responseHeaders,
+            });
           }
         }
 
@@ -216,7 +262,10 @@ export function withApi<
               await getService('audit').record(result.audit);
             } catch (auditError) {
               log.error('audit write failed', { error: auditError });
-              await security.raiseSecurityEvent('other', { reason: 'audit_write_failed', route: options.id });
+              await security.raiseSecurityEvent('other', {
+                reason: 'audit_write_failed',
+                route: options.id,
+              });
               throw new InternalError(auditError);
             }
           } else if (!options.auditExempt) {
@@ -225,9 +274,13 @@ export function withApi<
           }
         }
 
-        for (const [name, value] of Object.entries(result.headers ?? {})) responseHeaders.set(name, value);
+        for (const [name, value] of Object.entries(result.headers ?? {}))
+          responseHeaders.set(name, value);
         const status = result.status ?? 200;
-        const payload = JSON.stringify({ data: result.data, meta: { correlation_id: correlationId } });
+        const payload = JSON.stringify({
+          data: result.data,
+          meta: { correlation_id: correlationId },
+        });
         if (idempotencyScope && idempotencyKey) {
           await getService('idempotency').complete(idempotencyScope, idempotencyKey, {
             status,
@@ -253,4 +306,3 @@ export function withApi<
     });
   };
 }
-

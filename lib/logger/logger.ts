@@ -1,16 +1,31 @@
 // path: lib/logger/logger.ts
-import { getContext } from './correlation';
 import { redact } from './redact';
 import { writeLine } from './sink';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+export interface LogContext {
+  correlationId: string;
+  companyId?: string | null;
+  actorId?: string | null;
+}
+
+let contextProvider: () => LogContext | undefined = () => undefined;
+
+/** Server code registers the request context reader (lib/logger/correlation.ts); browsers log without it. */
+export function setLogContextProvider(provider: () => LogContext | undefined): void {
+  contextProvider = provider;
+}
 export type LogFields = Record<string, unknown>;
 
 const ORDER: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
 function activeLevel(): LogLevel {
   const configured = process.env.LOG_LEVEL;
-  return configured === 'debug' || configured === 'info' || configured === 'warn' || configured === 'error'
+  return configured === 'debug' ||
+    configured === 'info' ||
+    configured === 'warn' ||
+    configured === 'error'
     ? configured
     : 'info';
 }
@@ -27,7 +42,7 @@ export interface Logger {
 export function createLogger(bindings: LogFields = {}): Logger {
   const emit = (level: LogLevel, message: string, fields?: LogFields): void => {
     if (ORDER[level] < ORDER[activeLevel()]) return;
-    const context = getContext();
+    const context = contextProvider();
     const record = redact({
       ts: new Date().toISOString(),
       level,

@@ -43,7 +43,12 @@ export function isSensitiveKey(key: string): boolean {
 }
 
 /** Returns a redacted deep copy that is safe to serialize. */
-export function redact(value: unknown, key = '', depth = 0, seen: WeakSet<object> = new WeakSet()): unknown {
+export function redact(
+  value: unknown,
+  key = '',
+  depth = 0,
+  seen: WeakSet<object> = new WeakSet(),
+): unknown {
   if (key !== '' && isSensitiveKey(key)) return REDACTED;
   if (value === null || value === undefined) return value;
   if (typeof value === 'string') return scrubString(value);
@@ -62,7 +67,8 @@ export function redact(value: unknown, key = '', depth = 0, seen: WeakSet<object
   if (depth >= MAX_DEPTH) return '[TRUNCATED]';
   if (seen.has(value)) return '[CIRCULAR]';
   seen.add(value);
-  if (Array.isArray(value)) return value.slice(0, 100).map((item) => redact(item, '', depth + 1, seen));
+  if (Array.isArray(value))
+    return value.slice(0, 100).map((item) => redact(item, '', depth + 1, seen));
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value)) out[k] = redact(v, k, depth + 1, seen);
   return out;

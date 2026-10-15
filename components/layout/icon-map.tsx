@@ -1,0 +1,87 @@
+// path: components/layout/icon-map.tsx
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Briefcase,
+  Building2,
+  Calculator,
+  CheckSquare,
+  ClipboardList,
+  CreditCard,
+  FileText,
+  Globe,
+  Home,
+  Key,
+  Layers,
+  LifeBuoy,
+  Link as LinkIcon,
+  Mail,
+  MessageCircle,
+  Package,
+  Plug,
+  Receipt,
+  Repeat,
+  Search,
+  Server,
+  Settings,
+  Share2,
+  Shield,
+  Tag,
+  Truck,
+  User,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react';
+import type { NavIcon } from '@/config/nav-types';
+
+const ICONS: Record<NavIcon, LucideIcon> = {
+  home: Home,
+  'file-text': FileText,
+  users: Users,
+  'credit-card': CreditCard,
+  package: Package,
+  truck: Truck,
+  receipt: Receipt,
+  calculator: Calculator,
+  briefcase: Briefcase,
+  'bar-chart': BarChart3,
+  repeat: Repeat,
+  wallet: Wallet,
+  settings: Settings,
+  bell: Bell,
+  'life-buoy': LifeBuoy,
+  shield: Shield,
+  key: Key,
+  globe: Globe,
+  'book-open': BookOpen,
+  mail: Mail,
+  'check-square': CheckSquare,
+  'alert-triangle': AlertTriangle,
+  activity: Activity,
+  layers: Layers,
+  link: LinkIcon,
+  user: User,
+  building: Building2,
+  tag: Tag,
+  plug: Plug,
+  'message-circle': MessageCircle,
+  share: Share2,
+  clipboard: ClipboardList,
+  server: Server,
+  search: Search,
+};
+
+export function NavIconView({
+  name,
+  className,
+}: {
+  name: NavIcon;
+  className?: string;
+}): JSX.Element {
+  const Icon = ICONS[name];
+  return <Icon className={className ?? 'h-5 w-5'} aria-hidden="true" />;
+}
