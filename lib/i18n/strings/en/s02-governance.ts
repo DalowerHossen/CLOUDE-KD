@@ -142,4 +142,23 @@ export const strings = {
     colRegion: 'Default data region',
     loadError: 'The compliance data could not be loaded.',
   },
+  presence: {
+    viewing: '{names} is also viewing this page.',
+    viewingMany: '{count} people are also viewing this page.',
+    lockedBy: '{name} is editing this. You can read it, but not change it.',
+    lockExpires: 'The lock ends in {minutes} min if {name} stops.',
+    youEditing: 'You are editing. Others see this page as locked.',
+    startEditing: 'Start editing',
+    stopEditing: 'Stop editing',
+  },
+  conflict: {
+    title: 'Someone else changed this',
+    body: 'Another person saved a newer version while you were editing. Choose how to continue.',
+    fieldColumn: 'Field',
+    yoursColumn: 'Your change',
+    theirsColumn: 'Saved version',
+    reload: 'Discard mine and reload',
+    keepMine: 'Keep mine and save again',
+    cancel: 'Back to editing',
+  },
 } as const;

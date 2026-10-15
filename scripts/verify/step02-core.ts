@@ -10,6 +10,13 @@ import { ConflictError, DuplicateError } from '@/lib/errors';
 import { evaluatePermission, grantMatches, validateStaffGrants } from '@/lib/auth/permissions';
 import { resolveApprovalLevel } from '@/lib/auth/approval-rules';
 import { outranks } from '@/lib/auth/roles';
+import {
+  LOCK_TIMEOUT_MS,
+  computeLock,
+  presenceTopic,
+  type PresenceEntry,
+} from '@/lib/providers/presence-logic';
+import { diffFields } from '@/components/admin/shared/conflict';
 import { dsarDueDate, isJurisdiction, jurisdictionRule } from '@/lib/compliance/jurisdictions';
 import { checkDecision, planSteps, roleCanDecide } from '@/lib/auth/approval-engine';
 import type { PermissionDefinition } from '@/types/contracts';
@@ -312,6 +319,35 @@ async function main(): Promise<void> {
       assert.equal(jurisdictionRule('JP')?.defaultRegion, 'jp');
     },
   );
+
+  await check('presence: longest editor holds the lock, stale heartbeat releases it', () => {
+    const now = Date.parse('2026-10-15T12:00:00Z');
+    const entry = (userId: string, since: string, beat: string, editing = true): PresenceEntry => ({
+      userId,
+      name: userId,
+      editing,
+      editingSince: editing ? since : null,
+      heartbeatAt: beat,
+    });
+    const a = entry('a', '2026-10-15T11:50:00Z', '2026-10-15T11:59:30Z');
+    const b = entry('b', '2026-10-15T11:55:00Z', '2026-10-15T11:59:50Z');
+    assert.equal(computeLock([b, a], now).holder?.userId, 'a');
+    const stale = entry('a', '2026-10-15T11:50:00Z', '2026-10-15T11:54:00Z');
+    assert.equal(computeLock([stale, b], now).holder?.userId, 'b');
+    assert.equal(computeLock([stale], now).holder, null);
+    assert.equal(computeLock([entry('c', '', '2026-10-15T11:59:00Z', false)], now).holder, null);
+    assert.equal(computeLock([a], now).expiresInMs, LOCK_TIMEOUT_MS - 30_000);
+  });
+
+  await check('presence topics are scoped to the tenant', () => {
+    assert.equal(presenceTopic({ companyId: 'c1' }, 'invoice:42'), 'tenant:c1:invoice:42');
+    assert.equal(presenceTopic({ companyId: null }, 'a b/c'), 'platform:a_b_c');
+  });
+
+  await check('conflict diff lists only changed fields', () => {
+    const d = diffFields({ name: 'A', note: 'x' }, { name: 'B', note: 'x' });
+    assert.deepEqual(d, [{ field: 'name', yours: 'A', theirs: 'B' }]);
+  });
 }
 
 main()
