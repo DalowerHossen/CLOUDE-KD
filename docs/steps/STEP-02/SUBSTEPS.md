@@ -1,0 +1,24 @@
+# STEP 02 - Sub-steps plan
+
+Session branch: claude/clever-goldberg-8ncdae (contains integration 0a869c5 plus the STEP 01 CI fix 11723d8).
+Migration block: `S02_001` to `S02_0xx`, each with a `_down.sql`. Assertions: `sql/assertions/s02_*.sql`.
+Common checks for every sub-step: `npm run lint`, `npm run typecheck`, `bash scripts/check-all.sh`; with a migration also `bash scripts/db-apply.sh --clean`; with assertions also `bash scripts/run-assertions.sh s02`.
+Security checks for every sub-step: STEP_PROTOCOL section 6 (Z1 to Z14) reviewed on the diff.
+
+| Id | Goal | Files (owned paths) | Migrations | FEATURE_LIST coverage | Done when |
+|---|---|---|---|---|---|
+| 02.1 | Migration foundation helpers | migrations/S02_001_foundation.sql (+down) | S02_001 | Part 9 4024-4046 | clean apply; helpers exist: uuid_generate_v7, set_updated_at, bump_version, soft_delete, rls_enable_default_deny, unique-live-index helper |
+| 02.2 | Tenancy tables and claim helpers | migrations/S02_002_tenancy.sql (+down) | S02_002 | Part 9 3743-3769; Part 11 4436-4481 | companies, profiles, memberships, roles, role_permissions, feature_flags with RLS; `app_company_id()` claim helper; two-tenant read isolation |
+| 02.3 | Supabase clients and tenant middleware | lib/supabase/{browser,server,admin,types}.ts, lib/middleware/tenant.ts, services/base/tenant-service.ts, services/base/register.ts (tenant) | none | Part 9 3743-3769 | tenant service registered; foreign tenant id gives NotFoundError; admin client is server-only |
+| 02.4 | Concurrency base | services/base/{optimistic-lock,pessimistic-lock,advisory-lock,transaction,duplicate-detector}.ts, migrations/S02_003_locks.sql (+down) | S02_003 | Part 9 4048-4060; Part 11 4884-4911; Part 3 1000-1008 | `locks` service registered; version mismatch raises ConflictError |
+| 02.5a | Audit log database layer | migrations/S02_004_audit.sql (+down) | S02_004 | Part 11 4513-4540 | audit_logs append-only (trigger and policy), sequence, hash chain, checkpoints, verify function, generic audit trigger |
+| 02.5b | Audit service, signing, export | services/audit/*, lib/compliance/audit-export.ts, app/api/admin/audit/* | none | Part 11 4513-4540 | `audit` service registered; Ed25519 signing; JSON/CSV/CEF export; search API |
+| 02.5c | Audit admin page | app/(admin)/admin/audit/*, components/admin/audit/* | none | Part 11 4513-4540 | page renders with all states |
+| 02.6 | Roles and permissions engine | lib/auth/{roles,permissions}.ts, services/base/permission-service.ts, config/permissions/s02-core.ts | none | Part 11 4436-4481 | `permissions` service registered; `can()` enforces least privilege; staff permissions owner-controlled |
+| 02.7a | Approval database and engine | migrations/S02_005_approvals.sql (+down), lib/auth/{approval-rules,approval-engine}.ts | S02_005 | Part 11 4436-4481 | self-approval rejected; L0 to L3 plus dual; solo mode super_admin only |
+| 02.7b | Approval services, API, pages | services/approval/*, app/api/approvals/*, app/(admin)/admin/approvals/*, app/(dashboard)/approvals/*, components/admin/approvals/* | none | Part 11 4436-4481 | `approval` service registered; SLA escalation; delegation; bulk; history |
+| 02.8 | Events and jobs | migrations/S02_006_events_jobs.sql (+down), services/{events,jobs}/*, cron/base/leader-lock.ts, app/api/cron/[job]/route.ts, workers/runner.ts | S02_006 | Part 9 4024-4046 | `events` and `jobs` registered; SKIP LOCKED claim; retry and dead letter; cron secret enforced |
+| 02.9a | Compliance database | migrations/S02_007_compliance.sql (+down) | S02_007 | Part 9 3919-3952; Part 11 4581-4622 | consent_records_platform, dsar_requests, retention_policies, data_classifications, data_region |
+| 02.9b | Compliance services and page | lib/compliance/*, services/compliance/*, app/api/admin/compliance/*, app/(admin)/admin/compliance/*, components/admin/compliance/* | none | Part 9 3919-3952; Part 11 4581-4622 | `consent` registered; DSAR export/erase tombstones keep chain valid |
+| 02.10 | Presence and co-editing | lib/providers/presence-provider.tsx, components/admin/{edit-lock-indicator,conflict-dialog}.tsx | none | Part 9 4048-4060 | 5 minute lock timeout; conflict UI |
+| 02.11 | SQL assertions and closure | sql/assertions/s02_*.sql, VERIFY.md, HANDOFF.md | none | all | `run-assertions.sh s02` passes |
