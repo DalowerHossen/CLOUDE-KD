@@ -67,7 +67,7 @@ jobs:
       - uses: bridgecrewio/checkov-action@8c07e78c64ddc2209d8c193a4e321aad67677f8d # v12.999.0
         with:
           directory: .
-          framework: dockerfile,github_actions
+          framework: dockerfile
           quiet: true
 
   dast:

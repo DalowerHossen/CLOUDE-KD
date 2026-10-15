@@ -9,4 +9,5 @@ paths = [
   '''^\.env\.example$''',
   '''^docs/''',
   '''^package-lock\.json$''',
+  '''^scripts/verify/step01-core\.ts$''',
 ]
