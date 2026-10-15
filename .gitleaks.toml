@@ -1,0 +1,12 @@
+title = "KD SOLUTION IT gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documentation and the environment template contain no real secrets"
+paths = [
+  '''^\.env\.example$''',
+  '''^docs/''',
+  '''^package-lock\.json$''',
+]
