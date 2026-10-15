@@ -21,6 +21,15 @@ export const nav: NavItem[] = [
     order: 210,
   },
   {
+    id: 'admin-compliance',
+    labelKey: 's02Governance.nav.compliance',
+    href: '/admin/compliance',
+    icon: 'clipboard',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 220,
+  },
+  {
     id: 'dashboard-approvals',
     labelKey: 's02Governance.nav.approvals',
     href: '/approvals',

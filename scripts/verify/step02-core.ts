@@ -10,6 +10,7 @@ import { ConflictError, DuplicateError } from '@/lib/errors';
 import { evaluatePermission, grantMatches, validateStaffGrants } from '@/lib/auth/permissions';
 import { resolveApprovalLevel } from '@/lib/auth/approval-rules';
 import { outranks } from '@/lib/auth/roles';
+import { dsarDueDate, isJurisdiction, jurisdictionRule } from '@/lib/compliance/jurisdictions';
 import { checkDecision, planSteps, roleCanDecide } from '@/lib/auth/approval-engine';
 import type { PermissionDefinition } from '@/types/contracts';
 
@@ -297,6 +298,20 @@ async function main(): Promise<void> {
       'other_company',
     );
   });
+
+  await check(
+    'jurisdictions: deadlines per law, unknown falls back to the platform default',
+    () => {
+      const from = new Date('2026-01-01T00:00:00Z');
+      assert.equal(dsarDueDate('EU', from).toISOString(), '2026-01-31T00:00:00.000Z');
+      assert.equal(dsarDueDate('US-CA', from).toISOString(), '2026-02-15T00:00:00.000Z');
+      assert.equal(dsarDueDate('BR', from).toISOString(), '2026-01-16T00:00:00.000Z');
+      assert.equal(dsarDueDate('XX', from).toISOString(), '2026-01-31T00:00:00.000Z');
+      assert.equal(isJurisdiction('SG'), true);
+      assert.equal(isJurisdiction('sg'), false);
+      assert.equal(jurisdictionRule('JP')?.defaultRegion, 'jp');
+    },
+  );
 }
 
 main()

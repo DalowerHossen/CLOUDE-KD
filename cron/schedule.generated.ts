@@ -5,6 +5,7 @@ import type { CronJobDefinition } from '@/types/contracts';
 import { job as s02ApprovalEscalation } from './jobs/s02-approval-escalation';
 import { job as s02AuditIntegrity } from './jobs/s02-audit-integrity';
 import { job as s02QueuePurge } from './jobs/s02-queue-purge';
+import { job as s02Retention } from './jobs/s02-retention';
 import { job as s02WorkerTick } from './jobs/s02-worker-tick';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02WorkerTick];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick];
