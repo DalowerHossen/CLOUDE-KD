@@ -11,4 +11,22 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 200,
   },
+  {
+    id: 'admin-approvals',
+    labelKey: 's02Governance.nav.approvals',
+    href: '/admin/approvals',
+    icon: 'check-square',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 210,
+  },
+  {
+    id: 'dashboard-approvals',
+    labelKey: 's02Governance.nav.approvals',
+    href: '/approvals',
+    icon: 'check-square',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 900,
+  },
 ];

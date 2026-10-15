@@ -91,7 +91,10 @@ export interface ApiResult<T> {
 }
 
 export interface RouteContext {
-  params?: Record<string, string | string[] | undefined>;
+  /** Next.js 16 passes route params as a promise. */
+  params?:
+    | Record<string, string | string[] | undefined>
+    | Promise<Record<string, string | string[] | undefined>>;
 }
 
 function assertStrict(schema: z.ZodTypeAny | undefined, label: string, id: string): void {
@@ -210,7 +213,7 @@ export function withApi<
             : undefined
         ) as z.output<Q>;
         const params = (
-          options.params ? options.params.parse(clean(routeContext.params ?? {})) : undefined
+          options.params ? options.params.parse(clean((await routeContext.params) ?? {})) : undefined
         ) as z.output<P>;
 
         if (options.idempotent) {
