@@ -1,6 +1,6 @@
 # STEP 04 - Security Shield, Fraud Signals and Security Operations
 
-Wave B. Depends on: STEP 01. Contract use: tenant, audit, events, jobs, auth. Provides contracts: security, tokens. Owns `middleware.ts`.
+Wave B. Depends on: STEP 01. Contract use: tenant, audit, events, jobs, auth. Provides contracts: security, tokens. Owns `proxy.ts` (Next.js 16 renamed `middleware.ts` to `proxy.ts`; the exported function is named `proxy` and runs on the Node.js runtime).
 
 ## Feature sources
 - Part 9 lines 3800-3891 (C application security, D bots and abuse), 3907-3918 (F token and link security), 3971-3981 (I webhook security), 4240-4262 (S observability and incidents)
@@ -14,7 +14,7 @@ OWNERSHIP_MAP.md rows 04 and section 4. Migration block `S04_*`. Config file `co
 ## Sub-steps
 - 04.1 Headers and policies: nonce-based CSP (no unsafe-inline), Trusted Types, HSTS, frame-ancestors none, referrer policy, permissions policy, CORS allowlist, open-redirect validation, SSRF guard (allowlist, private ranges blocked), HTTP header injection strip, request size limit (10 MB). Block every `/dev/*` and `/admin/dev/*` path when `APP_ENV` is `production` (ADR 0003). A stricter payment-page CSP profile that allows only the processor's script and frame origins and no analytics.
 - 04.2 Sanitizer: `lib/security/sanitizer.ts` (Unicode NFC, zero-width and RTL override removal, null byte rejection, path traversal, prototype pollution guard), DOMPurify wrapper, Zod strict helpers, safe-regex validation script.
-- 04.3 Middleware composition: `middleware.ts` and `lib/middleware/chain.generated.ts` consumer, CSRF (double-submit cookie, one-time form tokens), Turnstile verification, honeypot, bot and headless detection, user-agent validation.
+- 04.3 Request proxy composition: `proxy.ts` and `lib/middleware/chain.generated.ts` consumer, CSRF (double-submit cookie, one-time form tokens), Turnstile verification, honeypot, bot and headless detection, user-agent validation.
 - 04.4 Rate limiting: Supabase table-based limiter behind an adapter interface (Upstash adapter ready), per IP, per user, per endpoint policies in config, brute-force IP bans, large-payload guard, generic idempotency middleware (`lib/middleware/idempotency.ts`).
 - 04.5 Network intelligence (REQ-NETWORK): provider adapters (IPQualityScore, MaxMind Anonymous IP), Tor exit list refresh job, datacenter ranges, residential proxy score, geo-fencing, country block, IP reputation, whitelist, `checkNetwork(ip, context)` with the policy table (block on signup, payment, kyc, admin; flag plus 2FA on login), admin configuration page `(admin)/admin/security`.
 - 04.6 Device and behaviour signals: device fingerprint collector (excluded on payment, auth-password and card pages), device trust, device reuse detection, impossible travel, velocity checks, trial abuse, same-IP multi-account, ATO and session hijack signals, insider-threat signals for admin_staff, activity tracking that never records key presses on payment pages.

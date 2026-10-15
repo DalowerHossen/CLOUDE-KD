@@ -5,7 +5,7 @@ Every sub-step stays inside the paths that OWNERSHIP_MAP.md assigns to STEP 01. 
 | Id | Goal | Main files | Done when |
 |---|---|---|---|
 | 01.0 | Route namespace and fragment naming decisions recorded in the docs | docs/execution/*, docs/ADR | DECISIONS.md written, ownership map updated |
-| 01.1 | Scaffold: Next.js 14, TypeScript strict, ESLint, Prettier, Husky, ignore files, folder skeleton | package.json (scripts), tsconfig.json, .eslintrc.json, .prettierrc, next.config.js, tailwind.config.ts, postcss.config.js, components.json, .husky/*, folders | lint and typecheck configs load |
+| 01.1 | Scaffold: Next.js 16, TypeScript strict, ESLint, Prettier, Husky, ignore files, folder skeleton | package.json (scripts), tsconfig.json, eslint.config.mjs, .prettierrc, next.config.js, tailwind.config.ts, postcss.config.js, components.json, .husky/*, folders | lint and typecheck configs load |
 | 01.2 | Dependency baseline and lockfile | package.json, package-lock.json, scripts/apply-dependency-requests.sh | `npm ci` succeeds |
 | 01.3 | Guard scripts and check runners | scripts/check-*.sh, scripts/check-*.mjs, scripts/lib/, scripts/{check-all,integration-check,db-apply,run-assertions}.sh, config/ownership.json, supabase/local-shim.sql | `scripts/check-all.sh` passes; verify script proves each guard fails on a seeded violation |
 | 01.4 | CI/CD skeleton | .github/workflows/*, CODEOWNERS, PR template, dependabot | YAML valid |

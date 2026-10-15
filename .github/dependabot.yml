@@ -4,15 +4,45 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Major upgrades of these packages need a planned migration, not an automatic pull request.
+      - dependency-name: zod
+        update-types: [version-update:semver-major]
+      - dependency-name: '@hookform/resolvers'
+        update-types: [version-update:semver-major]
+      - dependency-name: tailwind-merge
+        update-types: [version-update:semver-major]
+      - dependency-name: tailwindcss
+        update-types: [version-update:semver-major]
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+      - dependency-name: react
+        update-types: [version-update:semver-major]
+      - dependency-name: react-dom
+        update-types: [version-update:semver-major]
+      - dependency-name: '@types/react'
+        update-types: [version-update:semver-major]
+      - dependency-name: '@types/react-dom'
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
   - package-ecosystem: docker
     directory: /docker
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+    ignore:
+      # The runtime image follows the Node.js LTS line selected in .nvmrc.
+      - dependency-name: node
+        update-types: [version-update:semver-major]

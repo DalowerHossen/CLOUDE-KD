@@ -14,7 +14,6 @@
         "postcss.config.js",
         "components.json",
         "netlify.toml",
-        ".eslintrc.json",
         ".prettierrc",
         ".prettierignore",
         ".editorconfig",
@@ -111,7 +110,9 @@
         "app/(auth)/{layout,error,loading,not-found}.tsx",
         "app/(dashboard)/{layout,error,loading,not-found}.tsx",
         "app/(admin)/admin/{layout,error,loading,not-found}.tsx",
-        "app/(client-portal)/{layout,error,loading,not-found}.tsx"
+        "app/(client-portal)/{layout,error,loading,not-found}.tsx",
+        "types/global.d.ts",
+        "eslint.config.mjs"
       ]
     },
     "02": {
@@ -178,7 +179,7 @@
     },
     "04": {
       "owns": [
-        "middleware.ts",
+        "proxy.ts",
         "lib/security/**",
         "lib/middleware/{rate-limit,bot-detector,vpn-detector,csrf,auth,idempotency,headers}.ts",
         "lib/auth/tokens.ts",

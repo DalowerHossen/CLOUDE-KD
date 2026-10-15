@@ -1,5 +1,5 @@
 # Self-hosted production: the application behind an nginx reverse proxy that terminates TLS.
-# Put certificates at docker/certs/fullchain.pem and docker/certs/privkey.pem.
+# Set APP_DOMAIN in the environment. Put certificates at docker/certs/fullchain.pem and docker/certs/privkey.pem.
 services:
   app:
     build:
@@ -28,8 +28,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN is required (the public host name, for example app.example.com)}
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./certs:/etc/nginx/certs:ro
     restart: always
     security_opt:

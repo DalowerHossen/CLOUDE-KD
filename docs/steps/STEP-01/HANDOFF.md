@@ -13,7 +13,7 @@ STEP 01 is complete: repository scaffold, guard scripts, generators, environment
 
 ## Files created (by area)
 
-- Root configuration: `package.json`, lockfile, `tsconfig.json`, `.eslintrc.json`, `.prettierrc`, `next.config.js`, `tailwind.config.ts`, `postcss.config.js`, `components.json`, `netlify.toml`, `instrumentation.ts`, `.gitignore`, `.dockerignore`, `.gitleaks.toml`, `.lighthouserc.json`, `.nvmrc`, `.editorconfig`, README, CONTRIBUTING, SECURITY, CHANGELOG, LICENSE, `.env.example` (generated).
+- Root configuration: `package.json`, lockfile, `tsconfig.json`, `eslint.config.mjs`, `.prettierrc`, `next.config.js`, `tailwind.config.ts`, `postcss.config.js`, `components.json`, `netlify.toml`, `instrumentation.ts`, `.gitignore`, `.dockerignore`, `.gitleaks.toml`, `.lighthouserc.json`, `.nvmrc`, `.editorconfig`, README, CONTRIBUTING, SECURITY, CHANGELOG, LICENSE, `.env.example` (generated).
 - `.github/`: workflows (`ci`, `security`, `deploy`), CODEOWNERS, PR template, Dependabot. `.husky/`: `pre-commit`, `commit-msg`.
 - `scripts/`: 13 guard scripts and `check-all.sh`, `check-migrations.mjs`, `check-ownership.mjs`, `check-dead-links.mjs`, `gen.mjs`, `db-apply.sh`, `run-assertions.sh`, `integration-check.sh`, `apply-dependency-requests.sh`, `backup.sh`, `restore.sh`, `deploy.sh`, `make-brand-assets.mjs`, `lib/common.sh`, `verify/step01-{guards.sh,core.ts,tokens.mjs}`.
 - `lib/`: `container.ts`, `errors/`, `logger/`, `env/`, `utils/` (Money, uuid v7, hash, date, slug, formatting, motion, cn), `api/with-api.ts`, `entitlement/`, `i18n/`, `providers/`, `hooks/`.
