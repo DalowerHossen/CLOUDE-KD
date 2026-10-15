@@ -19,7 +19,7 @@ Stripe, NMI, Adyen, Verifone (2Checkout), Braintree (PayPal), BlueSnap, Square, 
 6. Every mode change is written to the audit log (actor, processor, from, to, test id).
 
 ## REQ-ADMIN-CONNECT - Connect processors from the super admin dashboard
-1. One page, `app/(admin)/processors`, lets the super admin enter API credentials, run a test, and enable or disable any processor, with no document change and no redeploy.
+1. One page, `app/(admin)/admin/processors`, lets the super admin enter API credentials, run a test, and enable or disable any processor, with no document change and no redeploy.
 2. Only `super_admin` can open it. It requires an active 2FA session and a fresh identity check (`requireStepUp`, default `STEP_UP_MAX_AGE_SECONDS` = 300) for every write action.
 3. Credentials are encrypted with AES-256-GCM before they are saved. The encryption key lives in an environment variable (`ENCRYPTION_KEY`, purpose `processor-credentials`), never in the database. Stored fields: ciphertext, iv, tag, key_version, last4 (last characters), updated_at, updated_by.
 4. After saving, the secret is never shown again. The page shows only the last characters and the last update time.

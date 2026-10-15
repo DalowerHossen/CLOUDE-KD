@@ -16,6 +16,7 @@ All money values in contracts use the `Money` type (decimal.js wrapper, USD, 4 d
 | `consent.ts` | `consent` | 02 | 06,13,16 | `record`, `has`, `withdraw` |
 | `auth.ts` | `auth` | 03 | all | `getActor()`; `requireRole(roles)`; `requireStepUp({ maxAgeSeconds })` (2FA code plus fresh password check); `lockState(identifierHash)` |
 | `security.ts` | `security` | 04 | all | `rateLimit(key, policy)`; `verifyTurnstile(token)`; `checkNetwork(ip, context)` -> `{ vpn, proxy, tor, datacenter, countryCode, score, allowed }` where context is signup, login, payment, kyc, admin, other; `riskScore(subject)`; `raiseSecurityEvent(type, details)`; `sanitize(input, schema)` |
+| `idempotency.ts` | `idempotency` | 04 | all (via `withApi`) | `begin({ scope, key, requestHash })` -> `new` / `replay` (cached response) / `conflict`; `complete(scope, key, response)` |
 | `tokens.ts` | `tokens` | 04 | 13,15 | `issue({ docType, docId, expiresAt, otp? })` -> url token; `verify(token)`; `revoke(id)`; `reissue(id)`; `verifyOtp(id, code)` |
 | `encryption.ts` | `encryption` | 05 | 03,07,10,14,16 | `encrypt(purpose, plaintext, scope?)` -> `{ ciphertext, iv, tag, keyVersion }`; `decrypt(purpose, payload, scope?)`; purposes: `files`, `processor-credentials`, `oauth-tokens`, `kyc`, `pii`; keys come only from environment |
 | `storage.ts` | `storage` | 05 | 07,08,09,13,15,16 | `put({ companyId, category, bytes, meta })` -> file record with `storageProvider`; `get(fileId)`; `signedUrl(fileId, ttl)`; `remove(fileId)`; `resolveProvider(companyId)`; `migrate(fileId, targetProvider)` |
@@ -26,7 +27,7 @@ All money values in contracts use the `Money` type (decimal.js wrapper, USD, 4 d
 | `invoice.ts` | `invoices` | 09 | 10,13,14,15,16 | `getForPayment(invoiceId)` -> amountDue, currency=USD, billingPostalCode, billingCountry, status, version; `applyPayment({ invoiceId, paymentId, amount })`; `markDisputed`; `snapshot(invoiceId)` |
 | `payment-adapter.ts` | (static types) | 01 types, 10 re-exports | 10,11,12 | `ProcessorAdapter` interface, `ProcessorId` union (16 ids), `ProcessorCapabilities`, `DeclineCategory`, `CredentialField`, `ProcessorMode` (see PAYMENT_PROCESSORS.md section 5) |
 | `payment.ts` | `payments` | 10 | 09,13,14,15,16 | `createPayment({ invoiceId, idempotencyKey, ... })`; `refund(paymentId, amount)`; `getPayment(id)`; `listReview()` |
-| `entitlement.ts` | `entitlement` | 01 (config-based base), 14 (database-backed) | all | `has(companyId, key)`; `limit(companyId, key)` |
+| `entitlement.ts` | `entitlement` | 01 (config-based base in `lib/entitlement/`), 14 (database-backed, registered with `override: true`) | all | `has(companyId, key)`; `limit(companyId, key)` |
 | `wallet.ts` | `wallet` | 14 | 10,13 | `credit`, `debit`, `hold`, `release` (ledger entries, serializable) |
 | `kyc.ts` | `kyc` | 07 | 10,14 | `status(companyId)`; `isVerified(companyId)` |
 | `accounting.ts` | `accounting` | 15 | none directly | fed by domain events `invoice.*`, `payment.*`, `refund.*`, `payout.*`, `expense.*`, `payroll.*` |

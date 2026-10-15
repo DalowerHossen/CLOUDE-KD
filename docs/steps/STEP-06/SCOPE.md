@@ -16,12 +16,12 @@ OWNERSHIP_MAP.md rows 06 and section 4. Migration block `S06_*`.
 ## Sub-steps
 - 06.1 Public layout: header, mega menu, footer, cookie consent banner connected to the consent contract, theme toggle, language policy (English only).
 - 06.2 Core marketing pages: home (hero, trust signals, features, pricing teaser, testimonials, FAQ, CTA), features, industries, pricing (reads plan data through the entitlement contract), about, contact (honeypot, Turnstile, email), careers, security and trust pages.
-- 06.3 CMS core: block system (hero, features, testimonials, CTA, FAQ), page versions, draft, schedule, preview, revert, media via the storage contract, approval through the approval contract for content_manager, admin pages `(admin)/cms`.
+- 06.3 CMS core: block system (hero, features, testimonials, CTA, FAQ), page versions, draft, schedule, preview, revert, media via the storage contract, approval through the approval contract for content_manager, admin pages `(admin)/admin/cms`.
 - 06.4 Legal pages (CMS-editable): terms, privacy, refund policy, cookie, DPA, acceptable use, with version history and acceptance tracking for later evidence use.
-- 06.5 Blog: Tiptap editor with DOMPurify, categories, tags, authors, cover images, scheduling, RSS, related posts, admin `(admin)/blog`.
-- 06.6 SEO: eight JSON-LD schema types, meta manager, OG image generation, sitemap, robots, canonical rules, noindex rule for token and app pages, SEO audit report, verification tags, admin `(admin)/seo`.
-- 06.7 Analytics and pixels: GA4, GTM, Meta Pixel with conversions API, TikTok, LinkedIn, X, Clarity, Pinterest; loaded only after consent and never on `(auth)`, payment, `(client-portal)` or `(admin)` routes; in-app product analytics; admin `(admin)/analytics`.
-- 06.8 Conversion and marketing: A/B testing framework (traffic split, goal, significance, winner), trust signals, testimonials manager, lead generation tools (free invoice generator, calculators, template library), lead capture and `leads` admin, email campaigns and drip sequences using the email contract, retention tools, admin `(admin)/marketing`.
+- 06.5 Blog: Tiptap editor with DOMPurify, categories, tags, authors, cover images, scheduling, RSS, related posts, admin `(admin)/admin/blog`.
+- 06.6 SEO: eight JSON-LD schema types, meta manager, OG image generation, sitemap, robots, canonical rules, noindex rule for token and app pages, SEO audit report, verification tags, admin `(admin)/admin/seo`.
+- 06.7 Analytics and pixels: GA4, GTM, Meta Pixel with conversions API, TikTok, LinkedIn, X, Clarity, Pinterest; loaded only after consent and never on `(auth)`, payment, `(client-portal)` or `(admin)` routes; in-app product analytics; admin `(admin)/admin/analytics`.
+- 06.8 Conversion and marketing: A/B testing framework (traffic split, goal, significance, winner), trust signals, testimonials manager, lead generation tools (free invoice generator, calculators, template library), lead capture and `leads` admin, email campaigns and drip sequences using the email contract, retention tools, admin `(admin)/admin/marketing`.
 - 06.9 Support content: help center and knowledge base, FAQ, public status page UI fed by the incident service, public roadmap, changelog page ("What's new").
 - 06.10 Visual polish: illustrations, empty-state art, charts style guide for marketing, easter eggs from the list, print styles for public pages.
 

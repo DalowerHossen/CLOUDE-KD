@@ -20,8 +20,8 @@ OWNERSHIP_MAP.md rows 03 and section 4. Migration block `S03_*`. Config file `co
 - 03.5 Two-factor: TOTP enrollment with QR and manual code, 10 one-time backup codes (hashed), recovery by backup code, mandatory for all account-holding roles (owner within `OWNER_2FA_GRACE_DAYS`, default 7, config), 2FA failures feed the lock engine, step-up service (`requireStepUp`: TOTP plus password re-entry, default 300 seconds).
 - 03.6 Sessions: asymmetric JWT where supported, HttpOnly + Secure cookies (SameSite=Lax with CSRF token because of OAuth and processor return redirects; the decision is recorded), session id rotation on login, configurable timeout (default 24 hours), device list, revoke one or all, mid-session IP or device change detection event, new-device and unusual-IP login notifications, staff session revoke by owner.
 - 03.7 OAuth: Google and GitHub, tokens encrypted through the encryption contract, safe account linking, state and PKCE.
-- 03.8 Unlock workflow (REQ-LOCK 4): admin page `(admin)/account-locks`, permission `auth.account.unlock`, unlock request -> confirmation message to the account owner's registered email -> owner confirms -> unlock allowed -> counters reset -> audit entries at each stage, `account_unlocked` event.
-- 03.9 Impersonation: super_admin only, step-up required, time-limited, banner on every page, all actions marked in the audit log, `(admin)/impersonation`.
+- 03.8 Unlock workflow (REQ-LOCK 4): admin page `(admin)/admin/account-locks`, permission `auth.account.unlock`, unlock request -> confirmation message to the account owner's registered email -> owner confirms -> unlock allowed -> counters reset -> audit entries at each stage, `account_unlocked` event.
+- 03.9 Impersonation: super_admin only, step-up required, time-limited, banner on every page, all actions marked in the audit log, `(admin)/admin/impersonation`.
 - 03.10 Account security page `(dashboard)/account/security`: 2FA status, backup codes regeneration, sessions, devices, password change with history check.
 
 ## Security notes
