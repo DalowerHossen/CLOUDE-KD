@@ -74,7 +74,7 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
-    "@types/node": "^20.16.11",
+    "@types/node": "^26.6.5",
     "@types/nodemailer": "^6.4.16",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^18.3.11",
