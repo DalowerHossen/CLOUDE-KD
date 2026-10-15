@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@googleapis/drive": "^8.14.0",
-    "@hookform/resolvers": "^3.9.0",
+    "@hookform/resolvers": "^5.9.1",
     "@noble/ed25519": "^2.1.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",
