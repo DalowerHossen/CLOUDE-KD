@@ -7,6 +7,10 @@ import { merkleRoot } from '@/services/audit/merkle';
 import { withTransaction } from '@/services/base/transaction';
 import { DuplicateDetector, type DuplicateMatch } from '@/services/base/duplicate-detector';
 import { ConflictError, DuplicateError } from '@/lib/errors';
+import { evaluatePermission, grantMatches, validateStaffGrants } from '@/lib/auth/permissions';
+import { resolveApprovalLevel } from '@/lib/auth/approval-rules';
+import { outranks } from '@/lib/auth/roles';
+import type { PermissionDefinition } from '@/types/contracts';
 
 let failures = 0;
 async function check(name: string, fn: () => Promise<void> | void): Promise<void> {
@@ -112,6 +116,143 @@ async function main(): Promise<void> {
       await detector.fingerprint({ name: 'acme' }),
     );
     await assert.rejects(detector.assertNoDuplicate({ name: 'acme' }), DuplicateError);
+  });
+
+  const defs: PermissionDefinition[] = [
+    {
+      action: 'audit.read',
+      description: 'x',
+      defaultRoles: ['super_admin', 'admin_staff'],
+      approvalLevel: 'L0',
+    },
+    {
+      action: 'invoice.create',
+      description: 'x',
+      defaultRoles: ['owner', 'staff'],
+      approvalLevel: 'L1',
+    },
+    { action: 'team.manage', description: 'x', defaultRoles: ['owner'], approvalLevel: 'L0' },
+  ];
+
+  await check('permissions: unknown action and malformed action are denied', () => {
+    assert.equal(
+      evaluatePermission({
+        actor: { role: 'super_admin', subRole: null },
+        action: 'nope.read',
+        definitions: defs,
+      }),
+      false,
+    );
+    assert.equal(
+      evaluatePermission({
+        actor: { role: 'super_admin', subRole: null },
+        action: 'Audit.Read',
+        definitions: defs,
+      }),
+      false,
+    );
+  });
+
+  await check('permissions: admin_staff needs a matching sub-role', () => {
+    const base = { action: 'audit.read', definitions: defs };
+    assert.equal(
+      evaluatePermission({ ...base, actor: { role: 'admin_staff', subRole: null } }),
+      false,
+    );
+    assert.equal(
+      evaluatePermission({ ...base, actor: { role: 'admin_staff', subRole: 'kyc_reviewer' } }),
+      false,
+    );
+    assert.equal(
+      evaluatePermission({
+        ...base,
+        actor: { role: 'admin_staff', subRole: 'compliance_officer' },
+      }),
+      true,
+    );
+    assert.equal(
+      evaluatePermission({ ...base, actor: { role: 'super_admin', subRole: null } }),
+      true,
+    );
+  });
+
+  await check('permissions: staff need an owner grant, owners need none', () => {
+    const base = { action: 'invoice.create', definitions: defs };
+    assert.equal(evaluatePermission({ ...base, actor: { role: 'staff', subRole: null } }), false);
+    assert.equal(
+      evaluatePermission({
+        ...base,
+        actor: { role: 'staff', subRole: null },
+        grantedPermissions: ['invoice.*'],
+      }),
+      true,
+    );
+    assert.equal(
+      evaluatePermission({
+        ...base,
+        actor: { role: 'staff', subRole: null },
+        grantedPermissions: ['invoices.*'],
+      }),
+      false,
+    );
+    assert.equal(evaluatePermission({ ...base, actor: { role: 'owner', subRole: null } }), true);
+    assert.equal(
+      evaluatePermission({
+        action: 'team.manage',
+        definitions: defs,
+        actor: { role: 'staff', subRole: null },
+        grantedPermissions: ['team.manage'],
+      }),
+      false,
+    );
+  });
+
+  await check('permissions: explicit deny override wins, allow override adds a role', () => {
+    const actor = { role: 'owner', subRole: null } as const;
+    assert.equal(
+      evaluatePermission({
+        actor,
+        action: 'invoice.create',
+        definitions: defs,
+        overrides: [{ action: 'invoice.create', allowed: false }],
+      }),
+      false,
+    );
+    assert.equal(
+      evaluatePermission({
+        actor: { role: 'ceo', subRole: null },
+        action: 'audit.read',
+        definitions: defs,
+        overrides: [{ action: 'audit.read', allowed: true }],
+      }),
+      true,
+    );
+  });
+
+  await check('permissions: staff grants are validated against open actions', () => {
+    assert.deepEqual(validateStaffGrants(['invoice.*'], defs), { ok: true, rejected: [] });
+    assert.deepEqual(validateStaffGrants(['team.manage', 'bad grant', 'ghost.*'], defs).rejected, [
+      'team.manage',
+      'bad grant',
+      'ghost.*',
+    ]);
+    assert.equal(grantMatches('invoice.*', 'invoice.create'), true);
+    assert.equal(grantMatches('invoice.*', 'invoices.create'), false);
+  });
+
+  await check('roles and approval level fallback', () => {
+    assert.equal(outranks('ceo', 'owner'), true);
+    assert.equal(outranks('staff', 'owner'), false);
+    assert.equal(resolveApprovalLevel('unknown.thing', [], defs), 'L3');
+    assert.equal(resolveApprovalLevel('invoice.create', [], defs), 'L1');
+    assert.equal(
+      resolveApprovalLevel(
+        'invoice.create',
+        [{ action: 'invoice.create', level: 'L2', slaHours: 4 }],
+        defs,
+      ),
+      'L2',
+    );
   });
 }
 
