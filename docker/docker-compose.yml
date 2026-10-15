@@ -1,0 +1,13 @@
+# Local development with Docker. The database is Supabase (hosted project or `supabase start`).
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env.local
+    environment:
+      APP_ENV: development
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

@@ -1,0 +1,36 @@
+# Self-hosted production: the application behind an nginx reverse proxy that terminates TLS.
+# Put certificates at docker/certs/fullchain.pem and docker/certs/privkey.pem.
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../.env.production
+    environment:
+      APP_ENV: production
+    expose:
+      - "3000"
+    restart: always
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    restart: always
+    security_opt:
+      - no-new-privileges:true
