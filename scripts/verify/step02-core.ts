@@ -10,6 +10,7 @@ import { ConflictError, DuplicateError } from '@/lib/errors';
 import { evaluatePermission, grantMatches, validateStaffGrants } from '@/lib/auth/permissions';
 import { resolveApprovalLevel } from '@/lib/auth/approval-rules';
 import { outranks } from '@/lib/auth/roles';
+import { checkDecision, planSteps, roleCanDecide } from '@/lib/auth/approval-engine';
 import type { PermissionDefinition } from '@/types/contracts';
 
 let failures = 0;
@@ -252,6 +253,48 @@ async function main(): Promise<void> {
         defs,
       ),
       'L2',
+    );
+  });
+
+  await check('approval engine: step plans and authority', () => {
+    assert.deepEqual(planSteps('L0', 'staff'), []);
+    assert.deepEqual(planSteps('L2', 'staff'), ['L1', 'L2']);
+    assert.deepEqual(planSteps('L2', 'owner'), ['L2']);
+    assert.deepEqual(planSteps('L2+L3', 'owner'), ['L2', 'L3']);
+    assert.equal(roleCanDecide('owner', 'L2'), false);
+    assert.equal(roleCanDecide('ceo', 'L3'), false);
+    assert.equal(roleCanDecide('super_admin', 'L1'), true);
+    const base = {
+      approver: { id: 'a', role: 'ceo' as const, companyId: null },
+      request: { requesterId: 'r', companyId: 'c', requiredLevel: 'L2' as const },
+      stepLevel: 'L2' as const,
+      decision: 'approve' as const,
+      reason: null,
+      previousApproverId: null,
+      soloMode: false,
+    };
+    assert.equal(checkDecision(base), null);
+    assert.equal(
+      checkDecision({ ...base, approver: { ...base.approver, id: 'r' } }),
+      'self_approval',
+    );
+    assert.equal(checkDecision({ ...base, decision: 'reject' }), 'reason_required');
+    assert.equal(
+      checkDecision({
+        ...base,
+        approver: { id: 's', role: 'super_admin', companyId: null },
+        request: { ...base.request, requesterId: 's' },
+        soloMode: true,
+      }),
+      null,
+    );
+    assert.equal(
+      checkDecision({
+        ...base,
+        approver: { id: 'o', role: 'owner', companyId: 'x' },
+        stepLevel: 'L1',
+      }),
+      'other_company',
     );
   });
 }
