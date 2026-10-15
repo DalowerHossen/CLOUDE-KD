@@ -23,7 +23,10 @@ function codeOf(error: unknown): string | undefined {
   return undefined;
 }
 
-export async function withTransaction<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
+export async function withTransaction<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {},
+): Promise<T> {
   const attempts = options.attempts ?? 3;
   const base = options.baseDelayMs ?? 40;
   for (let attempt = 1; ; attempt++) {

@@ -6,11 +6,18 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { InternalError } from '@/lib/errors';
 import { merkleRoot } from './merkle';
-import { auditKeyId, checkpointMessage, signCheckpoint, verifyCheckpointSignature } from './signing';
+import {
+  auditKeyId,
+  checkpointMessage,
+  signCheckpoint,
+  verifyCheckpointSignature,
+} from './signing';
 
 const MAX_PER_CHECKPOINT = 5000;
 
-const entrySchema = z.object({ sequence: z.coerce.string(), entry_hash: z.string().length(64) }).strip();
+const entrySchema = z
+  .object({ sequence: z.coerce.string(), entry_hash: z.string().length(64) })
+  .strip();
 const checkpointSchema = z
   .object({
     id: z.string().uuid(),
@@ -88,8 +95,15 @@ export interface CheckpointVerification {
   failedCheckpointIds: string[];
 }
 
-export async function verifyCheckpoints(admin: SupabaseClient, chainKey: string): Promise<CheckpointVerification> {
-  const cps = await admin.from('audit_checkpoints').select('*').eq('chain_key', chainKey).order('to_sequence');
+export async function verifyCheckpoints(
+  admin: SupabaseClient,
+  chainKey: string,
+): Promise<CheckpointVerification> {
+  const cps = await admin
+    .from('audit_checkpoints')
+    .select('*')
+    .eq('chain_key', chainKey)
+    .order('to_sequence');
   if (cps.error) throw new InternalError(cps.error);
   const failed: string[] = [];
   const list = z.array(checkpointSchema).parse(cps.data);

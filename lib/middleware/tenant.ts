@@ -48,6 +48,10 @@ export async function resolveTenantContext(client: SupabaseClient): Promise<Tena
 }
 
 /** Throws NotFoundError unless the resource belongs to the given tenant. A null resource tenant is platform data. */
-export function assertResourceInTenant(context: TenantContext, resourceCompanyId: string | null): void {
-  if (resourceCompanyId === null || resourceCompanyId !== context.companyId) throw new NotFoundError();
+export function assertResourceInTenant(
+  context: TenantContext,
+  resourceCompanyId: string | null,
+): void {
+  if (resourceCompanyId === null || resourceCompanyId !== context.companyId)
+    throw new NotFoundError();
 }

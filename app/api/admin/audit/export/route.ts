@@ -23,7 +23,11 @@ export const GET = withApi(
   },
   async ({ query }) => {
     const { format, ...filter } = query;
-    const page = await searchAudit(await createServerSupabase(), { ...filter, cursor: null, limit: EXPORT_LIMIT });
+    const page = await searchAudit(await createServerSupabase(), {
+      ...filter,
+      cursor: null,
+      limit: EXPORT_LIMIT,
+    });
     return {
       data: {
         format,

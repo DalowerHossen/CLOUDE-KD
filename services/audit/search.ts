@@ -8,8 +8,18 @@ import type { AuditExportRow } from '@/lib/compliance/audit-export';
 
 export const auditSearchSchema = z
   .object({
-    action: z.string().trim().max(100).regex(/^[a-z0-9_.]*$/).optional(),
-    resourceType: z.string().trim().max(100).regex(/^[a-z0-9_]*$/).optional(),
+    action: z
+      .string()
+      .trim()
+      .max(100)
+      .regex(/^[a-z0-9_.]*$/)
+      .optional(),
+    resourceType: z
+      .string()
+      .trim()
+      .max(100)
+      .regex(/^[a-z0-9_]*$/)
+      .optional(),
     resourceId: z.string().uuid().optional(),
     actorUserId: z.string().uuid().optional(),
     companyId: z.string().uuid().optional(),
@@ -49,7 +59,11 @@ export interface AuditPage {
 }
 
 export async function searchAudit(client: SupabaseClient, filter: AuditSearch): Promise<AuditPage> {
-  let query = client.from('audit_logs').select(COLUMNS).order('id', { ascending: false }).limit(filter.limit + 1);
+  let query = client
+    .from('audit_logs')
+    .select(COLUMNS)
+    .order('id', { ascending: false })
+    .limit(filter.limit + 1);
   if (filter.action) query = query.like('action', `${filter.action}%`);
   if (filter.resourceType) query = query.eq('resource_type', filter.resourceType);
   if (filter.resourceId) query = query.eq('resource_id', filter.resourceId);

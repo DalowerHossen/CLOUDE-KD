@@ -23,10 +23,17 @@ export async function signCheckpoint(message: string): Promise<string> {
   return bytesToHex(signature);
 }
 
-export async function verifyCheckpointSignature(message: string, signatureHex: string): Promise<boolean> {
+export async function verifyCheckpointSignature(
+  message: string,
+  signatureHex: string,
+): Promise<boolean> {
   try {
     const signature = Uint8Array.from(Buffer.from(signatureHex, 'hex'));
-    return await ed.verifyAsync(signature, new TextEncoder().encode(message), await auditPublicKey());
+    return await ed.verifyAsync(
+      signature,
+      new TextEncoder().encode(message),
+      await auditPublicKey(),
+    );
   } catch {
     return false;
   }
@@ -39,5 +46,12 @@ export function checkpointMessage(parts: {
   merkleRoot: string;
   lastEntryHash: string;
 }): string {
-  return ['kd-audit-checkpoint-v1', parts.chainKey, parts.fromSequence, parts.toSequence, parts.merkleRoot, parts.lastEntryHash].join('|');
+  return [
+    'kd-audit-checkpoint-v1',
+    parts.chainKey,
+    parts.fromSequence,
+    parts.toSequence,
+    parts.merkleRoot,
+    parts.lastEntryHash,
+  ].join('|');
 }

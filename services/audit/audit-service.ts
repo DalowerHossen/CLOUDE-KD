@@ -49,7 +49,10 @@ export function createAuditService(): AuditService {
     async record(entry: AuditEntryInput): Promise<void> {
       const context = getContext();
       const actor = (await tryGetService('auth')?.getActor()) ?? null;
-      const companyId = entry.companyId !== undefined ? entry.companyId : (context?.companyId ?? actor?.companyId ?? null);
+      const companyId =
+        entry.companyId !== undefined
+          ? entry.companyId
+          : (context?.companyId ?? actor?.companyId ?? null);
       const meta = await readRequestMeta();
       const { error } = await getAdminSupabase().rpc('kd_audit_append', {
         p_company: companyId,

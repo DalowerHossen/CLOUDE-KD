@@ -8,8 +8,16 @@ import { verifyCheckpoints } from '@/services/audit/checkpoint';
 const bodySchema = z
   .object({
     chainKey: z.string().regex(/^(platform|[0-9a-f-]{36})$/),
-    fromSequence: z.string().regex(/^\d{1,18}$/).nullable().default(null),
-    toSequence: z.string().regex(/^\d{1,18}$/).nullable().default(null),
+    fromSequence: z
+      .string()
+      .regex(/^\d{1,18}$/)
+      .nullable()
+      .default(null),
+    toSequence: z
+      .string()
+      .regex(/^\d{1,18}$/)
+      .nullable()
+      .default(null),
   })
   .strict();
 
@@ -22,7 +30,10 @@ export const POST = withApi(
     body: bodySchema,
   },
   async ({ body }) => {
-    const chain = await verifyChainByKey(body.chainKey, { fromSequence: body.fromSequence, toSequence: body.toSequence });
+    const chain = await verifyChainByKey(body.chainKey, {
+      fromSequence: body.fromSequence,
+      toSequence: body.toSequence,
+    });
     const checkpoints = await verifyCheckpoints(getAdminSupabase(), body.chainKey);
     return {
       data: { chain, checkpoints },

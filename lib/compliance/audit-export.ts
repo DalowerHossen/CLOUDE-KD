@@ -52,11 +52,17 @@ export function toJsonLines(rows: readonly AuditExportRow[]): string {
 }
 
 function cefHeaderEscape(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/[\r\n]+/g, ' ');
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/[\r\n]+/g, ' ');
 }
 
 function cefExtensionEscape(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/=/g, '\\=').replace(/[\r\n]+/g, ' ');
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/=/g, '\\=')
+    .replace(/[\r\n]+/g, ' ');
 }
 
 /** CEF:Version|Vendor|Product|Version|SignatureID|Name|Severity|Extension */
@@ -88,7 +94,10 @@ export function toCef(rows: readonly AuditExportRow[]): string {
     .concat(rows.length > 0 ? '\n' : '');
 }
 
-export function formatAuditExport(rows: readonly AuditExportRow[], format: AuditExportFormat): string {
+export function formatAuditExport(
+  rows: readonly AuditExportRow[],
+  format: AuditExportFormat,
+): string {
   if (format === 'csv') return toCsv(rows);
   if (format === 'cef') return toCef(rows);
   return toJsonLines(rows);
