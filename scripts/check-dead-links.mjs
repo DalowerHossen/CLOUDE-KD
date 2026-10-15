@@ -6,6 +6,12 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = process.env.GUARD_ROOT ?? path.resolve(here, '..');
+const strict = process.argv.includes('--strict');
+const plannedFile = path.join(root, 'config', 'planned-routes.json');
+const planned =
+  !strict && fs.existsSync(plannedFile)
+    ? Object.keys(JSON.parse(fs.readFileSync(plannedFile, 'utf8')).routes ?? {})
+    : [];
 
 function walk(dir, out = []) {
   if (!fs.existsSync(dir)) return out;
@@ -46,22 +52,29 @@ function matches(urlSegs) {
 
 const errors = [];
 const hrefRe = /(?:href|to|path)\s*[:=]\s*\{?\s*['"`](\/[^'"`?#\s$]*)/g;
-const files = [...walk(path.join(root, 'config')), ...walk(path.join(root, 'app')), ...walk(path.join(root, 'components'))].filter((f) => /\.(ts|tsx)$/.test(f));
+const files = [
+  ...walk(path.join(root, 'config')),
+  ...walk(path.join(root, 'app')),
+  ...walk(path.join(root, 'components')),
+].filter((f) => /\.(ts|tsx)$/.test(f));
 let checked = 0;
 for (const f of files) {
   const text = fs.readFileSync(f, 'utf8');
   for (const m of text.matchAll(hrefRe)) {
     const href = m[1];
-    if (href === '/' ) {
+    if (planned.includes(href)) continue;
+    if (href === '/') {
       if (!matches([])) errors.push(`${path.relative(root, f)}: link "/" has no page`);
       checked++;
       continue;
     }
     if (href.startsWith('/api/') || staticRoutes.has(href)) continue;
-    if (/^\/(favicon|apple-touch|manifest|robots|sitemap|design-tokens|icons|images)/.test(href)) continue;
+    if (/^\/(favicon|apple-touch|manifest|robots|sitemap|design-tokens|icons|images)/.test(href))
+      continue;
     checked++;
     const segs = href.split('/').filter(Boolean);
-    if (!matches(segs)) errors.push(`${path.relative(root, f)}: link "${href}" has no matching page`);
+    if (!matches(segs))
+      errors.push(`${path.relative(root, f)}: link "${href}" has no matching page`);
   }
 }
 if (errors.length > 0) {

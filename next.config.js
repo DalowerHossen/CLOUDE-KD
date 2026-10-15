@@ -5,7 +5,18 @@ const nextConfig = {
   poweredByHeader: false,
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   eslint: {
-    dirs: ['app', 'components', 'lib', 'services', 'config', 'types', 'schemas', 'stores', 'cron', 'workers'],
+    dirs: [
+      'app',
+      'components',
+      'lib',
+      'services',
+      'config',
+      'types',
+      'schemas',
+      'stores',
+      'cron',
+      'workers',
+    ],
   },
   images: {
     formats: ['image/avif', 'image/webp'],

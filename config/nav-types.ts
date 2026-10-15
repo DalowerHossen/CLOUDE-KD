@@ -2,7 +2,8 @@
 import type { EntitlementKey } from '@/config/plans';
 import type { Role } from '@/types/contracts/common';
 
-export type NavGroup = 'dashboard' | 'admin' | 'account' | 'public-header' | 'public-footer' | 'portal';
+export type NavGroup =
+  'dashboard' | 'admin' | 'account' | 'public-header' | 'public-footer' | 'portal';
 
 /** Icon names resolved by components/layout/icon-map.tsx (Lucide icons only). */
 export type NavIcon =

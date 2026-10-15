@@ -124,7 +124,10 @@ export class ServiceNotRegisteredError extends AppError {
 
 export class InternalError extends AppError {
   constructor(cause?: unknown) {
-    super('internal_error', 500, 'Something went wrong. Please try again.', { cause, expose: true });
+    super('internal_error', 500, 'Something went wrong. Please try again.', {
+      cause,
+      expose: true,
+    });
   }
 }
 

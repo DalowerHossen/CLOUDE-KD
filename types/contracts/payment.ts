@@ -36,7 +36,12 @@ export interface CreatePaymentInput {
 
 export interface PaymentService {
   createPayment(input: CreatePaymentInput): Promise<PaymentSummary>;
-  refund(paymentId: Uuid, amount: Money, reason: string | null, idempotencyKey: string): Promise<PaymentSummary>;
+  refund(
+    paymentId: Uuid,
+    amount: Money,
+    reason: string | null,
+    idempotencyKey: string,
+  ): Promise<PaymentSummary>;
   getPayment(paymentId: Uuid): Promise<PaymentSummary>;
   listReview(): Promise<PaymentSummary[]>;
 }

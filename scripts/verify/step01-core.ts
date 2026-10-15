@@ -5,16 +5,35 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { COUNTRIES, isCountryCode } from '@/config/countries';
 import { PLANS } from '@/config/plans';
-import { getService, hasService, registerService, tryGetService, unregisterService } from '@/lib/container';
+import {
+  getService,
+  hasService,
+  registerService,
+  tryGetService,
+  unregisterService,
+} from '@/lib/container';
 import { createConfigEntitlementService } from '@/lib/entitlement/config-entitlement';
-import { ConflictError, NotFoundError, RateLimitError, ServiceNotRegisteredError, toErrorBody, normalizeError } from '@/lib/errors';
+import {
+  ConflictError,
+  NotFoundError,
+  RateLimitError,
+  ServiceNotRegisteredError,
+  toErrorBody,
+  normalizeError,
+} from '@/lib/errors';
 import { withApi } from '@/lib/api/with-api';
 import { redact, scrubString } from '@/lib/logger/redact';
 import { resolveCorrelationId } from '@/lib/logger/correlation';
 import { Money } from '@/lib/utils/currency';
 import { addUtcMonths, parseIsoTimestamp } from '@/lib/utils/date';
 import { formatMoney, maskEmail, maskTail } from '@/lib/utils/formatting';
-import { base64UrlDecode, base64UrlEncode, hmacSha256Hex, sha256Hex, timingSafeEqualStrings } from '@/lib/utils/hash';
+import {
+  base64UrlDecode,
+  base64UrlEncode,
+  hmacSha256Hex,
+  sha256Hex,
+  timingSafeEqualStrings,
+} from '@/lib/utils/hash';
 import { slugify } from '@/lib/utils/slug';
 import { isUuid, uuidv7, uuidv7Timestamp } from '@/lib/utils/uuid';
 import { idempotencyKeySchema, strictObject } from '@/schemas/common';
@@ -29,7 +48,9 @@ async function check(name: string, fn: () => void | Promise<void>): Promise<void
     process.stdout.write(`ok    ${name}\n`);
   } catch (error) {
     failures.push(name);
-    process.stdout.write(`FAIL  ${name}: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.stdout.write(
+      `FAIL  ${name}: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
   }
 }
 
@@ -52,11 +73,20 @@ async function main(): Promise<void> {
   });
   await check('Money: allocate keeps every unit', () => {
     const parts = Money.parse('100.00').allocate([1, 1, 1]);
-    assert.deepEqual(parts.map((p) => p.toDbString()), ['33.3334', '33.3333', '33.3333']);
+    assert.deepEqual(
+      parts.map((p) => p.toDbString()),
+      ['33.3334', '33.3333', '33.3333'],
+    );
     assert.equal(Money.sum(parts).toDbString(), '100.0000');
     const neg = Money.parse('-0.0005').allocate([1, 1, 1]);
     assert.equal(Money.sum(neg).toDbString(), '-0.0005');
-    assert.equal(Money.parse('5').allocate([0, 2, 3]).map((p) => p.toDbString()).join(','), '0.0000,2.0000,3.0000');
+    assert.equal(
+      Money.parse('5')
+        .allocate([0, 2, 3])
+        .map((p) => p.toDbString())
+        .join(','),
+      '0.0000,2.0000,3.0000',
+    );
   });
   await check('Money: comparison, sign and formatting', () => {
     const a = Money.parse('1234.5');
@@ -97,7 +127,10 @@ async function main(): Promise<void> {
 
   // ---- Hash
   await check('hash: known SHA-256 and HMAC vectors', async () => {
-    assert.equal(await sha256Hex('abc'), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    assert.equal(
+      await sha256Hex('abc'),
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    );
     assert.equal(
       await hmacSha256Hex('key', 'The quick brown fox jumps over the lazy dog'),
       'f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8',
@@ -111,11 +144,20 @@ async function main(): Promise<void> {
 
   // ---- Date, slug, formatting
   await check('date, slug and masking helpers', () => {
-    assert.equal(addUtcMonths(new Date('2026-01-31T00:00:00Z'), 1).toISOString(), '2026-02-28T00:00:00.000Z');
-    assert.equal(addUtcMonths(new Date('2028-01-31T00:00:00Z'), 1).toISOString(), '2028-02-29T00:00:00.000Z');
-    assert.equal(addUtcMonths(new Date('2026-11-15T00:00:00Z'), 3).toISOString(), '2027-02-15T00:00:00.000Z');
+    assert.equal(
+      addUtcMonths(new Date('2026-01-31T00:00:00Z'), 1).toISOString(),
+      '2026-02-28T00:00:00.000Z',
+    );
+    assert.equal(
+      addUtcMonths(new Date('2028-01-31T00:00:00Z'), 1).toISOString(),
+      '2028-02-29T00:00:00.000Z',
+    );
+    assert.equal(
+      addUtcMonths(new Date('2026-11-15T00:00:00Z'), 3).toISOString(),
+      '2027-02-15T00:00:00.000Z',
+    );
     assert.throws(() => parseIsoTimestamp('2026-01-01T00:00:00'));
-    assert.equal(slugify('  Café & Bar -- 2026! '), 'cafe-bar-2026');
+    assert.equal(slugify(`  Caf${String.fromCharCode(0xe9)} & Bar -- 2026! `), 'cafe-bar-2026');
     assert.equal(maskEmail('jane.doe@example.com'), 'j***@example.com');
     assert.equal(maskTail('sk_live_abcdef1234'), '****1234');
   });
@@ -144,7 +186,12 @@ async function main(): Promise<void> {
   // ---- Errors and correlation id
   await check('errors map to the standard response shape', () => {
     const body = toErrorBody(new ConflictError(), 'abc-123456');
-    assert.deepEqual(Object.keys(body.error).sort(), ['code', 'correlation_id', 'details', 'message']);
+    assert.deepEqual(Object.keys(body.error).sort(), [
+      'code',
+      'correlation_id',
+      'details',
+      'message',
+    ]);
     assert.equal(body.error.code, 'conflict');
     const unknown = normalizeError(new Error('database password is hunter2'));
     assert.equal(unknown.status, 500);
@@ -176,7 +223,9 @@ async function main(): Promise<void> {
     assert.equal(tryGetService('wallet'), undefined);
   });
   await check('entitlement: config based plan checks', async () => {
-    const svc = createConfigEntitlementService(async (id) => (id === 'c1' ? 'pro' : id === 'c2' ? 'free' : null));
+    const svc = createConfigEntitlementService(async (id) =>
+      id === 'c1' ? 'pro' : id === 'c2' ? 'free' : null,
+    );
     assert.equal(await svc.has('c1', 'api.access'), true);
     assert.equal(await svc.has('c2', 'api.access'), false);
     assert.equal(await svc.limit('c1', 'staff.seats'), 5);
@@ -223,7 +272,16 @@ async function main(): Promise<void> {
     },
     async checkNetwork(ip, context) {
       calls.push(`network:${context}`);
-      return { vpn: false, proxy: false, tor: ip === '9.9.9.9', datacenter: false, countryCode: 'US', score: 0, allowed: ip !== '9.9.9.9', reason: null };
+      return {
+        vpn: false,
+        proxy: false,
+        tor: ip === '9.9.9.9',
+        datacenter: false,
+        countryCode: 'US',
+        score: 0,
+        allowed: ip !== '9.9.9.9',
+        reason: null,
+      };
     },
     async riskScore() {
       return 0;
@@ -232,7 +290,9 @@ async function main(): Promise<void> {
       calls.push(`event:${type}`);
     },
     sanitize<T>(input: T): T {
-      return typeof input === 'string' ? (input.normalize('NFC').replace(/\u0000/g, '') as unknown as T) : input;
+      return typeof input === 'string'
+        ? (input.normalize('NFC').replace(/\u0000/g, '') as unknown as T)
+        : input;
     },
   };
   registerService('security', security);
@@ -248,7 +308,12 @@ async function main(): Promise<void> {
   });
   registerService('tenant', {
     async getTenantContext() {
-      return { companyId: actor.companyId ?? '', planKey: 'pro', dataRegion: 'sg', status: 'active' };
+      return {
+        companyId: actor.companyId ?? '',
+        planKey: 'pro',
+        dataRegion: 'sg',
+        status: 'active',
+      };
     },
     async assertSameTenant(id) {
       if (id !== actor.companyId) throw new NotFoundError();
@@ -279,7 +344,9 @@ async function main(): Promise<void> {
         return { state: 'new' };
       }
       if (found.hash !== requestHash) return { state: 'conflict' };
-      return found.response ? { state: 'replay', response: found.response } : { state: 'in_progress' };
+      return found.response
+        ? { state: 'replay', response: found.response }
+        : { state: 'in_progress' };
     },
     async complete(scope, key, response) {
       const found = idempotencyStore.get(`${scope}|${key}`);
@@ -306,7 +373,11 @@ async function main(): Promise<void> {
     }),
   );
   const listItems = withApi(
-    { id: 'items.list', scope: 'tenant', query: strictObject({ limit: z.coerce.number().int().min(1).max(50).default(10) }) },
+    {
+      id: 'items.list',
+      scope: 'tenant',
+      query: strictObject({ limit: z.coerce.number().int().min(1).max(50).default(10) }),
+    },
     async ({ query }) => ({ data: { limit: query.limit } }),
   );
   const publicPing = withApi({ id: 'ping', scope: 'public' }, async () => ({ data: { ok: true } }));
@@ -315,10 +386,15 @@ async function main(): Promise<void> {
   const post = (url: string, body: unknown, headers: Record<string, string> = {}): NextRequest =>
     new NextRequest(`http://localhost${url}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'idempotency-key': 'key-aaaaaaaaaaaaaaaa', ...headers },
+      headers: {
+        'content-type': 'application/json',
+        'idempotency-key': 'key-aaaaaaaaaaaaaaaa',
+        ...headers,
+      },
       body: typeof body === 'string' ? body : JSON.stringify(body),
     });
-  const readJson = async (response: Response): Promise<Record<string, unknown>> => (await response.json()) as Record<string, unknown>;
+  const readJson = async (response: Response): Promise<Record<string, unknown>> =>
+    (await response.json()) as Record<string, unknown>;
 
   await check('withApi: success runs the full pipeline and audits', async () => {
     calls.length = 0;
@@ -329,59 +405,115 @@ async function main(): Promise<void> {
     assert.ok(res.headers.get('x-correlation-id'));
     assert.deepEqual(calls, ['network:other', 'audit:invoice.created']);
   });
-  await check('withApi: replay returns the stored response without running the handler again', async () => {
-    calls.length = 0;
-    const res = await createInvoice(post('/api/invoices', { title: 'Hello' }), {});
-    assert.equal(res.status, 201);
-    assert.equal(res.headers.get('idempotent-replayed'), 'true');
-    assert.ok(!calls.includes('audit:invoice.created'));
-  });
+  await check(
+    'withApi: replay returns the stored response without running the handler again',
+    async () => {
+      calls.length = 0;
+      const res = await createInvoice(post('/api/invoices', { title: 'Hello' }), {});
+      assert.equal(res.status, 201);
+      assert.equal(res.headers.get('idempotent-replayed'), 'true');
+      assert.ok(!calls.includes('audit:invoice.created'));
+    },
+  );
   await check('withApi: same key with a different body conflicts', async () => {
     const res = await createInvoice(post('/api/invoices', { title: 'Other' }), {});
     assert.equal(res.status, 409);
-    assert.equal(((await readJson(res)).error as Record<string, unknown>).code, 'idempotency_conflict');
+    assert.equal(
+      ((await readJson(res)).error as Record<string, unknown>).code,
+      'idempotency_conflict',
+    );
   });
-  await check('withApi: missing idempotency key, unknown field, bad json and wrong type are rejected', async () => {
-    const noKey = new NextRequest('http://localhost/api/invoices', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: 'x' }),
-    });
-    assert.equal((await createInvoice(noKey, {})).status, 400);
-    assert.equal((await createInvoice(post('/api/invoices', { title: 'x', role: 'admin' }, { 'idempotency-key': 'key-bbbbbbbbbbbbbbbb' }), {})).status, 400);
-    assert.equal((await createInvoice(post('/api/invoices', '{bad', { 'idempotency-key': 'key-cccccccccccccccc' }), {})).status, 400);
-    const text = new NextRequest('http://localhost/api/invoices', {
-      method: 'POST',
-      headers: { 'content-type': 'text/plain', 'idempotency-key': 'key-dddddddddddddddd' },
-      body: 'title=x',
-    });
-    assert.equal((await createInvoice(text, {})).status, 400);
-  });
+  await check(
+    'withApi: missing idempotency key, unknown field, bad json and wrong type are rejected',
+    async () => {
+      const noKey = new NextRequest('http://localhost/api/invoices', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: 'x' }),
+      });
+      assert.equal((await createInvoice(noKey, {})).status, 400);
+      assert.equal(
+        (
+          await createInvoice(
+            post(
+              '/api/invoices',
+              { title: 'x', role: 'admin' },
+              { 'idempotency-key': 'key-bbbbbbbbbbbbbbbb' },
+            ),
+            {},
+          )
+        ).status,
+        400,
+      );
+      assert.equal(
+        (
+          await createInvoice(
+            post('/api/invoices', '{bad', { 'idempotency-key': 'key-cccccccccccccccc' }),
+            {},
+          )
+        ).status,
+        400,
+      );
+      const text = new NextRequest('http://localhost/api/invoices', {
+        method: 'POST',
+        headers: { 'content-type': 'text/plain', 'idempotency-key': 'key-dddddddddddddddd' },
+        body: 'title=x',
+      });
+      assert.equal((await createInvoice(text, {})).status, 400);
+    },
+  );
   await check('withApi: a failed attempt releases the idempotency key for retry', async () => {
-    const res = await createInvoice(post('/api/invoices', { title: '' }, { 'idempotency-key': 'key-eeeeeeeeeeeeeeee' }), {});
+    const res = await createInvoice(
+      post('/api/invoices', { title: '' }, { 'idempotency-key': 'key-eeeeeeeeeeeeeeee' }),
+      {},
+    );
     assert.equal(res.status, 400);
-    assert.equal(idempotencyStore.has(`${actor.companyId}:invoices.create|key-eeeeeeeeeeeeeeee`), false);
+    assert.equal(
+      idempotencyStore.has(`${actor.companyId}:invoices.create|key-eeeeeeeeeeeeeeee`),
+      false,
+    );
   });
   await check('withApi: oversized body is refused', async () => {
     const big = JSON.stringify({ title: 'x'.repeat(2_000_000) });
-    const res = await createInvoice(post('/api/invoices', big, { 'idempotency-key': 'key-ffffffffffffffff' }), {});
+    const res = await createInvoice(
+      post('/api/invoices', big, { 'idempotency-key': 'key-ffffffffffffffff' }),
+      {},
+    );
     assert.equal(res.status, 413);
   });
-  await check('withApi: unauthenticated, forbidden and rate limited requests fail closed', async () => {
-    currentActor = null;
-    assert.equal((await listItems(new NextRequest('http://localhost/api/items'), {})).status, 401);
-    currentActor = actor;
-    allowPermission = false;
-    assert.equal((await createInvoice(post('/api/invoices', { title: 'x' }, { 'idempotency-key': 'key-gggggggggggggggg' }), {})).status, 403);
-    allowPermission = true;
-    rateAllowed = false;
-    const limited = await publicPing(new NextRequest('http://localhost/api/ping'), {});
-    assert.equal(limited.status, 429);
-    assert.equal(limited.headers.get('retry-after'), '30');
-    rateAllowed = true;
-  });
+  await check(
+    'withApi: unauthenticated, forbidden and rate limited requests fail closed',
+    async () => {
+      currentActor = null;
+      assert.equal(
+        (await listItems(new NextRequest('http://localhost/api/items'), {})).status,
+        401,
+      );
+      currentActor = actor;
+      allowPermission = false;
+      assert.equal(
+        (
+          await createInvoice(
+            post('/api/invoices', { title: 'x' }, { 'idempotency-key': 'key-gggggggggggggggg' }),
+            {},
+          )
+        ).status,
+        403,
+      );
+      allowPermission = true;
+      rateAllowed = false;
+      const limited = await publicPing(new NextRequest('http://localhost/api/ping'), {});
+      assert.equal(limited.status, 429);
+      assert.equal(limited.headers.get('retry-after'), '30');
+      rateAllowed = true;
+    },
+  );
   await check('withApi: blocked network is refused', async () => {
-    const req = post('/api/invoices', { title: 'x' }, { 'idempotency-key': 'key-hhhhhhhhhhhhhhhh', 'cf-connecting-ip': '9.9.9.9' });
+    const req = post(
+      '/api/invoices',
+      { title: 'x' },
+      { 'idempotency-key': 'key-hhhhhhhhhhhhhhhh', 'cf-connecting-ip': '9.9.9.9' },
+    );
     const res = await createInvoice(req, {});
     assert.equal(res.status, 403);
     assert.equal(((await readJson(res)).error as Record<string, unknown>).code, 'network_blocked');
@@ -391,8 +523,14 @@ async function main(): Promise<void> {
     assert.equal(((await readJson(ok)).data as Record<string, unknown>).limit, 5);
     const def = await listItems(new NextRequest('http://localhost/api/items'), {});
     assert.equal(((await readJson(def)).data as Record<string, unknown>).limit, 10);
-    assert.equal((await listItems(new NextRequest('http://localhost/api/items?limit=500'), {})).status, 400);
-    assert.equal((await listItems(new NextRequest('http://localhost/api/items?limit=5&admin=1'), {})).status, 400);
+    assert.equal(
+      (await listItems(new NextRequest('http://localhost/api/items?limit=500'), {})).status,
+      400,
+    );
+    assert.equal(
+      (await listItems(new NextRequest('http://localhost/api/items?limit=5&admin=1'), {})).status,
+      400,
+    );
   });
   await check('withApi: a mutating route without an audit entry fails closed', async () => {
     const res = await forgetful(post('/api/forgetful', {}, {}), {});
@@ -400,7 +538,11 @@ async function main(): Promise<void> {
     assert.ok(!JSON.stringify(await readJson(res)).includes('must return an audit entry'));
   });
   await check('withApi: non-strict schemas are rejected when the route is defined', () => {
-    assert.throws(() => withApi({ id: 'loose', scope: 'public', body: z.object({ a: z.string() }) }, async () => ({ data: {} })));
+    assert.throws(() =>
+      withApi({ id: 'loose', scope: 'public', body: z.object({ a: z.string() }) }, async () => ({
+        data: {},
+      })),
+    );
   });
   await check('withApi: missing service answers 503 instead of continuing', async () => {
     unregisterService('security');
@@ -417,6 +559,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  process.stdout.write(`step01-core crashed: ${error instanceof Error ? error.stack : String(error)}\n`);
+  process.stdout.write(
+    `step01-core crashed: ${error instanceof Error ? error.stack : String(error)}\n`,
+  );
   process.exit(1);
 });

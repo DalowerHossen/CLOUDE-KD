@@ -14,7 +14,19 @@ export const COUNTRIES: readonly Country[] = RAW.split('|').map((entry) => {
 });
 
 /** Primary target market of the platform (Asia-Pacific) plus the secondary market (United States). */
-export const PRIMARY_MARKET_CODES: readonly string[] = ['BD', 'IN', 'PH', 'TH', 'SG', 'MY', 'VN', 'ID', 'JP', 'KR', 'CN'];
+export const PRIMARY_MARKET_CODES: readonly string[] = [
+  'BD',
+  'IN',
+  'PH',
+  'TH',
+  'SG',
+  'MY',
+  'VN',
+  'ID',
+  'JP',
+  'KR',
+  'CN',
+];
 export const SECONDARY_MARKET_CODES: readonly string[] = ['US'];
 
 const CODE_SET: ReadonlySet<string> = new Set(COUNTRIES.map((c) => c.code));

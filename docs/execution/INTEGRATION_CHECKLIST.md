@@ -34,7 +34,7 @@ A change request in any `BLOCKERS.md` is decided by the Integrator. Edit the con
 1. Full clean build; all guard scripts; all SQL assertions.
 2. Performance: Lighthouse CI >= 90, LCP < 2.5 s, INP < 200 ms, CLS < 0.1, initial JS < 200 KB; PWA manifest and service worker; image and font optimization.
 3. Accessibility pass (keyboard, screen reader, contrast, reduced motion) on every route in `config/nav-map.ts`.
-4. 320 px layout pass on every page; dead-link scan; sitemap and robots check.
+4. 320 px layout pass on every page; dead-link scan in strict mode (`node scripts/check-dead-links.mjs --strict`); sitemap and robots check.
 5. Security pass: header and CSP scan, OWASP ZAP baseline, Semgrep, dependency audit, secret scan, RLS assertions for every table, token and webhook abuse checks, VPN/Proxy/Tor policy check on signup, payment, KYC, admin.
 6. Payment pass: every processor verification record complete in `docs/processors/`; routing no-match cancels; card rules; 3DS fallback rules; review queue.
 7. Documentation: README, CONTRIBUTING, SECURITY, ERD, ADRs, API docs, RUNBOOKS, disaster recovery plan.

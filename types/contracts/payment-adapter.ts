@@ -166,7 +166,11 @@ export interface ProcessorTransaction {
   /** Address verification result for the postal code, or null when not available. */
   avsPostalCodeMatch: boolean | null;
   cardIdentity: CardIdentity | null;
-  requiredAction: { kind: 'redirect' | 'sdk_challenge'; url: string | null; clientSecret: string | null } | null;
+  requiredAction: {
+    kind: 'redirect' | 'sdk_challenge';
+    url: string | null;
+    clientSecret: string | null;
+  } | null;
 }
 
 export interface WebhookRequest {
@@ -211,7 +215,10 @@ export interface ProcessorAdapter {
   readonly credentialFields: readonly CredentialField[];
 
   testConnection(context: AdapterContext): Promise<TestConnectionResult>;
-  createCheckoutSession(context: AdapterContext, input: CheckoutSessionInput): Promise<CheckoutSession>;
+  createCheckoutSession(
+    context: AdapterContext,
+    input: CheckoutSessionInput,
+  ): Promise<CheckoutSession>;
   authorize(context: AdapterContext, input: AuthorizeInput): Promise<ProcessorTransaction>;
   /** Present when `capabilities.supportsAuthCapture` is true. */
   capture?(context: AdapterContext, input: CaptureInput): Promise<ProcessorTransaction>;
@@ -220,7 +227,10 @@ export interface ProcessorAdapter {
   /** Single-step sale, present when the processor has no separate authorize and capture. */
   charge?(context: AdapterContext, input: AuthorizeInput): Promise<ProcessorTransaction>;
   refund(context: AdapterContext, input: RefundInput): Promise<ProcessorTransaction>;
-  getTransaction(context: AdapterContext, processorTransactionId: string): Promise<ProcessorTransaction>;
+  getTransaction(
+    context: AdapterContext,
+    processorTransactionId: string,
+  ): Promise<ProcessorTransaction>;
 
   /** Returns true only when the signature (and timestamp window, where the processor defines one) is valid. */
   verifyWebhook(context: AdapterContext, request: WebhookRequest): Promise<boolean>;

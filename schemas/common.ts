@@ -7,7 +7,9 @@ import { Money } from '@/lib/utils/currency';
 export const uuidSchema = z.string().uuid();
 
 /** Idempotency keys: 16 to 128 URL-safe characters. */
-export const idempotencyKeySchema = z.string().regex(/^[A-Za-z0-9_-]{16,128}$/, 'Invalid idempotency key.');
+export const idempotencyKeySchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{16,128}$/, 'Invalid idempotency key.');
 
 export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 

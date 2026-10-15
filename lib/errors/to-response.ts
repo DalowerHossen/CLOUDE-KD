@@ -1,6 +1,12 @@
 // path: lib/errors/to-response.ts
 import { ZodError } from 'zod';
-import { AppError, InternalError, RateLimitError, ValidationError, type ErrorCode } from './app-error';
+import {
+  AppError,
+  InternalError,
+  RateLimitError,
+  ValidationError,
+  type ErrorCode,
+} from './app-error';
 
 export interface ErrorBody {
   error: {

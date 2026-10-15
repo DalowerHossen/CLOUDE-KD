@@ -3,9 +3,7 @@
 import { z } from 'zod';
 import { publicShape } from './s01-public';
 
-const bool = z
-  .enum(['0', '1', 'true', 'false'])
-  .transform((v) => v === '1' || v === 'true');
+const bool = z.enum(['0', '1', 'true', 'false']).transform((v) => v === '1' || v === 'true');
 
 /** Base64 text that decodes to exactly `bytes` bytes. */
 const base64Key = (bytes: number): z.ZodEffects<z.ZodString, string, string> =>

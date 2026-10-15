@@ -57,6 +57,14 @@ export function addUtcMonths(date: Date, months: number): Date {
   const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
   const day = Math.min(date.getUTCDate(), lastDay);
   return new Date(
-    Date.UTC(targetYear, targetMonth, day, date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds(), date.getUTCMilliseconds()),
+    Date.UTC(
+      targetYear,
+      targetMonth,
+      day,
+      date.getUTCHours(),
+      date.getUTCMinutes(),
+      date.getUTCSeconds(),
+      date.getUTCMilliseconds(),
+    ),
   );
 }

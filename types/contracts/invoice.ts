@@ -2,7 +2,16 @@
 import type { Uuid } from './common';
 import type { Money } from '@/lib/utils/currency';
 
-export type InvoiceStatus = 'draft' | 'pending_approval' | 'sent' | 'viewed' | 'partially_paid' | 'paid' | 'overdue' | 'void' | 'disputed';
+export type InvoiceStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'sent'
+  | 'viewed'
+  | 'partially_paid'
+  | 'paid'
+  | 'overdue'
+  | 'void'
+  | 'disputed';
 
 export interface InvoiceForPayment {
   invoiceId: Uuid;
@@ -20,7 +29,11 @@ export interface InvoiceForPayment {
 
 export interface InvoiceService {
   getForPayment(invoiceId: Uuid): Promise<InvoiceForPayment>;
-  applyPayment(input: { invoiceId: Uuid; paymentId: Uuid; amount: Money }): Promise<{ status: InvoiceStatus }>;
+  applyPayment(input: {
+    invoiceId: Uuid;
+    paymentId: Uuid;
+    amount: Money;
+  }): Promise<{ status: InvoiceStatus }>;
   markDisputed(invoiceId: Uuid): Promise<void>;
   snapshot(invoiceId: Uuid): Promise<{ fileId: Uuid; contentHash: string }>;
 }

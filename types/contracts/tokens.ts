@@ -1,7 +1,8 @@
 // path: types/contracts/tokens.ts
 import type { Uuid } from './common';
 
-export type TokenDocumentType = 'invoice' | 'estimate' | 'receipt' | 'hub' | 'contract' | 'payslip' | 'payment';
+export type TokenDocumentType =
+  'invoice' | 'estimate' | 'receipt' | 'hub' | 'contract' | 'payslip' | 'payment';
 
 export interface IssuedToken {
   id: Uuid;
@@ -11,11 +12,24 @@ export interface IssuedToken {
 }
 
 export type TokenVerification =
-  | { valid: true; id: Uuid; docType: TokenDocumentType; docId: Uuid; companyId: Uuid; otpRequired: boolean }
+  | {
+      valid: true;
+      id: Uuid;
+      docType: TokenDocumentType;
+      docId: Uuid;
+      companyId: Uuid;
+      otpRequired: boolean;
+    }
   | { valid: false; reason: 'invalid' | 'expired' | 'revoked' };
 
 export interface TokenService {
-  issue(input: { docType: TokenDocumentType; docId: Uuid; companyId: Uuid; ttlDays: number; otpRequired?: boolean }): Promise<IssuedToken>;
+  issue(input: {
+    docType: TokenDocumentType;
+    docId: Uuid;
+    companyId: Uuid;
+    ttlDays: number;
+    otpRequired?: boolean;
+  }): Promise<IssuedToken>;
   verify(token: string): Promise<TokenVerification>;
   revoke(id: Uuid): Promise<void>;
   reissue(id: Uuid): Promise<IssuedToken>;

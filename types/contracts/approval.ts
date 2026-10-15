@@ -1,7 +1,8 @@
 // path: types/contracts/approval.ts
 import type { ApprovalLevel, Uuid } from './common';
 
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'escalated' | 'expired' | 'cancelled';
+export type ApprovalStatus =
+  'pending' | 'approved' | 'rejected' | 'escalated' | 'expired' | 'cancelled';
 
 export interface ApprovalRequestInput {
   action: string;

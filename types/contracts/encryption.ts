@@ -12,6 +12,14 @@ export interface EncryptedPayload {
 
 export interface EncryptionService {
   /** AES-256-GCM. Keys are derived from the environment master key; scope is usually the company id. */
-  encrypt(purpose: EncryptionPurpose, plaintext: Uint8Array | string, scope?: string): Promise<EncryptedPayload>;
-  decrypt(purpose: EncryptionPurpose, payload: EncryptedPayload, scope?: string): Promise<Uint8Array>;
+  encrypt(
+    purpose: EncryptionPurpose,
+    plaintext: Uint8Array | string,
+    scope?: string,
+  ): Promise<EncryptedPayload>;
+  decrypt(
+    purpose: EncryptionPurpose,
+    payload: EncryptedPayload,
+    scope?: string,
+  ): Promise<Uint8Array>;
 }

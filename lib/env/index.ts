@@ -9,7 +9,9 @@ export type ServerEnv = z.infer<typeof serverSchema>;
 let cached: ServerEnv | null = null;
 
 /** Parses the given source (default: process.env). The error lists variable names only, never values. */
-export function parseServerEnv(source: Record<string, string | undefined> = process.env): ServerEnv {
+export function parseServerEnv(
+  source: Record<string, string | undefined> = process.env,
+): ServerEnv {
   const result = serverSchema.safeParse(source);
   if (result.success) return result.data;
   throw new EnvValidationError(
@@ -39,5 +41,7 @@ export function validateEnvAtBoot(): void {
 
 /** Shell preview pages are available only in development and only when explicitly enabled. */
 export function isShellPreviewEnabled(): boolean {
-  return process.env.APP_ENV === 'development' && ['1', 'true'].includes(process.env.SHELL_PREVIEW ?? '');
+  return (
+    process.env.APP_ENV === 'development' && ['1', 'true'].includes(process.env.SHELL_PREVIEW ?? '')
+  );
 }

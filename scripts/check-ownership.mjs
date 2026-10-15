@@ -14,7 +14,11 @@ const map = JSON.parse(fs.readFileSync(path.join(root, 'config', 'ownership.json
 function expandBraces(pattern) {
   const m = pattern.match(/\{([^{}]*)\}/);
   if (!m) return [pattern];
-  return m[1].split(',').flatMap((alt) => expandBraces(pattern.slice(0, m.index) + alt + pattern.slice(m.index + m[0].length)));
+  return m[1]
+    .split(',')
+    .flatMap((alt) =>
+      expandBraces(pattern.slice(0, m.index) + alt + pattern.slice(m.index + m[0].length)),
+    );
 }
 
 function toRegex(pattern) {
@@ -40,7 +44,12 @@ const rules = [];
 for (const [step, def] of Object.entries(map.steps)) {
   for (const p of def.owns) {
     for (const expanded of expandBraces(p)) {
-      rules.push({ step, pattern: expanded, re: toRegex(expanded), score: expanded.replace(/[*?]/g, '').length });
+      rules.push({
+        step,
+        pattern: expanded,
+        re: toRegex(expanded),
+        score: expanded.replace(/[*?]/g, '').length,
+      });
     }
   }
 }
@@ -67,13 +76,19 @@ if (!stepArg) {
 const step = String(Number(stepArg)).padStart(2, '0');
 let files;
 if (second === '--files') {
-  files = fs.readFileSync(0, 'utf8').split('\n').map((s) => s.trim()).filter(Boolean);
+  files = fs
+    .readFileSync(0, 'utf8')
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
 } else {
   const ref = second ?? 'HEAD';
   const base = third ?? 'origin/integration';
   const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
   const mergeBase = git(['merge-base', base, ref]).trim();
-  files = git(['diff', '--name-only', '--diff-filter=ACMRD', `${mergeBase}`, ref]).split('\n').filter(Boolean);
+  files = git(['diff', '--name-only', '--diff-filter=ACMRD', `${mergeBase}`, ref])
+    .split('\n')
+    .filter(Boolean);
 }
 
 const errors = [];
@@ -82,7 +97,8 @@ for (const f of files) {
   const { owner, ambiguous, pattern } = ownerOf(f);
   if (owner === null) errors.push(`${f}: not owned by any STEP (write BLOCKERS.md)`);
   else if (ambiguous) errors.push(`${f}: ambiguous ownership (fix config/ownership.json)`);
-  else if (owner !== step) errors.push(`${f}: owned by STEP ${owner} (pattern ${pattern}), not STEP ${step}`);
+  else if (owner !== step)
+    errors.push(`${f}: owned by STEP ${owner} (pattern ${pattern}), not STEP ${step}`);
 }
 if (errors.length > 0) {
   for (const e of errors) process.stderr.write(`FAIL [ownership]: ${e}\n`);

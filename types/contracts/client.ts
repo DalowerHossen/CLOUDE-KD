@@ -11,6 +11,8 @@ export interface ClientBilling {
 }
 
 export interface ClientService {
-  getById(clientId: Uuid): Promise<{ id: Uuid; companyId: Uuid; name: string; email: string | null }>;
+  getById(
+    clientId: Uuid,
+  ): Promise<{ id: Uuid; companyId: Uuid; name: string; email: string | null }>;
   getBilling(clientId: Uuid): Promise<ClientBilling>;
 }

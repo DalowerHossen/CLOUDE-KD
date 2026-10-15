@@ -2,7 +2,11 @@
 import type { Actor, ApprovalLevel } from './common';
 
 export interface PermissionService {
-  can(actor: Actor, action: string, resource?: { type: string; id?: string | null }): Promise<boolean>;
+  can(
+    actor: Actor,
+    action: string,
+    resource?: { type: string; id?: string | null },
+  ): Promise<boolean>;
   /** Looks up the approval level of an action in lib/auth/approval-rules.ts. */
   requireApproval(action: string): Promise<ApprovalLevel>;
 }

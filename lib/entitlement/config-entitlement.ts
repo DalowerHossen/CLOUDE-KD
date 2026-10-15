@@ -12,7 +12,10 @@ function isKey(value: string): value is EntitlementKey {
 export function createConfigEntitlementService(
   resolvePlanKey: (companyId: string) => Promise<string | null>,
 ): EntitlementService {
-  const valueOf = async (companyId: string, key: string): Promise<boolean | number | null | undefined> => {
+  const valueOf = async (
+    companyId: string,
+    key: string,
+  ): Promise<boolean | number | null | undefined> => {
     if (!isKey(key)) return undefined;
     const planKey = await resolvePlanKey(companyId);
     if (planKey === null || !isPlanKey(planKey)) return undefined;

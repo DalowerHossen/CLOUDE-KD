@@ -23,10 +23,16 @@ export interface RegisterOptions {
   override?: boolean;
 }
 
-export function registerService<K extends ServiceId>(id: K, implementation: ServiceMap[K], options: RegisterOptions = {}): void {
+export function registerService<K extends ServiceId>(
+  id: K,
+  implementation: ServiceMap[K],
+  options: RegisterOptions = {},
+): void {
   const current = registry();
   if (current[id] !== undefined && options.override !== true) {
-    throw new Error(`Service "${id}" is already registered. Use { override: true } to replace it deliberately.`);
+    throw new Error(
+      `Service "${id}" is already registered. Use { override: true } to replace it deliberately.`,
+    );
   }
   (current as Record<K, ServiceMap[K]>)[id] = implementation;
 }

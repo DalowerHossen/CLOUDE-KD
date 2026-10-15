@@ -27,7 +27,8 @@ export class Money {
   private constructor(value: Decimal) {
     if (!value.isFinite()) throw new RangeError('Money must be a finite number.');
     const rounded = value.toDecimalPlaces(MONEY_SCALE, Decimal.ROUND_HALF_UP);
-    if (rounded.abs().gt(MAX_ABSOLUTE)) throw new RangeError('Money is outside the numeric(18,4) range.');
+    if (rounded.abs().gt(MAX_ABSOLUTE))
+      throw new RangeError('Money is outside the numeric(18,4) range.');
     this.value = rounded;
   }
 
@@ -42,7 +43,8 @@ export class Money {
   /** Parses decimal text with at most four decimal places, for example "12.5" or "-3.0001". */
   static parse(input: string): Money {
     const text = input.trim();
-    if (!DECIMAL_TEXT.test(text)) throw new RangeError('Money text must be a plain decimal number.');
+    if (!DECIMAL_TEXT.test(text))
+      throw new RangeError('Money text must be a plain decimal number.');
     const fraction = text.split('.')[1];
     if (fraction !== undefined && fraction.length > MONEY_SCALE) {
       throw new RangeError(`Money allows at most ${MONEY_SCALE} decimal places.`);
@@ -53,7 +55,8 @@ export class Money {
   /** Parses decimal text and rounds half up to four decimal places. */
   static parseRounded(input: string): Money {
     const text = input.trim();
-    if (!DECIMAL_TEXT.test(text)) throw new RangeError('Money text must be a plain decimal number.');
+    if (!DECIMAL_TEXT.test(text))
+      throw new RangeError('Money text must be a plain decimal number.');
     return new Money(new D(text));
   }
 
@@ -83,13 +86,15 @@ export class Money {
 
   /** Multiplies by a decimal factor given as text (quantity, rate). Rounds half up to four places. */
   mul(factor: string): Money {
-    if (!DECIMAL_TEXT.test(factor.trim())) throw new RangeError('Factor must be a plain decimal number.');
+    if (!DECIMAL_TEXT.test(factor.trim()))
+      throw new RangeError('Factor must be a plain decimal number.');
     return new Money(this.value.times(new D(factor.trim())));
   }
 
   /** Divides by a non-zero decimal divisor given as text. Rounds half up to four places. */
   div(divisor: string): Money {
-    if (!DECIMAL_TEXT.test(divisor.trim())) throw new RangeError('Divisor must be a plain decimal number.');
+    if (!DECIMAL_TEXT.test(divisor.trim()))
+      throw new RangeError('Divisor must be a plain decimal number.');
     const d = new D(divisor.trim());
     if (d.isZero()) throw new RangeError('Division by zero.');
     return new Money(this.value.div(d));

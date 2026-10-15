@@ -21,7 +21,7 @@ OWNERSHIP_MAP.md rows 07 and section 4. Migration block `S07_*`.
 - 07.5 KYC review (admin side): `(admin)/admin/kyc` queue for `kyc_reviewer`, CEO final approval through the approval engine, reasons and notifications, document access audit, AML and sanctions screening hook through the security contract.
 - 07.6 Domains: custom domain setup, DNS verification records, status, plan gating through entitlement.
 - 07.7 Tenant policy and data tools: security policy settings, session timeout, data export request, backup request, account closure and offboarding flow.
-- 07.8 Admin people: users list and detail, tenants list and detail, suspend and reactivate (through approval), admin_staff management and shifts, impersonation entry button (uses STEP 03 flow), broadcast messages, feature-flag manager UI, super-admin first-login setup wizard (solo mode choice, SMTP, security defaults).
+- 07.8 Admin people: admin home page `/admin` (platform overview), users list and detail, tenants list and detail, suspend and reactivate (through approval), admin_staff management and shifts, impersonation entry button (uses STEP 03 flow), broadcast messages, feature-flag manager UI, super-admin first-login setup wizard (solo mode choice, SMTP, security defaults).
 - 07.9 Support: tenant support pages, ticket create and thread, admin queue for `support_agent`, SLA timers, feedback and NPS prompts, enterprise and B2B items (multi-company switcher, SSO readiness settings as listed).
 - 07.10 Nav and permission fragments for all pages of this STEP; email templates for invitations, onboarding, KYC results.
 

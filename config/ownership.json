@@ -1,8 +1,6 @@
 {
   "comment": "Machine-readable copy of docs/execution/OWNERSHIP_MAP.md. The most specific matching pattern decides the owner.",
-  "anyStepMayCreate": [
-    "**/.gitkeep"
-  ],
+  "anyStepMayCreate": ["**/.gitkeep"],
   "steps": {
     "01": {
       "owns": [
@@ -100,7 +98,9 @@
         "docs/steps/STEP-01/**",
         "lib/env/s01-public.ts",
         "lib/env/public.ts",
-        "lib/env/public.generated.ts"
+        "lib/env/public.generated.ts",
+        "config/planned-routes.json",
+        "config/nav-types.ts"
       ]
     },
     "02": {
@@ -274,7 +274,8 @@
         "sql/assertions/s07_*",
         "scripts/verify/step07-*",
         "docs/steps/STEP-07/**",
-        "lib/env/s07-public.ts"
+        "lib/env/s07-public.ts",
+        "app/(admin)/admin/page.tsx"
       ]
     },
     "08": {

@@ -22,5 +22,8 @@ export interface ChainVerificationResult {
 export interface AuditService {
   /** Actor, tenant, ip, user agent, device and correlation id come from the request context. */
   record(entry: AuditEntryInput): Promise<void>;
-  verifyChain(range: { fromSequence: string | null; toSequence: string | null }): Promise<ChainVerificationResult>;
+  verifyChain(range: {
+    fromSequence: string | null;
+    toSequence: string | null;
+  }): Promise<ChainVerificationResult>;
 }

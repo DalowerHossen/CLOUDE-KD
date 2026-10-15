@@ -27,7 +27,10 @@ export function base64UrlEncode(bytes: Uint8Array): string {
 }
 
 export function base64UrlDecode(text: string): Uint8Array {
-  const padded = text.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(text.length / 4) * 4, '=');
+  const padded = text
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(Math.ceil(text.length / 4) * 4, '=');
   const binary = atob(padded);
   const out = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
@@ -36,7 +39,10 @@ export function base64UrlDecode(text: string): Uint8Array {
 
 export async function sha256Bytes(input: string | Uint8Array): Promise<Uint8Array> {
   const data = toBytes(input);
-  const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  const buffer = data.buffer.slice(
+    data.byteOffset,
+    data.byteOffset + data.byteLength,
+  ) as ArrayBuffer;
   return new Uint8Array(await crypto.subtle.digest('SHA-256', buffer));
 }
 
@@ -44,16 +50,34 @@ export async function sha256Hex(input: string | Uint8Array): Promise<string> {
   return bytesToHex(await sha256Bytes(input));
 }
 
-export async function hmacSha256Bytes(key: string | Uint8Array, data: string | Uint8Array): Promise<Uint8Array> {
+export async function hmacSha256Bytes(
+  key: string | Uint8Array,
+  data: string | Uint8Array,
+): Promise<Uint8Array> {
   const keyBytes = toBytes(key);
-  const keyBuffer = keyBytes.buffer.slice(keyBytes.byteOffset, keyBytes.byteOffset + keyBytes.byteLength) as ArrayBuffer;
-  const cryptoKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const keyBuffer = keyBytes.buffer.slice(
+    keyBytes.byteOffset,
+    keyBytes.byteOffset + keyBytes.byteLength,
+  ) as ArrayBuffer;
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBuffer,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
   const dataBytes = toBytes(data);
-  const dataBuffer = dataBytes.buffer.slice(dataBytes.byteOffset, dataBytes.byteOffset + dataBytes.byteLength) as ArrayBuffer;
+  const dataBuffer = dataBytes.buffer.slice(
+    dataBytes.byteOffset,
+    dataBytes.byteOffset + dataBytes.byteLength,
+  ) as ArrayBuffer;
   return new Uint8Array(await crypto.subtle.sign('HMAC', cryptoKey, dataBuffer));
 }
 
-export async function hmacSha256Hex(key: string | Uint8Array, data: string | Uint8Array): Promise<string> {
+export async function hmacSha256Hex(
+  key: string | Uint8Array,
+  data: string | Uint8Array,
+): Promise<string> {
   return bytesToHex(await hmacSha256Bytes(key, data));
 }
 
