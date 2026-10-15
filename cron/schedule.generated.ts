@@ -2,5 +2,9 @@
 // GENERATED - do not edit. Source: cron/jobs/sNN-*.ts (run: npm run gen)
 
 import type { CronJobDefinition } from '@/types/contracts';
+import { job as s02ApprovalEscalation } from './jobs/s02-approval-escalation';
+import { job as s02AuditIntegrity } from './jobs/s02-audit-integrity';
+import { job as s02QueuePurge } from './jobs/s02-queue-purge';
+import { job as s02WorkerTick } from './jobs/s02-worker-tick';
 
-export const cronJobs: CronJobDefinition[] = [];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02WorkerTick];
