@@ -44,6 +44,7 @@ export default async function AdminApprovalsPage({
       apiBase="/api/approvals/platform"
       basePath="/admin/approvals"
       status={parsed.success ? parsed.data.status : undefined}
+      canDelegate={actor.role === 'super_admin' || actor.role === 'ceo'}
       extra={solo === null ? null : <SoloModeToggle initial={solo} />}
     />
   );

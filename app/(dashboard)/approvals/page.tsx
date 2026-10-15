@@ -21,7 +21,7 @@ export default async function OwnerApprovalsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }): Promise<JSX.Element> {
-  await requirePagePermission('approval.read', 'tenant', 'approval_request');
+  const actor = await requirePagePermission('approval.read', 'tenant', 'approval_request');
   const raw = await searchParams;
   const parsed = approvalListSchema.safeParse({
     status: first(raw.status),
@@ -40,6 +40,7 @@ export default async function OwnerApprovalsPage({
       page={page}
       apiBase="/api/approvals"
       basePath="/approvals"
+      canDelegate={actor.role === 'owner'}
       status={parsed.success ? parsed.data.status : undefined}
     />
   );

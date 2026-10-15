@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { t, type StringKey } from '@/lib/i18n';
 import type { ApprovalListPage } from '@/services/approval/queries';
 import { ApprovalQueue } from './approval-queue';
+import { DelegationForm } from './delegation-form';
 
 interface Props {
   page: ApprovalListPage | null;
@@ -13,6 +14,8 @@ interface Props {
   basePath: string;
   status: string | undefined;
   extra?: JSX.Element | null;
+  /** Owner, CEO and super admin may delegate. */
+  canDelegate?: boolean;
 }
 
 const STATUSES = ['pending', 'escalated', 'approved', 'rejected', 'expired'] as const;
@@ -24,7 +27,14 @@ const STATUS_LABEL: Record<(typeof STATUSES)[number], StringKey> = {
   expired: 's02Governance.approvals.statusExpired',
 };
 
-export function ApprovalsPageBody({ page, apiBase, basePath, status, extra }: Props): JSX.Element {
+export function ApprovalsPageBody({
+  page,
+  apiBase,
+  basePath,
+  status,
+  extra,
+  canDelegate = false,
+}: Props): JSX.Element {
   return (
     <div className="space-y-sp-24">
       <PageHeader
@@ -42,6 +52,7 @@ export function ApprovalsPageBody({ page, apiBase, basePath, status, extra }: Pr
         ))}
       </nav>
       {extra ?? null}
+      {canDelegate ? <DelegationForm apiBase={apiBase} /> : null}
       {page === null ? (
         <ErrorState description={t('s02Governance.approvals.loadError')} />
       ) : page.items.length === 0 ? (
