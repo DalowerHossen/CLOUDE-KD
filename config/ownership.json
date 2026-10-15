@@ -97,7 +97,10 @@
         "migrations/S01_*",
         "sql/assertions/s01_*",
         "scripts/verify/step01-*",
-        "docs/steps/STEP-01/**"
+        "docs/steps/STEP-01/**",
+        "lib/env/s01-public.ts",
+        "lib/env/public.ts",
+        "lib/env/public.generated.ts"
       ]
     },
     "02": {
@@ -131,7 +134,8 @@
         "migrations/S02_*",
         "sql/assertions/s02_*",
         "scripts/verify/step02-*",
-        "docs/steps/STEP-02/**"
+        "docs/steps/STEP-02/**",
+        "lib/env/s02-public.ts"
       ]
     },
     "03": {
@@ -157,7 +161,8 @@
         "migrations/S03_*",
         "sql/assertions/s03_*",
         "scripts/verify/step03-*",
-        "docs/steps/STEP-03/**"
+        "docs/steps/STEP-03/**",
+        "lib/env/s03-public.ts"
       ]
     },
     "04": {
@@ -186,7 +191,8 @@
         "migrations/S04_*",
         "sql/assertions/s04_*",
         "scripts/verify/step04-*",
-        "docs/steps/STEP-04/**"
+        "docs/steps/STEP-04/**",
+        "lib/env/s04-public.ts"
       ]
     },
     "05": {
@@ -213,7 +219,8 @@
         "migrations/S05_*",
         "sql/assertions/s05_*",
         "scripts/verify/step05-*",
-        "docs/steps/STEP-05/**"
+        "docs/steps/STEP-05/**",
+        "lib/env/s05-public.ts"
       ]
     },
     "06": {
@@ -241,7 +248,8 @@
         "migrations/S06_*",
         "sql/assertions/s06_*",
         "scripts/verify/step06-*",
-        "docs/steps/STEP-06/**"
+        "docs/steps/STEP-06/**",
+        "lib/env/s06-public.ts"
       ]
     },
     "07": {
@@ -265,7 +273,8 @@
         "migrations/S07_*",
         "sql/assertions/s07_*",
         "scripts/verify/step07-*",
-        "docs/steps/STEP-07/**"
+        "docs/steps/STEP-07/**",
+        "lib/env/s07-public.ts"
       ]
     },
     "08": {
@@ -286,7 +295,8 @@
         "migrations/S08_*",
         "sql/assertions/s08_*",
         "scripts/verify/step08-*",
-        "docs/steps/STEP-08/**"
+        "docs/steps/STEP-08/**",
+        "lib/env/s08-public.ts"
       ]
     },
     "09": {
@@ -311,7 +321,8 @@
         "migrations/S09_*",
         "sql/assertions/s09_*",
         "scripts/verify/step09-*",
-        "docs/steps/STEP-09/**"
+        "docs/steps/STEP-09/**",
+        "lib/env/s09-public.ts"
       ]
     },
     "10": {
@@ -339,7 +350,8 @@
         "migrations/S10_*",
         "sql/assertions/s10_*",
         "scripts/verify/step10-*",
-        "docs/steps/STEP-10/**"
+        "docs/steps/STEP-10/**",
+        "lib/env/s10-public.ts"
       ]
     },
     "11": {
@@ -362,7 +374,8 @@
         "migrations/S11_*",
         "sql/assertions/s11_*",
         "scripts/verify/step11-*",
-        "docs/steps/STEP-11/**"
+        "docs/steps/STEP-11/**",
+        "lib/env/s11-public.ts"
       ]
     },
     "12": {
@@ -385,7 +398,8 @@
         "migrations/S12_*",
         "sql/assertions/s12_*",
         "scripts/verify/step12-*",
-        "docs/steps/STEP-12/**"
+        "docs/steps/STEP-12/**",
+        "lib/env/s12-public.ts"
       ]
     },
     "13": {
@@ -410,7 +424,8 @@
         "migrations/S13_*",
         "sql/assertions/s13_*",
         "scripts/verify/step13-*",
-        "docs/steps/STEP-13/**"
+        "docs/steps/STEP-13/**",
+        "lib/env/s13-public.ts"
       ]
     },
     "14": {
@@ -434,7 +449,8 @@
         "migrations/S14_*",
         "sql/assertions/s14_*",
         "scripts/verify/step14-*",
-        "docs/steps/STEP-14/**"
+        "docs/steps/STEP-14/**",
+        "lib/env/s14-public.ts"
       ]
     },
     "15": {
@@ -458,7 +474,8 @@
         "migrations/S15_*",
         "sql/assertions/s15_*",
         "scripts/verify/step15-*",
-        "docs/steps/STEP-15/**"
+        "docs/steps/STEP-15/**",
+        "lib/env/s15-public.ts"
       ]
     },
     "16": {
@@ -484,7 +501,8 @@
         "migrations/S16_*",
         "sql/assertions/s16_*",
         "scripts/verify/step16-*",
-        "docs/steps/STEP-16/**"
+        "docs/steps/STEP-16/**",
+        "lib/env/s16-public.ts"
       ]
     }
   }

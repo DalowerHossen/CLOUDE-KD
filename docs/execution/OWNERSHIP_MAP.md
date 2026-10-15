@@ -81,7 +81,8 @@ If a path you need is not listed, it is not yours. Write `BLOCKERS.md`.
 | Permissions | `config/permissions/sNN-<name>.ts` (exports `permissions`) | `config/permissions.ts` |
 | Approval rules | `config/approval/sNN-<name>.ts` (exports `approvalRules`) | `config/approval-rules.generated.ts` |
 | Environment names | `config/env/sNN.env.fragment` | `.env.example` |
-| Environment schema | `lib/env/sNN.ts` (exports `serverShape`, `publicShape`) | `lib/env/schema.generated.ts` |
+| Environment schema (server) | `lib/env/sNN.ts` (exports `serverShape`) | `lib/env/schema.generated.ts` |
+| Environment schema (browser-visible, no secret names) | `lib/env/sNN-public.ts` (exports `publicShape`, `publicRuntime`) | `lib/env/public.generated.ts` |
 | Cron jobs | `cron/jobs/sNN-<job>.ts` (exports `job`) | `cron/schedule.generated.ts` |
 | Middleware modules | `config/middleware/sNN.ts` (exports `entry`) | `lib/middleware/chain.generated.ts` |
 | Boot hooks | `config/boot/sNN-<name>.ts` (exports `boot`) | `lib/boot.generated.ts` |
