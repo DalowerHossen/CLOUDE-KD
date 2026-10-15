@@ -16,8 +16,14 @@
       }
     ],
     "@typescript-eslint/explicit-module-boundary-types": "error",
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
-    "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports", "fixStyle": "inline-type-imports" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      { "prefer": "type-imports", "fixStyle": "inline-type-imports" }
+    ],
     "no-console": "error",
     "no-eval": "error",
     "no-implied-eval": "error",
@@ -54,7 +60,7 @@
       "rules": { "no-console": "off" }
     },
     {
-      "files": ["components/shared/safe-html.tsx"],
+      "files": ["components/shared/safe-html.tsx", "components/shared/theme-init-script.tsx"],
       "rules": { "react/no-danger": "off" }
     }
   ]
