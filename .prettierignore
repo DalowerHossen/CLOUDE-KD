@@ -1,0 +1,8 @@
+node_modules
+.next
+package-lock.json
+docs/source
+docs/bn
+public/design-tokens.json
+*.generated.ts
+*.generated.css

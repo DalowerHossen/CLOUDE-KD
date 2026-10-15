@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+.pnp.*
+
+# build output
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# environment files (never commit)
+.env
+.env.*
+!.env.example
+
+# logs and tooling
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+.idea/
+coverage/
+
+# local database dumps and backups
+*.dump
+backups/
+.sentryclirc
+.vercel
+.netlify
