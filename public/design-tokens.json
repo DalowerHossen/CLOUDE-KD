@@ -1,0 +1,233 @@
+{
+  "meta": {
+    "name": "KD SOLUTION IT design tokens",
+    "version": 1,
+    "note": "Single source of truth. Run npm run gen to produce styles/tokens.generated.css and public/design-tokens.json."
+  },
+  "spacing": {
+    "4": "4px",
+    "8": "8px",
+    "12": "12px",
+    "16": "16px",
+    "24": "24px",
+    "32": "32px",
+    "48": "48px",
+    "64": "64px"
+  },
+  "radius": {
+    "none": "0px",
+    "sm": "4px",
+    "md": "8px",
+    "lg": "12px",
+    "xl": "16px",
+    "full": "9999px"
+  },
+  "shadow": {
+    "sm": "0 1px 2px 0 rgb(15 23 42 / 0.08)",
+    "md": "0 4px 8px -2px rgb(15 23 42 / 0.12), 0 2px 4px -2px rgb(15 23 42 / 0.08)",
+    "lg": "0 12px 24px -6px rgb(15 23 42 / 0.16), 0 4px 8px -4px rgb(15 23 42 / 0.1)",
+    "xl": "0 24px 40px -10px rgb(15 23 42 / 0.2), 0 8px 16px -8px rgb(15 23 42 / 0.12)",
+    "2xl": "0 40px 64px -16px rgb(15 23 42 / 0.28)"
+  },
+  "zIndex": {
+    "base": "0",
+    "raised": "10",
+    "dropdown": "1000",
+    "sticky": "1100",
+    "banner": "1200",
+    "overlay": "1300",
+    "modal": "1400",
+    "popover": "1500",
+    "toast": "1600",
+    "tooltip": "1700"
+  },
+  "motion": {
+    "duration": {
+      "instant": "75ms",
+      "fast": "150ms",
+      "base": "250ms",
+      "slow": "400ms"
+    },
+    "easing": {
+      "standard": "cubic-bezier(0.2, 0, 0, 1)",
+      "enter": "cubic-bezier(0, 0, 0, 1)",
+      "exit": "cubic-bezier(0.4, 0, 1, 1)"
+    }
+  },
+  "typography": {
+    "fontSans": "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    "fontMono": "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
+    "scale": {
+      "caption": [
+        "0.875rem",
+        "1.25rem"
+      ],
+      "body": [
+        "1rem",
+        "1.5rem"
+      ],
+      "lead": [
+        "1.125rem",
+        "1.75rem"
+      ],
+      "h4": [
+        "1.25rem",
+        "1.75rem"
+      ],
+      "h3": [
+        "1.5rem",
+        "2rem"
+      ],
+      "h2": [
+        "1.875rem",
+        "2.25rem"
+      ],
+      "h1": [
+        "2.25rem",
+        "2.5rem"
+      ],
+      "display": [
+        "3rem",
+        "3.25rem"
+      ]
+    }
+  },
+  "breakpoints": {
+    "xs": "375px",
+    "sm": "430px",
+    "md": "768px",
+    "lg": "1024px",
+    "xl": "1280px",
+    "2xl": "1920px"
+  },
+  "colors": {
+    "light": {
+      "background": "0 0% 100%",
+      "foreground": "222 47% 11%",
+      "card": "0 0% 100%",
+      "card-foreground": "222 47% 11%",
+      "popover": "0 0% 100%",
+      "popover-foreground": "222 47% 11%",
+      "primary": "224 76% 40%",
+      "primary-foreground": "0 0% 100%",
+      "secondary": "215 25% 94%",
+      "secondary-foreground": "222 47% 11%",
+      "muted": "215 25% 95%",
+      "muted-foreground": "215 16% 36%",
+      "accent": "221 83% 95%",
+      "accent-foreground": "224 76% 28%",
+      "destructive": "0 72% 42%",
+      "destructive-foreground": "0 0% 100%",
+      "success": "142 72% 24%",
+      "success-foreground": "0 0% 100%",
+      "warning": "38 92% 50%",
+      "warning-foreground": "222 47% 11%",
+      "info": "199 89% 30%",
+      "info-foreground": "0 0% 100%",
+      "border": "215 20% 82%",
+      "input": "215 20% 62%",
+      "ring": "224 76% 48%",
+      "chart-1": "224 76% 40%",
+      "chart-2": "173 80% 28%",
+      "chart-3": "38 92% 40%",
+      "chart-4": "340 75% 42%",
+      "chart-5": "262 52% 47%"
+    },
+    "dark": {
+      "background": "222 47% 7%",
+      "foreground": "210 40% 96%",
+      "card": "222 40% 10%",
+      "card-foreground": "210 40% 96%",
+      "popover": "222 40% 10%",
+      "popover-foreground": "210 40% 96%",
+      "primary": "217 91% 68%",
+      "primary-foreground": "222 47% 8%",
+      "secondary": "217 33% 18%",
+      "secondary-foreground": "210 40% 96%",
+      "muted": "217 33% 16%",
+      "muted-foreground": "215 20% 72%",
+      "accent": "217 33% 20%",
+      "accent-foreground": "210 40% 96%",
+      "destructive": "0 80% 66%",
+      "destructive-foreground": "222 47% 8%",
+      "success": "142 60% 55%",
+      "success-foreground": "222 47% 8%",
+      "warning": "38 92% 58%",
+      "warning-foreground": "222 47% 8%",
+      "info": "199 89% 62%",
+      "info-foreground": "222 47% 8%",
+      "border": "217 25% 26%",
+      "input": "217 25% 40%",
+      "ring": "217 91% 68%",
+      "chart-1": "217 91% 68%",
+      "chart-2": "173 70% 50%",
+      "chart-3": "38 92% 58%",
+      "chart-4": "340 80% 68%",
+      "chart-5": "262 70% 72%"
+    },
+    "highContrastLight": {
+      "background": "0 0% 100%",
+      "foreground": "0 0% 0%",
+      "card": "0 0% 100%",
+      "card-foreground": "0 0% 0%",
+      "popover": "0 0% 100%",
+      "popover-foreground": "0 0% 0%",
+      "primary": "240 100% 22%",
+      "primary-foreground": "0 0% 100%",
+      "secondary": "0 0% 92%",
+      "secondary-foreground": "0 0% 0%",
+      "muted": "0 0% 94%",
+      "muted-foreground": "0 0% 15%",
+      "accent": "0 0% 90%",
+      "accent-foreground": "0 0% 0%",
+      "destructive": "0 100% 28%",
+      "destructive-foreground": "0 0% 100%",
+      "success": "130 100% 17%",
+      "success-foreground": "0 0% 100%",
+      "warning": "45 100% 45%",
+      "warning-foreground": "0 0% 0%",
+      "info": "205 100% 21%",
+      "info-foreground": "0 0% 100%",
+      "border": "0 0% 0%",
+      "input": "0 0% 0%",
+      "ring": "240 100% 22%",
+      "chart-1": "240 100% 22%",
+      "chart-2": "170 100% 16%",
+      "chart-3": "30 100% 30%",
+      "chart-4": "330 100% 30%",
+      "chart-5": "270 100% 30%"
+    },
+    "highContrastDark": {
+      "background": "0 0% 0%",
+      "foreground": "0 0% 100%",
+      "card": "0 0% 0%",
+      "card-foreground": "0 0% 100%",
+      "popover": "0 0% 0%",
+      "popover-foreground": "0 0% 100%",
+      "primary": "205 100% 75%",
+      "primary-foreground": "0 0% 0%",
+      "secondary": "0 0% 14%",
+      "secondary-foreground": "0 0% 100%",
+      "muted": "0 0% 12%",
+      "muted-foreground": "0 0% 85%",
+      "accent": "0 0% 18%",
+      "accent-foreground": "0 0% 100%",
+      "destructive": "0 100% 75%",
+      "destructive-foreground": "0 0% 0%",
+      "success": "130 80% 65%",
+      "success-foreground": "0 0% 0%",
+      "warning": "50 100% 60%",
+      "warning-foreground": "0 0% 0%",
+      "info": "195 100% 70%",
+      "info-foreground": "0 0% 0%",
+      "border": "0 0% 100%",
+      "input": "0 0% 100%",
+      "ring": "205 100% 75%",
+      "chart-1": "205 100% 75%",
+      "chart-2": "165 90% 60%",
+      "chart-3": "45 100% 60%",
+      "chart-4": "330 100% 75%",
+      "chart-5": "270 100% 78%"
+    }
+  }
+}
