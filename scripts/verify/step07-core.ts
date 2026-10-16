@@ -40,6 +40,8 @@ import {
   ownTicketActionSchema,
   queueQuery,
 } from '@/lib/support/rules';
+import { feedbackActionSchema, npsPromptDue, summarizeNps } from '@/lib/support/opinion';
+import { ssoSchema } from '@/lib/company/sections';
 import { peopleActionSchema, tenantListQuery, userListQuery } from '@/lib/company/admin-input';
 
 let failures = 0;
@@ -785,6 +787,114 @@ async function main(): Promise<void> {
     assert.ok(byAction.get('support.agent')?.defaultRoles.includes('admin_staff'));
     assert.ok(!byAction.get('support.agent')?.defaultRoles.includes('owner'));
     assert.ok(byAction.get('support.create')?.defaultRoles.includes('owner'));
+  });
+
+  await check('feedback, NPS and single sign-on settings', () => {
+    assert.ok(feedbackActionSchema.safeParse({ action: 'nps', score: 10, comment: '' }).success);
+    assert.ok(!feedbackActionSchema.safeParse({ action: 'nps', score: 11, comment: '' }).success);
+    assert.ok(!feedbackActionSchema.safeParse({ action: 'nps', score: 5.5, comment: '' }).success);
+    assert.ok(
+      !feedbackActionSchema.safeParse({
+        action: 'feedback',
+        category: 'idea',
+        comment: '',
+        page: '',
+      }).success,
+    );
+    assert.ok(
+      !feedbackActionSchema.safeParse({
+        action: 'feedback',
+        category: 'idea',
+        comment: 'ok',
+        page: 'https://x.test',
+      }).success,
+    );
+    assert.ok(
+      feedbackActionSchema.safeParse({
+        action: 'feedback',
+        category: 'idea',
+        comment: 'More filters',
+        page: '/invoices',
+      }).success,
+    );
+    assert.ok(feedbackActionSchema.safeParse({ action: 'dismiss' }).success);
+    const now = new Date('2026-10-20T00:00:00Z');
+    const old = new Date('2026-09-01T00:00:00Z');
+    assert.ok(
+      npsPromptDue({ companyCreatedAt: old, lastAnsweredAt: null, dismissedUntil: null, now }),
+    );
+    assert.ok(
+      !npsPromptDue({
+        companyCreatedAt: new Date('2026-10-15T00:00:00Z'),
+        lastAnsweredAt: null,
+        dismissedUntil: null,
+        now,
+      }),
+      'too new',
+    );
+    assert.ok(
+      !npsPromptDue({
+        companyCreatedAt: old,
+        lastAnsweredAt: new Date('2026-09-15T00:00:00Z'),
+        dismissedUntil: null,
+        now,
+      }),
+      'answered lately',
+    );
+    assert.ok(
+      npsPromptDue({
+        companyCreatedAt: old,
+        lastAnsweredAt: new Date('2026-06-01T00:00:00Z'),
+        dismissedUntil: null,
+        now,
+      }),
+    );
+    assert.ok(
+      !npsPromptDue({
+        companyCreatedAt: old,
+        lastAnsweredAt: null,
+        dismissedUntil: new Date('2026-10-25T00:00:00Z'),
+        now,
+      }),
+      'dismissed',
+    );
+    assert.deepEqual(summarizeNps([]), {
+      responses: 0,
+      promoters: 0,
+      passives: 0,
+      detractors: 0,
+      score: null,
+    });
+    const mix = summarizeNps([10, 9, 8, 7, 6, 0]);
+    assert.equal(mix.promoters, 2);
+    assert.equal(mix.passives, 2);
+    assert.equal(mix.detractors, 2);
+    assert.equal(mix.score, 0);
+    assert.equal(summarizeNps([10, 10, 9, 3]).score, 50);
+    assert.ok(ssoSchema.safeParse(SECTION_DEFAULTS.sso).success);
+    assert.ok(
+      ssoSchema.safeParse({
+        ...SECTION_DEFAULTS.sso,
+        protocol: 'oidc',
+        issuerUrl: 'https://login.example.com',
+        emailDomains: ['example.com'],
+      }).success,
+    );
+    assert.ok(
+      !ssoSchema.safeParse({ ...SECTION_DEFAULTS.sso, issuerUrl: 'http://login.example.com' })
+        .success,
+      'https only',
+    );
+    assert.ok(
+      !ssoSchema.safeParse({ ...SECTION_DEFAULTS.sso, emailDomains: ['not a domain'] }).success,
+    );
+    assert.ok(
+      !ssoSchema.safeParse({ ...SECTION_DEFAULTS.sso, emailDomains: ['a.com', 'a.com'] }).success,
+    );
+    assert.ok(!ssoSchema.safeParse({ ...SECTION_DEFAULTS.sso, protocol: 'ldap' }).success);
+    const ids = new Set(registered.map((d: PermissionDefinition) => d.action));
+    for (const a of ['feedback.send', 'feedback.read', 'company.switch', 'sso.manage'])
+      assert.ok(ids.has(a), a);
   });
 }
 

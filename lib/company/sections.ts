@@ -215,6 +215,34 @@ export const onboardingSchema = z
   })
   .strict();
 
+const emailDomain = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(100)
+  .regex(/^(?=.{4,100}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/, {
+    message: 'Use a domain such as example.com.',
+  });
+
+/** Single sign-on settings. Saving them only prepares the setup; the platform turns it on after a check. */
+export const ssoSchema = z
+  .object({
+    protocol: z.enum(['none', 'saml', 'oidc']),
+    providerName: text(80),
+    /** OIDC issuer address or SAML identity provider entity address. */
+    issuerUrl: optionalUrl,
+    /** SAML single sign-on address or OIDC sign-in address. */
+    loginUrl: optionalUrl,
+    /** OIDC client id or SAML service entity id. */
+    clientId: text(200),
+    emailDomains: z
+      .array(emailDomain)
+      .max(5)
+      .refine((v) => new Set(v).size === v.length, { message: 'Each domain once.' }),
+    enforceForStaff: z.boolean(),
+  })
+  .strict();
+
 export const SECTION_SCHEMAS = {
   profile: profileSchema,
   branding: brandingSchema,
@@ -226,6 +254,7 @@ export const SECTION_SCHEMAS = {
   policy: policySchema,
   backup: backupSchema,
   onboarding: onboardingSchema,
+  sso: ssoSchema,
 } as const;
 export type SectionKey = keyof typeof SECTION_SCHEMAS;
 export const SECTION_KEYS = Object.keys(SECTION_SCHEMAS) as SectionKey[];
@@ -284,6 +313,15 @@ export const SECTION_DEFAULTS: { [K in SectionKey]: SectionValue<K> } = {
     exportNeedsOwnerApproval: true,
   },
   backup: { schedule: 'off', lastScheduledAt: null },
+  sso: {
+    protocol: 'none',
+    providerName: '',
+    issuerUrl: '',
+    loginUrl: '',
+    clientId: '',
+    emailDomains: [],
+    enforceForStaff: false,
+  },
   onboarding: {
     status: 'not_started',
     step: 1,

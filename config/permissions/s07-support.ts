@@ -20,4 +20,28 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin', 'ceo', 'admin_staff'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'feedback.send',
+    description: 'Answer the satisfaction question and send feedback',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'feedback.read',
+    description: 'Read the satisfaction score and the feedback of all companies',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'company.switch',
+    description: 'List the own companies, switch between them and add another one',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'sso.manage',
+    description: 'Prepare single sign-on and ask for its activation',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

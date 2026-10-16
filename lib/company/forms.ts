@@ -145,6 +145,24 @@ export const FORMS: Partial<Record<SectionKey, readonly FieldSpec[]>> = {
     { name: 'loginNotifications', label: 'loginNotifications', kind: 'bool' },
     { name: 'exportNeedsOwnerApproval', label: 'exportNeedsOwnerApproval', kind: 'bool' },
   ],
+  sso: [
+    {
+      name: 'protocol',
+      label: 'ssoProtocol',
+      kind: 'select',
+      options: [
+        { value: 'none', label: 'none' },
+        { value: 'saml', label: 'saml' },
+        { value: 'oidc', label: 'oidc' },
+      ],
+    },
+    { name: 'providerName', label: 'ssoProvider', kind: 'text', max: 80 },
+    { name: 'issuerUrl', label: 'ssoIssuer', kind: 'url', max: 200 },
+    { name: 'loginUrl', label: 'ssoLogin', kind: 'url', max: 200 },
+    { name: 'clientId', label: 'ssoClient', kind: 'text', max: 200 },
+    { name: 'emailDomains', label: 'ssoDomains', kind: 'lines' },
+    { name: 'enforceForStaff', label: 'ssoEnforce', kind: 'bool' },
+  ],
   backup: [
     {
       name: 'schedule',
@@ -203,5 +221,6 @@ export const EDITABLE_SECTIONS = [
   'approval',
   'policy',
   'backup',
+  'sso',
 ] as const;
 export type EditableSection = (typeof EDITABLE_SECTIONS)[number];

@@ -10,5 +10,5 @@
 - [x] 07.8 admin home, users and tenants (2026-10-16)
 - [x] 07.9 admin staff and shifts, announcements, feature flags, setup wizard (2026-10-16)
 - [x] 07.10 support tickets (2026-10-16)
-- [ ] 07.11
+- [x] 07.11 feedback and NPS, several companies, SSO readiness (2026-10-16)
 - [ ] 07.12
