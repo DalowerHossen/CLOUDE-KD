@@ -12,6 +12,7 @@ import {
 } from '@/lib/company/sections';
 import { en } from '@/lib/i18n';
 import { registerTenantExport, tenantExports } from '@/lib/lifecycle/registry';
+import '@/services/lifecycle/exports';
 import { dnsRecords, evaluateDns, isPublicAddress, validateHostname } from '@/lib/domain/hostnames';
 import { reviewActionSchema } from '@/lib/kyc/review-input';
 import { registerScreeningProvider, runScreening } from '@/lib/kyc/screening';
@@ -526,6 +527,10 @@ async function main(): Promise<void> {
       columns: ['id', 'name', 'created_at'],
     });
     assert.ok(tenantExports().some((t) => t.table === 'sample_table'));
+    assert.ok(
+      tenantExports().some((t) => t.table === 'companies' && t.columns.includes('plan_key')),
+      'the tables of this STEP register without error',
+    );
     for (const col of [
       'password_hash',
       'token_hash',

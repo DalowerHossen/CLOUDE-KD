@@ -11,4 +11,4 @@
 - [x] 07.9 admin staff and shifts, announcements, feature flags, setup wizard (2026-10-16)
 - [x] 07.10 support tickets (2026-10-16)
 - [x] 07.11 feedback and NPS, several companies, SSO readiness (2026-10-16)
-- [ ] 07.12
+- [x] 07.12 closure (2026-10-16)

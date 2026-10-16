@@ -18,7 +18,11 @@ export function registerTenantExport(def: TenantExportTable): void {
     throw new Error(`export table name "${def.table}" is not valid`);
   for (const col of def.columns) {
     if (!/^[a-z][a-z0-9_]{0,62}$/.test(col)) throw new Error(`export column "${col}" is not valid`);
-    if (/(hash|token|secret|password|key|cipher|encrypted|otp)/.test(col))
+    if (
+      /(hash|token|secret|password|cipher|encrypted|otp|(api|private|signing|access|encryption)_?key)/.test(
+        col,
+      )
+    )
       throw new Error(`export column "${col}" looks secret`);
   }
   tables.set(def.table, def);

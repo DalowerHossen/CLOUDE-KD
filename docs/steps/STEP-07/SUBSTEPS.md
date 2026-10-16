@@ -28,3 +28,23 @@ Design rules:
 | 07.12 | Nav, permissions, e-mail, closure   | config/nav/s07.ts, config/permissions/s07-_, emails/onboarding, scripts/verify/step07-_, VERIFY, HANDOFF                       | none      | all fragments registered, all templates render, checks recorded, handoff written                                                                     |
 
 Security notes: invitation tokens are 256-bit random, only the hash is stored, single use, expire; KYC documents never leave the storage contract; staff cannot raise their own permissions; every settings write is validated, optimistic-locked and audited; platform actions on tenants need the matching permission and are audited with the tenant id.
+
+## Result (written at closure)
+
+The plan above was adjusted while building; the table below is what was built. Migration numbers differ from the plan because earlier sub-steps needed more than one file.
+
+| Id    | Built                                                                                                   | Migration | Commit subject                                                                          |
+| ----- | ------------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------- |
+| 07.1  | onboarding wizard, checklist, milestones, settings core                                                 | S07_001   | feat(step07): 07.1                                                                      |
+| 07.2  | company, branding, invoicing, notifications, display settings, logo                                     | none      | feat(step07): 07.2                                                                      |
+| 07.3  | team invitations, permission editor, activity, staff security, approval settings                        | S07_002   | feat(step07): 07.3                                                                      |
+| 07.4  | KYC owner side and the `kyc` contract                                                                   | S07_003   | feat(step07): 07.4                                                                      |
+| 07.5  | KYC review with maker-checker approval                                                                  | S07_004   | feat(step07): 07.5                                                                      |
+| 07.6  | custom domains                                                                                          | S07_005   | feat(step07): 07.6                                                                      |
+| 07.7  | security policy, data export and backup, account closure                                                | S07_006   | feat(step07): 07.7                                                                      |
+| 07.8  | admin home, users and tenants, suspend and reactivate through approval                                  | S07_007   | feat(step07): 07.8                                                                      |
+| 07.9  | admin staff and shifts, announcements, feature flag manager, platform setup wizard                      | S07_008   | feat(step07): 07.9                                                                      |
+| 07.10 | support tickets, agent queue, SLA clocks                                                                | S07_009   | feat(step07): 07.10                                                                     |
+| 07.11 | feedback and NPS, company switcher, single sign-on readiness                                            | S07_010   | feat(step07): 07.11                                                                     |
+| 07.12 | closure: ownership patterns, verification record, handoff, dependency requests                          | none      | docs(step07): 07.12                                                                     |
+
