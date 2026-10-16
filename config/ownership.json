@@ -234,7 +234,12 @@
         "scripts/verify/step05-*",
         "docs/steps/STEP-05/**",
         "lib/env/s05-public.ts",
-        "workers/notifications/**"
+        "workers/notifications/**",
+        "services/encryption/**",
+        "components/storage/**",
+        "lib/notifications/**",
+        "config/{email,notifications,storage}.ts",
+        "app/api/admin/{storage,emails}/**"
       ]
     },
     "06": {

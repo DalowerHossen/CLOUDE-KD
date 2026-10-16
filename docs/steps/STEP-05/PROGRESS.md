@@ -11,4 +11,4 @@
 - [x] 05.7b e-mail settings pages, test tools, domain check, suppression list (2026-10-16)
 - [x] 05.8 template system: versions, editor, preview, brand shell, locked templates (2026-10-16)
 - [x] 05.9 notifications: service, preferences, realtime page, event consumer, digest (2026-10-16)
-- [ ] 05.10
+- [x] 05.10 assertions, file samples, VERIFY, HANDOFF, DEPENDENCY_REQUESTS (2026-10-16)
