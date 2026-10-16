@@ -56,4 +56,13 @@ export const nav: NavItem[] = [
   pub('foot-about', 's06Public.nav.about', '/about', 31, 'public-footer', 'foot-company'),
   pub('foot-careers', 's06Public.nav.careers', '/careers', 32, 'public-footer', 'foot-company'),
   pub('foot-contact', 's06Public.nav.contact', '/contact', 33, 'public-footer', 'foot-company'),
+  {
+    id: 'admin-cms',
+    labelKey: 's06Public.cms.nav',
+    href: '/admin/cms',
+    icon: 'globe',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 60,
+  },
 ];

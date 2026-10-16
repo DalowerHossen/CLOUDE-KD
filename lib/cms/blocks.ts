@@ -220,6 +220,16 @@ export const blockSchema = z.discriminatedUnion('type', [
         .max(6),
     })
     .strict(),
+  z
+    .object({
+      id,
+      type: z.literal('image'),
+      /** A file stored in the CMS media library (storage category cms). */
+      fileId: z.string().uuid(),
+      alt: text(200),
+      caption: optionalText(200),
+    })
+    .strict(),
 ]);
 
 export type Block = z.output<typeof blockSchema>;
@@ -240,6 +250,7 @@ export const BLOCK_TYPES = [
   'contact_form',
   'jobs',
   'columns',
+  'image',
 ] as const satisfies readonly BlockType[];
 
 export const pageContentSchema = z

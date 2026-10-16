@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import { pageContentSchema, pageMetaSchema, hrefSchema } from '@/lib/cms/blocks';
 import { DEFAULT_PAGES, pathOf } from '@/lib/cms/defaults';
 import { pricingColumns } from '@/lib/cms/pricing';
+import { BLOCK_LABELS, ITEM_TEMPLATES, newBlock } from '@/lib/cms/templates';
+import { sanitizeBlocks } from '@/lib/cms/sanitize-blocks';
+import type { BlockType } from '@/lib/cms/blocks';
 import { PLAN_KEYS } from '@/config/plans';
 import {
   COOKIE_POLICY_VERSION,
@@ -108,6 +111,38 @@ async function main(): Promise<void> {
       );
     },
   );
+
+  await check('editor templates: every new block is valid; item templates fit their lists', () => {
+    for (const type of Object.keys(BLOCK_LABELS) as BlockType[]) {
+      const block = newBlock(type);
+      const parsed = pageContentSchema.safeParse([block]);
+      // The image block needs a real file id, everything else must validate as created.
+      if (type !== 'image')
+        assert.ok(parsed.success, `${type}: ${parsed.success ? '' : parsed.error.message}`);
+    }
+    assert.ok(newBlock('faq').id !== newBlock('faq').id, 'ids are unique');
+    for (const key of Object.keys(ITEM_TEMPLATES)) {
+      const [type, field] = key.split('.');
+      const block = newBlock(type as BlockType) as Record<string, unknown>;
+      assert.ok(Array.isArray(block[field ?? '']), `${key} is a list`);
+    }
+  });
+
+  await check('rich text in saved blocks is cleaned', () => {
+    const blocks = sanitizeBlocks(
+      pageContentSchema.parse([
+        {
+          id: 'r',
+          type: 'richtext',
+          heading: '',
+          html: '<p>ok</p><script>alert(1)</script><img src=x onerror=alert(1)>',
+        },
+      ]),
+    );
+    const html = JSON.stringify(blocks);
+    assert.ok(!/script|onerror/i.test(html), html);
+    assert.ok(html.includes('ok'));
+  });
 
   await check('pricing table is built from the plan catalogue', () => {
     const columns = pricingColumns();

@@ -2,7 +2,7 @@
 
 - [x] 06.1 public frame, mega menu, footer, cookie consent banner (2026-10-16)
 - [x] 06.2 block system, eight core pages, contact form (2026-10-16)
-- [ ] 06.3
+- [x] 06.3
 - [ ] 06.4
 - [ ] 06.5
 - [ ] 06.6

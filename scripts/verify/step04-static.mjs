@@ -34,6 +34,7 @@ const DANGEROUS_INNER_HTML = new Set([
 // Routes that are intentionally plain handlers: probes that must not depend on any other service.
 // Whole folders of routes called by mail clients and providers: image, redirect, one-click and signed callbacks.
 const PLAIN_PREFIXES = [
+  'app/api/cms/media/[id]/',
   'app/api/email/track/',
   'app/api/email/unsubscribe/',
   'app/api/email/webhooks/',

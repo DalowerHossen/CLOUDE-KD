@@ -404,6 +404,25 @@ export function BlockView({ block, first }: { block: Block; first: boolean }): J
           <ContactForm email={block.email} />
         </section>
       );
+    case 'image':
+      return (
+        <section className={section}>
+          <figure className="max-w-4xl space-y-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- served by our own media route with cache headers */}
+            <img
+              src={`/api/cms/media/${block.fileId}`}
+              alt={block.alt}
+              loading="lazy"
+              className="w-full rounded-lg border"
+            />
+            {block.caption ? (
+              <figcaption className="text-caption text-muted-foreground">
+                {block.caption}
+              </figcaption>
+            ) : null}
+          </figure>
+        </section>
+      );
     case 'jobs':
       return <Jobs b={block} />;
     case 'columns':

@@ -19,5 +19,6 @@ import { job as s05NotificationPurge } from './jobs/s05-notification-purge';
 import { job as s05StorageHealth } from './jobs/s05-storage-health';
 import { job as s05StorageMigrate } from './jobs/s05-storage-migrate';
 import { job as s05UploadPurge } from './jobs/s05-upload-purge';
+import { job as s06Cms } from './jobs/s06-cms';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Cms];
