@@ -34,6 +34,14 @@ import {
   variantsSaveSchema,
 } from '@/lib/catalog/products';
 import { marginPercent, resolveUnitPrice } from '@/lib/catalog/resolve';
+import {
+  adjustSchema,
+  levelsQuery,
+  movementsQuery,
+  reorderSchema,
+  transferSchema,
+  warehouseSchema,
+} from '@/lib/stock/stock';
 import { checkCustomValues, type CustomFieldDef } from '@/lib/crm/custom-values';
 import { permissions as registered } from '@/config/permissions';
 import type { PermissionDefinition } from '@/types/contracts';
@@ -207,6 +215,7 @@ async function main(): Promise<void> {
         email: '',
         postalCode: '12345',
         country: 'US',
+        confirmDuplicate: false,
       }).success,
     );
     assert.ok(
@@ -647,6 +656,92 @@ async function main(): Promise<void> {
     );
     assert.equal(marginPercent('12.5', '10'), '20.0000');
     assert.equal(marginPercent('0', '1'), null);
+  });
+  await check('stock input: adjustments, transfers, warehouses', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    const id2 = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5c';
+    const base = {
+      productId: id,
+      variantId: null,
+      warehouseId: id,
+      reason: 'correction',
+      note: '',
+    };
+    assert.ok(adjustSchema.safeParse({ ...base, mode: 'set', quantity: '12' }).success);
+    assert.ok(
+      adjustSchema.safeParse({ ...base, mode: 'set', quantity: '0' }).success,
+      'a count of zero is valid',
+    );
+    assert.ok(
+      !adjustSchema.safeParse({ ...base, mode: 'set', quantity: '-1' }).success,
+      'a count is not negative',
+    );
+    assert.ok(adjustSchema.safeParse({ ...base, mode: 'change', quantity: '-3.5' }).success);
+    assert.ok(
+      !adjustSchema.safeParse({ ...base, mode: 'change', quantity: '0' }).success,
+      'a change is not zero',
+    );
+    assert.ok(
+      !adjustSchema.safeParse({ ...base, mode: 'change', quantity: '1.00001' }).success,
+      'four places at most',
+    );
+    assert.ok(
+      !adjustSchema.safeParse({ ...base, mode: 'change', quantity: '1', reason: 'fun' }).success,
+      'reason from a fixed list',
+    );
+    assert.ok(
+      !adjustSchema.safeParse({ ...base, mode: 'change', quantity: '1', extra: 1 }).success,
+    );
+    assert.ok(
+      transferSchema.safeParse({
+        productId: id,
+        variantId: null,
+        fromWarehouseId: id,
+        toWarehouseId: id2,
+        quantity: '2',
+        note: '',
+      }).success,
+    );
+    assert.ok(
+      !transferSchema.safeParse({
+        productId: id,
+        variantId: null,
+        fromWarehouseId: id,
+        toWarehouseId: id,
+        quantity: '2',
+        note: '',
+      }).success,
+      'two warehouses',
+    );
+    assert.ok(
+      !transferSchema.safeParse({
+        productId: id,
+        variantId: null,
+        fromWarehouseId: id,
+        toWarehouseId: id2,
+        quantity: '0',
+        note: '',
+      }).success,
+    );
+    const wh = {
+      id: null,
+      expectedVersion: null,
+      name: 'Main',
+      code: 'MAIN',
+      addressLine1: '',
+      addressCity: '',
+      addressRegion: '',
+      addressPostalCode: '',
+      addressCountry: 'US',
+      isActive: true,
+    };
+    assert.ok(warehouseSchema.safeParse(wh).success);
+    assert.ok(!warehouseSchema.safeParse({ ...wh, code: 'has space' }).success);
+    assert.ok(!warehouseSchema.safeParse({ ...wh, addressCountry: 'usa' }).success);
+    assert.ok(reorderSchema.safeParse({ productId: id, reorderLevel: null }).success);
+    assert.ok(!reorderSchema.safeParse({ productId: id, reorderLevel: '-2' }).success);
+    assert.ok(!levelsQuery.safeParse({ low: '0' }).success);
+    assert.ok(!movementsQuery.safeParse({ kind: 'theft' }).success);
   });
 }
 

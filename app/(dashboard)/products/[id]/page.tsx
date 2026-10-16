@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ImagesPanel } from '@/components/inventory/images-panel';
+import { StockPanel } from '@/components/inventory/stock-panel';
 import { ProductActions } from '@/components/inventory/product-actions';
 import { ProductForm } from '@/components/inventory/product-form';
 import { RatesPanel } from '@/components/inventory/rates-panel';
@@ -19,6 +20,8 @@ import { listRates } from '@/services/product/client-rates';
 import { getProduct, type ProductView } from '@/services/product/products';
 import { searchProducts } from '@/services/product/search';
 import { listVariants } from '@/services/product/variants';
+import { ensureDefaultWarehouse, listWarehouses } from '@/services/inventory/warehouses';
+import { productStock } from '@/services/inventory/stock';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Item' };
@@ -47,21 +50,40 @@ export default async function ProductPage({
     throw error;
   }
   const perms = getService('permissions');
-  const [canUpdate, canArchive, canDelete, canRates, categories, defs, items, variants, rates] =
-    await Promise.all([
-      perms.can(actor, 'product.update', { type: 'product' }),
-      perms.can(actor, 'product.archive', { type: 'product' }),
-      perms.can(actor, 'product.delete', { type: 'product' }),
-      perms.can(actor, 'product.client_rates', { type: 'product' }),
-      listCategories(companyId).catch(() => []),
-      listDefs(companyId, 'product').catch(() => []),
-      searchProducts(companyId, { status: 'active', sort: 'name', desc: '0' }).catch(() => ({
-        rows: [],
-        next: null,
-      })),
-      listVariants(companyId, id).catch(() => []),
-      listRates(companyId, { productId: id }).catch(() => []),
-    ]);
+  const [
+    canUpdate,
+    canArchive,
+    canDelete,
+    canRates,
+    canAdjust,
+    canTransfer,
+    categories,
+    defs,
+    items,
+    variants,
+    rates,
+    levels,
+    warehouses,
+  ] = await Promise.all([
+    perms.can(actor, 'product.update', { type: 'product' }),
+    perms.can(actor, 'product.archive', { type: 'product' }),
+    perms.can(actor, 'product.delete', { type: 'product' }),
+    perms.can(actor, 'product.client_rates', { type: 'product' }),
+    perms.can(actor, 'inventory.adjust', { type: 'stock' }),
+    perms.can(actor, 'inventory.transfer', { type: 'stock' }),
+    listCategories(companyId).catch(() => []),
+    listDefs(companyId, 'product').catch(() => []),
+    searchProducts(companyId, { status: 'active', sort: 'name', desc: '0' }).catch(() => ({
+      rows: [],
+      next: null,
+    })),
+    listVariants(companyId, id).catch(() => []),
+    listRates(companyId, { productId: id }).catch(() => []),
+    productStock(companyId, id).catch(() => []),
+    ensureDefaultWarehouse(companyId)
+      .then(() => listWarehouses(companyId))
+      .catch(() => []),
+  ]);
   return (
     <div className="mx-auto max-w-4xl space-y-sp-16">
       <PageHeader
@@ -92,6 +114,18 @@ export default async function ProductPage({
           candidates={items.rows
             .filter((r) => r.kind !== 'bundle' && r.id !== product.id)
             .map((r) => ({ id: r.id, name: r.name }))}
+        />
+      ) : null}
+      {product.kind === 'product' ? (
+        <StockPanel
+          productId={product.id}
+          tracked={product.trackInventory}
+          levels={levels}
+          warehouses={warehouses}
+          variants={variants}
+          reorderLevel={product.reorderLevel}
+          canAdjust={canAdjust}
+          canTransfer={canTransfer}
         />
       ) : null}
       <ImagesPanel productId={product.id} fileIds={product.imageFileIds} canEdit={canUpdate} />

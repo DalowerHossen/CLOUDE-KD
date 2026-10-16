@@ -4,7 +4,7 @@
 - [x] 08.2 client search, views, activity, duplicates and merge (2026-10-16)
 - [x] 08.3 client data management (2026-10-16)
 - [x] 08.4 products and services (2026-10-16)
-- [ ] 08.5 inventory core
+- [x] 08.5 inventory core (2026-10-16)
 - [ ] 08.6 inventory valuation and documents
 - [ ] 08.7 suppliers and purchase orders
 - [ ] 08.8 supplier bills, payments and statements

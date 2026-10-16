@@ -38,6 +38,7 @@ export interface ProductView {
   categoryId: string | null;
   hsCode: string;
   trackInventory: boolean;
+  reorderLevel: string | null;
   status: 'active' | 'inactive' | 'archived';
   customFields: Record<string, string | number | boolean | null>;
   imageFileIds: string[];
@@ -48,7 +49,7 @@ export interface ProductView {
 }
 
 export const PRODUCT_COLUMNS =
-  'id, kind, name, description, sku, barcode, unit, unit_price, cost_price, tax_category, tax_rate, category_id, hs_code, track_inventory, status, custom_fields, image_file_ids, volume_tiers, version, created_at';
+  'id, kind, name, description, sku, barcode, unit, unit_price, cost_price, tax_category, tax_rate, category_id, hs_code, track_inventory, reorder_level, status, custom_fields, image_file_ids, volume_tiers, version, created_at';
 
 type Row = Record<string, unknown>;
 const dec = (v: unknown): string => Money.parseRounded(String(v ?? '0')).toDbString();
@@ -72,6 +73,8 @@ export function toProductView(r: Row, bundleItems: BundleItemView[]): ProductVie
     categoryId: r.category_id ? String(r.category_id) : null,
     hsCode: String(r.hs_code ?? ''),
     trackInventory: r.track_inventory === true,
+    reorderLevel:
+      r.reorder_level === null || r.reorder_level === undefined ? null : dec(r.reorder_level),
     status: String(r.status) as ProductView['status'],
     customFields: (r.custom_fields ?? {}) as ProductView['customFields'],
     imageFileIds: (r.image_file_ids as string[] | null) ?? [],

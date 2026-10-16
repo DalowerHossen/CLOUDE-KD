@@ -100,14 +100,12 @@ export async function setRate(
       .update({ unit_price: input.unitPrice })
       .eq('id', String(existing.data.id));
   } else {
-    r = await admin
-      .from('client_prices')
-      .insert({
-        company_id: companyId,
-        client_id: input.clientId,
-        product_id: input.productId,
-        unit_price: input.unitPrice,
-      });
+    r = await admin.from('client_prices').insert({
+      company_id: companyId,
+      client_id: input.clientId,
+      product_id: input.productId,
+      unit_price: input.unitPrice,
+    });
   }
   if (r.error) throw new InternalError(r.error);
   await getService('audit').record({

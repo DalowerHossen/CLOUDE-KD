@@ -10,6 +10,7 @@ import register_compliance from '@/services/compliance/register';
 import register_email from '@/services/email/register';
 import register_encryption from '@/services/encryption/register';
 import register_events from '@/services/events/register';
+import register_inventory from '@/services/inventory/register';
 import register_jobs from '@/services/jobs/register';
 import register_kyc from '@/services/kyc/register';
 import register_notification from '@/services/notification/register';
@@ -27,6 +28,7 @@ export async function bootstrapServices(): Promise<void> {
   await register_email();
   await register_encryption();
   await register_events();
+  await register_inventory();
   await register_jobs();
   await register_kyc();
   await register_notification();
