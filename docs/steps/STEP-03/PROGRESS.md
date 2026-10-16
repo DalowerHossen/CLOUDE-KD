@@ -11,7 +11,7 @@
 - [x] 03.7 sessions, devices, revoke, mid-session detection (2026-10-16)
 - [x] 03.8 OAuth Google and GitHub (2026-10-16)
 - [x] 03.9 auth service registered (2026-10-16)
-- [ ] 03.10
+- [x] 03.10 unlock workflow (2026-10-16)
 - [ ] 03.11
 - [ ] 03.12
 - [ ] 03.13

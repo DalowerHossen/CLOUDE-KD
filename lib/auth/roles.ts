@@ -43,7 +43,7 @@ export function outranks(a: Role, b: Role): boolean {
 export const SUB_ROLE_DOMAINS: Readonly<Record<AdminSubRole, readonly string[]>> = {
   kyc_reviewer: ['kyc'],
   payment_processor: ['payment', 'payout', 'processor'],
-  support_agent: ['support', 'client', 'ticket'],
+  support_agent: ['support', 'client', 'ticket', 'auth'],
   content_manager: ['content', 'cms', 'blog', 'help'],
   compliance_officer: ['audit', 'compliance', 'consent', 'dsar', 'approval'],
   fraud_analyst: ['fraud', 'security', 'risk'],
