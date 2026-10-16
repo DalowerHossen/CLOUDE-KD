@@ -3,7 +3,7 @@
 - [x] 05.1 encryption library and service (2026-10-16)
 - [x] 05.2 file validation pipeline (2026-10-16)
 - [x] 05.2b upload preparation, quarantine, scanner hook, resumable sessions, quota (2026-10-16)
-- [ ] 05.3
+- [x] 05.3 storage adapters, put/get/remove/restore, signed links, retention, upload APIs (2026-10-16)
 - [ ] 05.4
 - [ ] 05.5
 - [ ] 05.6

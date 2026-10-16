@@ -29,7 +29,8 @@ const SUSPICIOUS: ReadonlySet<RejectCode> = new Set([
 
 export interface PrepareInput {
   companyId: string | null;
-  userId: string;
+  /** Null for system callers (generated documents); the per-user rate limit is skipped then. */
+  userId: string | null;
   category: FileCategory;
   name: string;
   bytes: Uint8Array;
@@ -94,8 +95,10 @@ async function isKnownMalware(hash: string): Promise<boolean> {
 }
 
 export async function prepareUpload(input: PrepareInput): Promise<PreparedUpload> {
-  const rate = await getService('security').rateLimit(`${input.userId}`, 'upload');
-  if (!rate.allowed) throw new RateLimitError(rate.retryAfterSeconds);
+  if (input.userId) {
+    const rate = await getService('security').rateLimit(input.userId, 'upload');
+    if (!rate.allowed) throw new RateLimitError(rate.retryAfterSeconds);
+  }
 
   const rawHash = createHash('sha256').update(input.bytes).digest('hex');
   if (input.clientHash && input.clientHash.toLowerCase() !== rawHash) {

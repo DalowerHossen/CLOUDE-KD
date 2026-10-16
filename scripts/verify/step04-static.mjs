@@ -32,7 +32,11 @@ const DANGEROUS_INNER_HTML = new Set([
   'components/shared/theme-init-script.tsx',
 ]);
 // Routes that are intentionally plain handlers: probes that must not depend on any other service.
-const PLAIN_ROUTES = new Set(['app/api/health/route.ts', 'app/api/health/ready/route.ts']);
+const PLAIN_ROUTES = new Set([
+  'app/api/storage/download/[token]/route.ts',
+  'app/api/health/route.ts',
+  'app/api/health/ready/route.ts',
+]);
 
 for (const { path, text } of files) {
   if (SCAN_SELF.test(path)) continue;
