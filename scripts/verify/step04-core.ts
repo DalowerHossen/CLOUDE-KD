@@ -6,7 +6,19 @@ import { securityHeaders } from '@/lib/security/headers';
 import { hasHeaderInjection, safeFileName, stripHeaderInjection } from '@/lib/security/http-safety';
 import { isNonPublicIp } from '@/lib/security/ip';
 import { isAllowedExternalRedirect, safeRedirectPath } from '@/lib/security/redirect';
+import {
+  cleanString,
+  detectInjection,
+  detectInjectionDeep,
+  hasPathTraversal,
+  sanitize,
+  SanitizerError,
+} from '@/lib/security/sanitizer';
+import { sanitizeHtml, stripHtml } from '@/lib/security/rich-text';
 import { SsrfError, resolvePublicAddresses, validateOutboundUrl } from '@/lib/security/ssrf';
+
+/** Builds a character from its hexadecimal code point, so the source file stays ASCII. */
+const U = (hex: string): string => String.fromCodePoint(Number.parseInt(hex, 16));
 
 let failures = 0;
 async function check(name: string, fn: () => Promise<void> | void): Promise<void> {
@@ -182,6 +194,90 @@ async function main(): Promise<void> {
     assert.equal(safeFileName('../../etc/passwd'), 'passwd');
     assert.equal(safeFileName('a"b;c.pdf'), 'abc.pdf');
     assert.equal(safeFileName('..'), 'file');
+  });
+
+  await check('sanitizer: NFC, invisible characters, null bytes, dangerous keys', () => {
+    assert.equal(cleanString('e' + U('0301') + ''), '' + U('00e9') + '');
+    assert.equal(cleanString('ab' + U('200b') + 'c' + U('202e') + 'd' + U('feff') + ''), 'abcd');
+    assert.equal(cleanString('a' + U('0000') + 'b'), 'ab');
+    assert.equal(cleanString('line\nnext\ttab'), 'line\nnext\ttab');
+    const polluted = JSON.parse(
+      '{"a":1,"__proto__":{"admin":true},"constructor":{"x":1},"nested":{"prototype":1,"ok":"v\\u200b"}}',
+    ) as Record<string, unknown>;
+    const clean = sanitize(polluted) as { a: number; nested: Record<string, unknown> };
+    assert.equal(Object.keys(clean).sort().join(','), 'a,nested');
+    assert.deepEqual(clean.nested, { ok: 'v' });
+    assert.equal(({} as Record<string, unknown>).admin, undefined);
+    assert.notEqual(sanitize(polluted), polluted);
+    let deep: unknown = 'x';
+    for (let i = 0; i < 40; i++) deep = [deep];
+    assert.throws(() => sanitize(deep), SanitizerError);
+    assert.deepEqual(sanitize([1, null, true, 'a' + U('200b') + '']), [1, null, true, 'a']);
+  });
+
+  await check('sanitizer: path traversal spellings', () => {
+    for (const bad of [
+      '../x',
+      'a/../../b',
+      '..\\win',
+      '%2e%2e/x',
+      '%252e%252e%252fx',
+      '/etc/passwd',
+      'C:\\x',
+      'a' + U('0000') + 'b',
+      '%00',
+      '....//x%2f',
+    ]) {
+      assert.equal(hasPathTraversal(bad), true, bad);
+    }
+    for (const good of ['invoice-2026.pdf', 'folder/file.txt', 'a.b.c'])
+      assert.equal(hasPathTraversal(good), false, good);
+  });
+
+  await check('injection detection: payload list is flagged, normal text is not', () => {
+    const sql = [
+      "' OR 1=1 --",
+      "1' UNION SELECT username, password FROM users --",
+      "x'; DROP TABLE invoices; --",
+      '1) or (1)=(1',
+      'SELECT * FROM information_schema.tables',
+      "'; select pg_sleep(5) --",
+      'a; truncate table b',
+    ];
+    const xss = [
+      '<script>alert(1)</script>',
+      '<img src=x onerror=alert(1)>',
+      'javascript:alert(1)',
+      '<svg onload=alert(1)>',
+      '"><iframe src=//evil>',
+      '<a href="data:text/html;base64,AAA">x</a>',
+      '<body onload = "x()">',
+    ];
+    for (const p of sql) assert.equal(detectInjection(p), 'sql_injection_attempt', p);
+    for (const p of xss) assert.equal(detectInjection(p), 'xss_attempt', p);
+    for (const ok of [
+      'Invoice for Acme Corp, net 30',
+      "O'Brien and Sons",
+      'Select your plan from the list',
+      'Total: 1,200.50 USD',
+      'We update the price - see you soon',
+    ]) {
+      assert.equal(detectInjection(ok), null, ok);
+    }
+    assert.equal(detectInjectionDeep({ a: [{ b: '<script>x</script>' }] }), 'xss_attempt');
+    assert.equal(detectInjectionDeep({ '<script>': 'x' }), 'xss_attempt');
+    assert.equal(detectInjectionDeep({ a: 'fine', b: [1, 2] }), null);
+  });
+
+  await check('rich text: scripts, handlers and unsafe links removed', () => {
+    const dirty =
+      '<p onclick="x()">Hi <b>there</b></p><script>alert(1)</script><a href="javascript:alert(1)">l</a><img src=x onerror=alert(1)><iframe src="https://evil.example"></iframe>';
+    const clean = sanitizeHtml(dirty);
+    assert.ok(clean.includes('<b>there</b>'));
+    for (const bad of ['<script', 'onclick', 'javascript:', 'onerror', '<iframe', '<img'])
+      assert.equal(clean.includes(bad), false, bad);
+    assert.equal(stripHtml('<p>a<b>b</b></p>'), 'ab');
+    assert.ok(sanitizeHtml('<a href="https://example.com">ok</a>').includes('https://example.com'));
   });
 }
 
