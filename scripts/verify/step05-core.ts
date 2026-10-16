@@ -35,6 +35,15 @@ import {
   isValidDomain,
   scoreReport,
 } from '@/lib/email/dns';
+import {
+  DEFAULT_BRAND,
+  extractVariables,
+  fillVariables,
+  sampleData,
+  sanitizeBodyHtml,
+  unknownVariables,
+  wrapInShell,
+} from '@/lib/email/template-body';
 import { createHttpScanner } from '@/lib/storage/scanner';
 import { maskEmail, maskIdentifier, maskName, maskPhone } from '@/lib/encryption/redact';
 
@@ -737,6 +746,66 @@ async function main(): Promise<void> {
       '',
     ])
       assert.equal(isValidDomain(bad), false, bad);
+  });
+  await check('template bodies: variables, escaping, strict html, brand shell', () => {
+    assert.deepEqual(extractVariables('Hi {{ name }}, {{amount}} {{name}} {{1bad}} {{ }}'), [
+      'name',
+      'amount',
+    ]);
+    assert.deepEqual(unknownVariables('{{a}} {{b}}', ['a']), ['b']);
+    assert.equal(
+      fillVariables('Hi {{name}} <{{missing}}>', { name: '<b>"Jo"</b>' }, 'html'),
+      'Hi &lt;b&gt;&quot;Jo&quot;&lt;/b&gt; <>',
+    );
+    assert.equal(
+      fillVariables('Re: {{subject}}', { subject: 'a\r\nBcc: x@y.z' }, 'text'),
+      'Re: a Bcc: x@y.z',
+    );
+    const dirty =
+      '<p style="color:red;background:url(http://t/p)" onclick="x()">Hi {{name}}</p><script>alert(1)</script><a href="javascript:alert(1)">x</a><a href="{{payUrl}}">pay</a><img src="https://a/b.png" onerror="x()"><iframe src="https://e"></iframe><form action="https://e"><input></form>';
+    const clean = sanitizeBodyHtml(dirty);
+    for (const bad of [
+      'script',
+      'javascript:',
+      'onclick',
+      'onerror',
+      'iframe',
+      '<form',
+      '<input',
+      'url(',
+    ])
+      assert.ok(!clean.includes(bad), `${bad} survived`);
+    assert.ok(
+      clean.includes('{{payUrl}}') &&
+        clean.includes('color:red') &&
+        clean.includes('rel="noopener noreferrer"'),
+    );
+    // After the values are filled the body is cleaned again; an address that turned into a script address is dropped.
+    const filled = sanitizeBodyHtml(
+      fillVariables(clean, { name: 'Jo', payUrl: 'javascript:alert(1)' }, 'html'),
+      { allowPlaceholderUri: false },
+    );
+    assert.ok(!filled.includes('javascript:'));
+    const shell = wrapInShell(
+      {
+        ...DEFAULT_BRAND,
+        productName: 'Acme <Co>',
+        primaryColor: 'red;}</style>',
+        logoUrl: 'http://insecure/logo.png',
+      },
+      '<p>x</p>',
+    );
+    assert.ok(
+      shell.includes('Acme &lt;Co&gt;') &&
+        !shell.includes('</style>') &&
+        !shell.includes('insecure'),
+      'brand fields are escaped and checked',
+    );
+    assert.ok(shell.includes('#1d4ed8'), 'a bad color falls back to the default');
+    assert.deepEqual(sampleData(['name', 'payUrl']), {
+      name: '[name]',
+      payUrl: 'https://app.example.com/open',
+    });
   });
 }
 

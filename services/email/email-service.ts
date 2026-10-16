@@ -41,7 +41,9 @@ async function submit(
     throw new ValidationError(`The e-mail template "${input.template}" does not exist.`);
   if (input.idempotencyKey.length < 8)
     throw new ValidationError('The idempotency key is too short.');
-  const rendered = await renderTemplate(input.template, input.data);
+  const rendered = await renderTemplate(input.template, input.data, {
+    companyId: input.companyId ?? null,
+  });
   const token = newTrackingToken();
   const track = !NO_TRACKING_PREFIXES.some((p) => input.template.startsWith(p));
   let html = rendered.html;

@@ -20,3 +20,15 @@ export const RAMP_UP_DAILY_LIMIT = 100;
 /** Hosts that links in tenant-edited templates may point to besides the application itself (feature 487). */
 export const EXTRA_LINK_HOSTS: readonly string[] = [];
 export const PLATFORM_SENDER_NAME = 'KD SOLUTION IT';
+/** Templates that nobody can override: sign-in, security codes and alerts keep their exact wording. */
+export const LOCKED_TEMPLATE_PREFIXES: readonly string[] = ['auth.', 'security.', 'system.'];
+/** Templates a company may customise for its own clients and team. */
+export const TENANT_EDITABLE_PREFIXES: readonly string[] = [
+  'invoice.',
+  'estimate.',
+  'payment.',
+  'payslip.',
+  'notification.',
+  'digest.',
+  'report.',
+];

@@ -6,6 +6,9 @@ import { createElement, type ComponentType } from 'react';
 import { emailCatalog } from '@/emails/catalog';
 import { ValidationError } from '@/lib/errors';
 import { htmlToText } from '@/lib/email/content';
+import { fillVariables, sanitizeBodyHtml, wrapInShell } from '@/lib/email/template-body';
+import { getAdminSupabase } from '@/lib/supabase/admin';
+import { resolveBrand } from './brand';
 import type { EmailTemplateDefinition } from '@/types/contracts';
 
 interface Registered {
@@ -66,13 +69,66 @@ export interface Rendered {
   text: string;
 }
 
-export async function renderTemplate(id: string, data: Record<string, unknown>): Promise<Rendered> {
+/** The active edited version for a company, else the platform's edited version, else none. */
+export async function activeOverride(
+  templateId: string,
+  companyId: string | null,
+): Promise<{ subject: string; body: string; scope: 'company' | 'platform' } | null> {
+  const admin = getAdminSupabase();
+  const lookup = async (id: string | null): Promise<{ subject: string; body: string } | null> => {
+    let query = admin
+      .from('email_template_overrides')
+      .select('subject, body_html')
+      .eq('template_id', templateId)
+      .eq('status', 'active')
+      .is('deleted_at', null);
+    query = id ? query.eq('company_id', id) : query.is('company_id', null);
+    const { data } = await query.maybeSingle();
+    return data ? { subject: String(data.subject), body: String(data.body_html) } : null;
+  };
+  if (companyId) {
+    const own = await lookup(companyId);
+    if (own) return { ...own, scope: 'company' };
+  }
+  const platform = await lookup(null);
+  return platform ? { ...platform, scope: 'platform' } : null;
+}
+
+/** Renders an edited body: values are escaped, the result is cleaned again and put into the brand shell. */
+export async function renderOverride(
+  subject: string,
+  body: string,
+  data: Record<string, unknown>,
+  companyId: string | null,
+): Promise<Rendered> {
+  const brand = await resolveBrand(companyId);
+  const filled = sanitizeBodyHtml(fillVariables(body, data, 'html'), {
+    allowPlaceholderUri: false,
+  });
+  const html = wrapInShell(brand, filled, fillVariables(subject, data, 'text'));
+  return {
+    subject: fillVariables(subject, data, 'text').slice(0, 300),
+    html,
+    text: htmlToText(html),
+  };
+}
+
+export async function renderTemplate(
+  id: string,
+  data: Record<string, unknown>,
+  options: { companyId?: string | null; ignoreOverride?: boolean } = {},
+): Promise<Rendered> {
   const entry = registry().get(id);
   if (!entry) throw new ValidationError(`The e-mail template "${id}" does not exist.`);
-  if (!entry.component) throw new ValidationError(`The e-mail template "${id}" has no design yet.`);
   const missing = missingVariables(entry.definition, data);
   if (missing.length > 0)
     throw new ValidationError(`The e-mail template "${id}" needs: ${missing.join(', ')}.`);
+  if (!options.ignoreOverride) {
+    const override = await activeOverride(id, options.companyId ?? null);
+    if (override)
+      return renderOverride(override.subject, override.body, data, options.companyId ?? null);
+  }
+  if (!entry.component) throw new ValidationError(`The e-mail template "${id}" has no design yet.`);
   const element = createElement(entry.component as ComponentType<Record<string, unknown>>, data);
   const html = (await render(element)).replace(/<!--\/?\$-->/g, '');
   return { subject: renderSubject(entry.definition.subject, data), html, text: htmlToText(html) };

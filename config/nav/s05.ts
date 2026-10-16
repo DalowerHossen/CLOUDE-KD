@@ -29,4 +29,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 420,
   },
+  {
+    id: 'admin-emails',
+    labelKey: 's05Storage.nav.adminEmails',
+    href: '/admin/emails',
+    icon: 'mail',
+    group: 'admin',
+    roles: ['super_admin', 'ceo'],
+    order: 410,
+  },
 ];
