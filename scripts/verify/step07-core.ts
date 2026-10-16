@@ -22,6 +22,7 @@ import { permissions as registered } from '@/config/permissions';
 import type { PermissionDefinition } from '@/types/contracts';
 import { FORMS, EDITABLE_SECTIONS } from '@/lib/company/forms';
 import { stepSchema } from '@/lib/company/steps';
+import { peopleActionSchema, tenantListQuery, userListQuery } from '@/lib/company/admin-input';
 
 let failures = 0;
 async function check(name: string, fn: () => Promise<void> | void): Promise<void> {
@@ -555,6 +556,40 @@ async function main(): Promise<void> {
         stepSchema.safeParse({ action: 'resume' }).success,
     );
     assert.ok(!stepSchema.safeParse({ action: 'delete' }).success);
+  });
+
+  await check('admin people input', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    assert.ok(
+      peopleActionSchema.safeParse({ action: 'user.suspend', id, reason: 'Repeated chargebacks' })
+        .success,
+    );
+    assert.ok(
+      !peopleActionSchema.safeParse({ action: 'user.suspend', id, reason: 'short' }).success,
+    );
+    assert.ok(
+      !peopleActionSchema.safeParse({ action: 'tenant.suspend', id, reason: '<b>bad reason</b>' })
+        .success,
+    );
+    assert.ok(!peopleActionSchema.safeParse({ action: 'user.delete', id }).success);
+    assert.ok(
+      !peopleActionSchema.safeParse({ action: 'user.verify_email', id, extra: 1 }).success,
+      'strict',
+    );
+    assert.ok(
+      peopleActionSchema.safeParse({ action: 'note', subject: 'tenant', id, body: 'Called' })
+        .success,
+    );
+    assert.ok(
+      !peopleActionSchema.safeParse({ action: 'note', subject: 'tenant', id, body: '' }).success,
+    );
+    assert.equal(userListQuery.parse({}).page, 1);
+    assert.ok(!userListQuery.safeParse({ role: 'ceo' }).success);
+    assert.ok(!tenantListQuery.safeParse({ page: '0' }).success);
+    assert.ok(!tenantListQuery.safeParse({ unknown: 'x' }).success);
+    const ids = new Set(registered.map((d: PermissionDefinition) => d.action));
+    for (const a of ['admin.home', 'people.read', 'people.note', 'people.manage'])
+      assert.ok(ids.has(a), a);
   });
 }
 

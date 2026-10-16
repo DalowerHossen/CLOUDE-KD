@@ -7,10 +7,11 @@ import { permissions as s03Auth } from './permissions/s03-auth';
 import { permissions as s04Security } from './permissions/s04-security';
 import { permissions as s05StorageEmail } from './permissions/s05-storage-email';
 import { permissions as s06Site } from './permissions/s06-site';
+import { permissions as s07Admin } from './permissions/s07-admin';
 import { permissions as s07Company } from './permissions/s07-company';
 import { permissions as s07Data } from './permissions/s07-data';
 import { permissions as s07Domain } from './permissions/s07-domain';
 import { permissions as s07Kyc } from './permissions/s07-kyc';
 import { permissions as s07Team } from './permissions/s07-team';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Team];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Team];
