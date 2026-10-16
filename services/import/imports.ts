@@ -201,19 +201,29 @@ export async function createImport(actor: Actor, input: ImportUpload): Promise<I
   return getImport(companyId, String(data.id));
 }
 
+/** Only the plain data of the fields, so the page can pass them to the browser. */
+function plainFields(fields: readonly TransferField[]): TransferField[] {
+  return fields.map((f) => ({
+    key: f.key,
+    label: f.label,
+    required: f.required,
+    aliases: f.aliases,
+  }));
+}
+
 export async function getImport(companyId: string, id: string): Promise<ImportDetail> {
   const row = await loadRow(companyId, id);
   const view = toView(row);
   const target = getImportTarget(view.target);
   if (view.status !== 'uploaded' && view.status !== 'previewed')
-    return { ...view, headers: [], sample: [], suggested: {}, fields: target.fields };
+    return { ...view, headers: [], sample: [], suggested: {}, fields: plainFields(target.fields) };
   const table = await readTable(companyId, row);
   return {
     ...view,
     headers: table.headers,
     sample: table.data.slice(0, 5),
     suggested: suggestMapping(table.headers, target.fields),
-    fields: target.fields,
+    fields: plainFields(target.fields),
   };
 }
 

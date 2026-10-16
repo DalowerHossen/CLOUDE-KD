@@ -38,4 +38,10 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner', 'staff'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'product.bulk',
+    description: 'Change many products at once',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
 ];

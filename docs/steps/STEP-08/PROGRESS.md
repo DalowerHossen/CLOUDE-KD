@@ -10,6 +10,6 @@
 - [x] 08.7 suppliers and purchase orders
 - [x] 08.8 supplier bills, payments and statements
 - [x] 08.9 import and export framework
-- [ ] 08.10 import and export for clients, products and suppliers
+- [x] 08.10 import and export for clients, products and suppliers
 - [ ] 08.11 UI completion
 - [ ] 08.12 fragments, verification and closure

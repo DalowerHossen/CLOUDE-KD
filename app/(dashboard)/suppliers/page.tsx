@@ -1,6 +1,8 @@
 // path: app/(dashboard)/suppliers/page.tsx
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { BulkBar } from '@/components/crm/bulk-bar';
+import { ExportButton } from '@/components/transfer/export-button';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState, ErrorState } from '@/components/shared/state-views';
@@ -22,6 +24,18 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Suppliers' };
 
 const columns: readonly DataColumn<SupplierRow>[] = [
+  {
+    key: 'select',
+    header: '',
+    cell: (r) => (
+      <input
+        type="checkbox"
+        name="ids"
+        value={r.id}
+        aria-label={t('s08Crm.bulk.selectRow', { name: r.name })}
+      />
+    ),
+  },
   { key: 'name', header: t('s08Crm.suppliers.name'), primary: true, cell: (r) => r.name },
   {
     key: 'email',
@@ -83,9 +97,18 @@ export default async function SuppliersPage({
   } catch {
     result = null;
   }
-  const canWrite = await getService('permissions').can(actor, 'supplier.write', {
-    type: 'supplier',
-  });
+  const perms = getService('permissions');
+  const [canWrite, canBulk, canDelete, canExport, canImport] = await Promise.all([
+    perms.can(actor, 'supplier.write', { type: 'supplier' }),
+    perms.can(actor, 'supplier.bulk', { type: 'supplier' }),
+    perms.can(actor, 'supplier.delete', { type: 'supplier' }),
+    perms.can(actor, 'list.export', { type: 'supplier' }),
+    perms.can(actor, 'import.manage', { type: 'import_job' }),
+  ]);
+  const bulkActions = [
+    ...(canWrite ? (['archive', 'reactivate'] as const) : []),
+    ...(canDelete ? (['delete'] as const) : []),
+  ];
   const base: Record<string, string> = {};
   if (query.q) base.q = query.q;
   if (query.status) base.status = query.status;
@@ -99,11 +122,21 @@ export default async function SuppliersPage({
         title={t('s08Crm.suppliers.title')}
         description={t('s08Crm.suppliers.description')}
         actions={
-          canWrite ? (
-            <Link className="underline" href="/suppliers/new">
-              {t('s08Crm.suppliers.newSupplier')}
-            </Link>
-          ) : undefined
+          <>
+            {canImport ? (
+              <Link className="underline" href="/imports">
+                {t('s08Crm.transfer.importLink')}
+              </Link>
+            ) : null}
+            {canExport ? (
+              <ExportButton target="suppliers" q={query.q} status={query.status} />
+            ) : null}
+            {canWrite ? (
+              <Link className="underline" href="/suppliers/new">
+                {t('s08Crm.suppliers.newSupplier')}
+              </Link>
+            ) : null}
+          </>
         }
       />
       <form
@@ -149,6 +182,9 @@ export default async function SuppliersPage({
           </Link>
         </div>
       </form>
+      {canBulk && bulkActions.length > 0 ? (
+        <BulkBar allowed={bulkActions} endpoint="/api/suppliers/bulk" />
+      ) : null}
       {result === null ? (
         <ErrorState description={t('s08Crm.suppliers.loadError')} />
       ) : (

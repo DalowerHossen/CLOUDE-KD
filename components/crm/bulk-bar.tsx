@@ -18,6 +18,8 @@ const resultBody = z.object({
 const ACTIONS = [
   'archive',
   'reactivate',
+  'activate',
+  'deactivate',
   'delete',
   'add_tag',
   'remove_tag',
@@ -28,6 +30,8 @@ type Action = (typeof ACTIONS)[number];
 const LABEL: Record<Action, StringKey> = {
   archive: 's08Crm.bulk.archive',
   reactivate: 's08Crm.bulk.reactivate',
+  activate: 's08Crm.bulk.activate',
+  deactivate: 's08Crm.bulk.deactivate',
   delete: 's08Crm.bulk.delete',
   add_tag: 's08Crm.bulk.addTag',
   remove_tag: 's08Crm.bulk.removeTag',
@@ -36,7 +40,13 @@ const LABEL: Record<Action, StringKey> = {
 };
 
 /** Reads the ticked rows (checkboxes named "ids" on the page), asks to confirm with the count, then applies. */
-export function BulkBar({ allowed }: { allowed: readonly Action[] }): JSX.Element {
+export function BulkBar({
+  allowed,
+  endpoint = '/api/clients/bulk',
+}: {
+  allowed: readonly Action[];
+  endpoint?: string;
+}): JSX.Element {
   const router = useRouter();
   const [action, setAction] = useState<Action | ''>('');
   const [value, setValue] = useState('');
@@ -61,7 +71,7 @@ export function BulkBar({ allowed }: { allowed: readonly Action[] }): JSX.Elemen
       body = { ...body, value: value.trim() === '' ? null : Math.trunc(Number(value)) };
     setBusy(true);
     try {
-      const response = await fetch('/api/clients/bulk', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),

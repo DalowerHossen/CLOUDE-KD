@@ -56,4 +56,13 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 170,
   },
+  {
+    id: 'imports',
+    labelKey: 's08Crm.nav.imports',
+    href: '/imports',
+    icon: 'layers',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 180,
+  },
 ];

@@ -1,6 +1,8 @@
 // path: app/(dashboard)/products/page.tsx
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { BulkBar } from '@/components/crm/bulk-bar';
+import { ExportButton } from '@/components/transfer/export-button';
 import { ViewsPanel } from '@/components/crm/views-panel';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
@@ -10,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { productListQuery, type ProductListQuery } from '@/lib/catalog/products';
+import { getService } from '@/lib/container';
 import { t, type StringKey } from '@/lib/i18n';
 import { Money } from '@/lib/utils/currency';
 import { formatMoney } from '@/lib/utils/formatting';
@@ -29,6 +32,18 @@ const statusKey = {
 } as const;
 
 const columns: readonly DataColumn<ProductListItem>[] = [
+  {
+    key: 'select',
+    header: '',
+    cell: (r) => (
+      <input
+        type="checkbox"
+        name="ids"
+        value={r.id}
+        aria-label={t('s08Crm.bulk.selectRow', { name: r.name })}
+      />
+    ),
+  },
   { key: 'name', header: t('s08Crm.products.name'), primary: true, cell: (r) => r.name },
   { key: 'sku', header: t('s08Crm.products.sku'), hideOnMobile: true, cell: (r) => r.sku ?? '-' },
   {
@@ -104,6 +119,18 @@ export default async function ProductsPage({
   } catch {
     result = null;
   }
+  const perms = getService('permissions');
+  const [canBulk, canArchive, canDelete, canExport, canImport] = await Promise.all([
+    perms.can(actor, 'product.bulk', { type: 'product' }),
+    perms.can(actor, 'product.archive', { type: 'product' }),
+    perms.can(actor, 'product.delete', { type: 'product' }),
+    perms.can(actor, 'list.export', { type: 'product' }),
+    perms.can(actor, 'import.manage', { type: 'import_job' }),
+  ]);
+  const bulkActions = [
+    ...(canArchive ? (['archive', 'activate', 'deactivate'] as const) : []),
+    ...(canDelete ? (['delete'] as const) : []),
+  ];
   const base = params(query);
   const nextHref = result?.next
     ? `/products?${new URLSearchParams({ ...base, after: result.next }).toString()}`
@@ -118,6 +145,14 @@ export default async function ProductsPage({
             <Link className="underline" href="/products/categories">
               {t('s08Crm.products.categoriesLink')}
             </Link>
+            {canImport ? (
+              <Link className="underline" href="/imports">
+                {t('s08Crm.transfer.importLink')}
+              </Link>
+            ) : null}
+            {canExport ? (
+              <ExportButton target="products" q={query.q} status={query.status} />
+            ) : null}
             <Link className="underline" href="/products/new">
               {t('s08Crm.products.newItem')}
             </Link>
@@ -204,6 +239,9 @@ export default async function ProductsPage({
         </div>
       </form>
       <ViewsPanel listKey="products" basePath="/products" views={views} current={base} />
+      {canBulk && bulkActions.length > 0 ? (
+        <BulkBar allowed={bulkActions} endpoint="/api/products/bulk" />
+      ) : null}
       {result === null ? (
         <ErrorState description={t('s08Crm.products.loadError')} />
       ) : (

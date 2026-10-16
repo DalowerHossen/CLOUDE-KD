@@ -40,6 +40,9 @@ import {
   suggestMapping,
 } from '@/lib/transfer/mapping';
 import { readXlsx } from '@/lib/transfer/xlsx';
+import { deepMerge } from '@/lib/transfer/rows';
+import { parseClientRow, parseProductRow, parseSupplierRow } from '@/lib/transfer/targets';
+import { productBulkSchema, supplierBulkSchema } from '@/lib/transfer/bulk';
 import { deflateRawSync } from 'node:zlib';
 import { PurchaseOrderEmail } from '@/emails/crm/purchase-order';
 import { Money } from '@/lib/utils/currency';
@@ -1224,6 +1227,94 @@ async function main(): Promise<void> {
     );
     assert.ok(exportSchema.safeParse({ target: 'products', q: 'a' }).success);
     assert.ok(!exportSchema.safeParse({ target: 'products', all: true }).success);
+  });
+  await check('import rows: clients, products, suppliers', () => {
+    const client = parseClientRow({
+      name: 'Acme Ltd',
+      email: 'SALES@Acme.test',
+      billing_postal_code: '10001',
+      billing_country: 'us',
+      tags: 'vip; north ;',
+      payment_terms_days: '30',
+      do_not_contact: 'No',
+    });
+    assert.ok(client.ok);
+    if (client.ok) {
+      assert.equal(client.value.input.email, 'sales@acme.test');
+      assert.equal(client.value.input.billing.country, 'US');
+      assert.deepEqual(client.value.input.tags, ['vip', 'north']);
+      assert.equal(client.value.input.paymentTermsDays, 30);
+      assert.deepEqual(Object.keys(client.value.patch).sort(), [
+        'billing',
+        'doNotContact',
+        'email',
+        'name',
+        'paymentTermsDays',
+        'tags',
+      ]);
+      const merged = deepMerge(
+        { name: 'Old', billing: { line1: 'Keep me', postalCode: '1' }, tags: ['a'] },
+        client.value.patch,
+      );
+      assert.equal(
+        (merged.billing as { line1: string }).line1,
+        'Keep me',
+        'an overwrite keeps untouched fields',
+      );
+      assert.equal((merged.billing as { postalCode: string }).postalCode, '10001');
+    }
+    const noZip = parseClientRow({ name: 'No Zip', billing_country: 'US' });
+    assert.ok(!noZip.ok, 'the billing postal code is required');
+    const bad = parseClientRow({
+      name: 'X',
+      billing_postal_code: '1',
+      billing_country: 'USA',
+      payment_terms_days: '4000',
+      opening_balance: '1,5',
+    });
+    assert.ok(!bad.ok);
+    if (!bad.ok) assert.ok(bad.errors.length >= 3, bad.errors.join(' | '));
+    assert.ok(
+      !parseClientRow({ name: '<script>', billing_postal_code: '1', billing_country: 'US' }).ok,
+      'angle brackets are refused',
+    );
+
+    const product = parseProductRow({
+      name: 'Widget',
+      unit_price: '2.5',
+      sku: 'W-1',
+      kind: 'service',
+      track_inventory: 'yes',
+      category: 'Parts',
+    });
+    assert.ok(product.ok);
+    if (product.ok) {
+      assert.equal(product.value.input.trackInventory, false, 'a service has no stock');
+      assert.equal(product.value.categoryName, 'Parts');
+      assert.equal(product.value.input.unit, 'unit');
+    }
+    assert.ok(!parseProductRow({ name: 'Widget', unit_price: '-1' }).ok, 'no negative price');
+    assert.ok(
+      !parseProductRow({ name: 'Widget', unit_price: '1', kind: 'bundle' }).ok,
+      'bundles are not imported',
+    );
+
+    const supplier = parseSupplierRow({
+      name: 'Acme Supply',
+      email: 'a@b.test',
+      address_country: 'ca',
+    });
+    assert.ok(supplier.ok);
+    if (supplier.ok) assert.equal(supplier.value.input.addressCountry, 'CA');
+    assert.ok(!parseSupplierRow({ name: 'Acme', website: 'http://x.test' }).ok);
+    assert.ok(!parseSupplierRow({ name: '' }).ok);
+    const id1 = '0190a0a0-0000-7000-8000-000000000001';
+    assert.ok(productBulkSchema.safeParse({ action: 'activate', ids: [id1, id1] }).success);
+    assert.ok(!productBulkSchema.safeParse({ action: 'reactivate', ids: [id1] }).success);
+    assert.ok(!supplierBulkSchema.safeParse({ action: 'delete', ids: [] }).success);
+    assert.ok(
+      !supplierBulkSchema.safeParse({ action: 'delete', ids: Array(201).fill(id1) }).success,
+    );
   });
 }
 

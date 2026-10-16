@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BulkBar } from '@/components/crm/bulk-bar';
+import { ExportButton } from '@/components/transfer/export-button';
 import { ViewsPanel } from '@/components/crm/views-panel';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
@@ -132,13 +133,16 @@ export default async function ClientsPage({
     result = null;
   }
   const perms = getService('permissions');
-  const [canMerge, canBulk, canArchive, canDelete, canUpdate] = await Promise.all([
-    perms.can(actor, 'client.merge', { type: 'client' }),
-    perms.can(actor, 'client.bulk', { type: 'client' }),
-    perms.can(actor, 'client.archive', { type: 'client' }),
-    perms.can(actor, 'client.delete', { type: 'client' }),
-    perms.can(actor, 'client.update', { type: 'client' }),
-  ]);
+  const [canMerge, canBulk, canArchive, canDelete, canUpdate, canExport, canImport] =
+    await Promise.all([
+      perms.can(actor, 'client.merge', { type: 'client' }),
+      perms.can(actor, 'client.bulk', { type: 'client' }),
+      perms.can(actor, 'client.archive', { type: 'client' }),
+      perms.can(actor, 'client.delete', { type: 'client' }),
+      perms.can(actor, 'client.update', { type: 'client' }),
+      perms.can(actor, 'list.export', { type: 'client' }),
+      perms.can(actor, 'import.manage', { type: 'import_job' }),
+    ]);
   const bulkActions = [
     ...(canArchive ? (['archive', 'reactivate'] as const) : []),
     ...(canUpdate ? (['add_tag', 'remove_tag', 'set_risk', 'set_terms'] as const) : []),
@@ -160,6 +164,12 @@ export default async function ClientsPage({
                 {t('s08Crm.search.duplicatesLink')}
               </Link>
             ) : null}
+            {canImport ? (
+              <Link className="underline" href="/imports">
+                {t('s08Crm.transfer.importLink')}
+              </Link>
+            ) : null}
+            {canExport ? <ExportButton target="clients" q={query.q} status={status} /> : null}
             <Link className="underline" href="/clients/new">
               {t('s08Crm.clients.newClient')}
             </Link>
