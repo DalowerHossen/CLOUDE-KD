@@ -9,7 +9,8 @@ import { getService } from '@/lib/container';
 import { ForbiddenError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { pageContentSchema, pageMetaSchema, type BlockInput } from '@/lib/cms/blocks';
-import { DEFAULT_PAGES, LEGAL_PAGES, defaultPage, pathOf } from '@/lib/cms/defaults';
+import { DEFAULT_PAGES, HELP_PAGES, LEGAL_PAGES, defaultPage, pathOf } from '@/lib/cms/defaults';
+import { isReservedSlug } from '@/lib/cms/reserved';
 import { sanitizeBlocks } from '@/lib/cms/sanitize-blocks';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
@@ -109,8 +110,9 @@ export async function listPages(kind: 'page' | 'legal' | 'help' = 'page'): Promi
     : { data: [], error: null };
   if (open.error) throw new InternalError(open.error);
   const out = new Map<string, PageListItem>();
-  if (kind === 'page' || kind === 'legal') {
-    for (const [slug, def] of Object.entries(kind === 'legal' ? LEGAL_PAGES : DEFAULT_PAGES))
+  if (kind === 'page' || kind === 'legal' || kind === 'help') {
+    const defaults = kind === 'legal' ? LEGAL_PAGES : kind === 'help' ? HELP_PAGES : DEFAULT_PAGES;
+    for (const [slug, def] of Object.entries(defaults))
       out.set(slug, {
         slug,
         kind,
@@ -271,6 +273,10 @@ export async function runCmsAction(
   const audit = getService('audit');
   switch (input.action) {
     case 'save': {
+      if (kind === 'page' && !(input.slug in DEFAULT_PAGES) && isReservedSlug(input.slug))
+        throw new ValidationError('This address is used by the application. Choose another.');
+      if (kind === 'page' && input.slug.includes('/'))
+        throw new ValidationError('Site pages use a single address segment.');
       const content = parseContent(input);
       const { data, error } = await admin.rpc('kd_cms_save_draft', {
         p_slug: input.slug,

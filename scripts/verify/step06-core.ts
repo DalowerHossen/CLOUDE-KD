@@ -18,6 +18,15 @@ import {
 import { invoiceTotals, lateFee, salesTax, formatUsd } from '@/lib/marketing/tools';
 import { normalCdf, significance } from '@/lib/marketing/significance';
 import { experimentSchema, leadCaptureSchema } from '@/services/marketing/schemas';
+import { HELP_CATEGORIES, HELP_PAGES } from '@/lib/cms/defaults';
+import {
+  dayBars,
+  overallLevel,
+  publicState,
+  uptimePercent,
+  type PublicIncident,
+} from '@/lib/support/status';
+import { isReservedSlug } from '@/lib/cms/reserved';
 import { plainText, readMinutes, slugify } from '@/lib/blog/text';
 import { postActionSchema, postSaveSchema, publicListQuery } from '@/services/blog/schemas';
 import { PLAN_KEYS } from '@/config/plans';
@@ -99,7 +108,7 @@ async function main(): Promise<void> {
         for (const m of text.matchAll(/"href":"([^"]+)"/g)) hrefSchema.parse(m[1]);
         assert.equal(pathOf(slug), slug === 'home' ? '/' : `/${slug}`);
       }
-      assert.equal(Object.keys(DEFAULT_PAGES).length, 8);
+      assert.equal(Object.keys(DEFAULT_PAGES).length, 11);
       assert.ok(
         !hrefSchema.safeParse('javascript:alert(1)').success &&
           !hrefSchema.safeParse('//evil.test').success &&
@@ -356,6 +365,70 @@ async function main(): Promise<void> {
       !leadCaptureSchema.safeParse({ ...lead, marketingOk: undefined }).success,
       'agreement must be explicit',
     );
+  });
+
+  await check('help articles are valid and the status page shows only safe facts', () => {
+    const keys = new Set<string>(HELP_CATEGORIES.map((c) => c.key));
+    for (const [slug, page] of Object.entries(HELP_PAGES)) {
+      pageMetaSchema.parse({ title: page.title, description: page.description });
+      pageContentSchema.parse(page.blocks);
+      assert.match(slug, /^help\/[a-z0-9-]+\/[a-z0-9-]+$/);
+      assert.ok(keys.has(slug.split('/')[1] ?? ''), `${slug} has an unknown category`);
+      const text = JSON.stringify(page);
+      assert.ok(!/[^\x00-\x7f]/.test(text), `${slug} has non-ASCII text`);
+      for (const brand of ['bKash', 'Nagad', 'GCash', 'UPI', 'lorem'])
+        assert.ok(!new RegExp(brand, 'i').test(text), `${slug} mentions ${brand}`);
+    }
+    assert.ok(Object.keys(HELP_PAGES).length >= 8);
+    const now = new Date('2026-10-16T12:00:00Z');
+    const inc = (
+      severity: PublicIncident['severity'],
+      from: string,
+      to: string | null,
+      state: PublicIncident['state'] = 'resolved',
+    ): PublicIncident => ({
+      number: 1,
+      title: 'x',
+      severity,
+      state,
+      startedAt: from,
+      resolvedAt: to,
+    });
+    assert.equal(publicState('detected'), 'investigating');
+    assert.equal(publicState('mitigating'), 'monitoring');
+    assert.equal(publicState('closed'), 'resolved');
+    assert.equal(overallLevel([], true), 'operational');
+    assert.equal(overallLevel([], false), 'outage');
+    assert.equal(
+      overallLevel([inc('SEV3', '2026-10-16T10:00:00Z', null, 'investigating')], true),
+      'degraded',
+    );
+    assert.equal(
+      overallLevel(
+        [inc('SEV3', '2026-10-16T10:00:00Z', null), inc('SEV1', '2026-10-16T11:00:00Z', null)],
+        true,
+      ),
+      'outage',
+    );
+    const bars = dayBars([inc('SEV2', '2026-10-14T23:00:00Z', '2026-10-15T01:00:00Z')], 90, now);
+    assert.equal(bars.length, 90);
+    assert.equal(bars[89]?.day, '2026-10-16');
+    assert.deepEqual(
+      bars.filter((b) => b.level !== 'operational').map((b) => b.day),
+      ['2026-10-14', '2026-10-15'],
+    );
+    assert.equal(uptimePercent([], 90, now), '100.00');
+    assert.equal(
+      uptimePercent([inc('SEV1', '2026-10-16T00:00:00Z', '2026-10-16T12:00:00Z')], 90, now),
+      '99.44',
+    );
+    assert.equal(
+      uptimePercent([inc('SEV4', '2026-10-01T00:00:00Z', '2026-10-16T00:00:00Z')], 90, now),
+      '100.00',
+      'minor incidents do not count',
+    );
+    assert.ok(isReservedSlug('login') && isReservedSlug('api') && isReservedSlug('blog'));
+    assert.ok(!isReservedSlug('partners'));
   });
 
   await check('pricing table is built from the plan catalogue', () => {

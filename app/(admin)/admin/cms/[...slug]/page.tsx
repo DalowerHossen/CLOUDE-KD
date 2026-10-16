@@ -23,7 +23,7 @@ export default async function EditCmsPage({
   const actor = await requirePagePermission('cms.edit', 'platform', 'cms');
   const slug = (await params).slug.map(decodeURIComponent).join('/');
   if (!SLUG.test(slug)) notFound();
-  const kind = slug.startsWith('legal/') ? 'legal' : 'page';
+  const kind = slug.startsWith('legal/') ? 'legal' : slug.startsWith('help/') ? 'help' : 'page';
   const data = await editorData(actor, slug, kind);
   return (
     <div className="space-y-sp-24">

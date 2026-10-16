@@ -5,11 +5,12 @@ import { DEFAULT_PAGES, LEGAL_PAGES, pathOf } from '@/lib/cms/defaults';
 import { InternalError } from '@/lib/errors';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { publishedSlugs } from '@/services/blog/public';
+import { listHelpArticles } from '@/services/support/help';
 
 export interface IndexablePage {
   path: string;
   slug: string;
-  kind: 'page' | 'legal' | 'blog' | 'blog_index';
+  kind: 'page' | 'legal' | 'help' | 'blog' | 'blog_index';
   lastModified: string | null;
 }
 
@@ -62,6 +63,18 @@ export async function indexablePages(): Promise<IndexablePage[]> {
       kind: 'legal',
       lastModified: modified.get(slug) ?? null,
     });
+  }
+  try {
+    for (const a of await listHelpArticles())
+      if (!hidden.has(a.slug))
+        pages.push({
+          path: pathOf(a.slug),
+          slug: a.slug,
+          kind: 'help',
+          lastModified: modified.get(a.slug) ?? null,
+        });
+  } catch {
+    // Help articles are left out when the list cannot be read.
   }
   pages.push({ path: '/legal', slug: 'legal', kind: 'page', lastModified: null });
   for (const tool of [

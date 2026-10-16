@@ -43,7 +43,12 @@ export default async function AdminCmsPage({
   searchParams: Promise<{ kind?: string }>;
 }): Promise<JSX.Element> {
   await requirePagePermission('cms.read', 'platform', 'cms');
-  const kind = (await searchParams).kind === 'legal' ? 'legal' : 'page';
+  const kind =
+    (await searchParams).kind === 'legal'
+      ? 'legal'
+      : (await searchParams).kind === 'help'
+        ? 'help'
+        : 'page';
   let rows: PageListItem[] | null;
   try {
     rows = await listPages(kind);
@@ -66,6 +71,12 @@ export default async function AdminCmsPage({
         >
           {t('s06Public.cms.tabLegal')}
         </Link>
+        <Link
+          className={kind === 'help' ? 'font-semibold underline' : 'underline'}
+          href="/admin/cms?kind=help"
+        >
+          {t('s06Public.cms.tabHelp')}
+        </Link>
       </nav>
       {rows === null ? (
         <ErrorState description={t('s06Public.cms.loadError')} />
@@ -77,7 +88,7 @@ export default async function AdminCmsPage({
           caption={t('s06Public.cms.title')}
         />
       )}
-      {kind === 'page' ? <NewPageForm /> : null}
+      {kind !== 'legal' ? <NewPageForm kind={kind} /> : null}
     </div>
   );
 }
