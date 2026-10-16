@@ -26,4 +26,10 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'inventory.costs',
+    description: 'See stock value, costs and cost of goods sold',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

@@ -10,6 +10,7 @@ import {
   type AdjustInput,
   type LevelsQuery,
   type MovementsQuery,
+  type ReceiveInput,
   type TransferInput,
 } from '@/lib/stock/stock';
 import { decodeCursor, encodeCursor } from '@/lib/crm/search';
@@ -402,4 +403,48 @@ export async function setReorderLevel(
     companyId,
     metadata: { by: actor.userId },
   });
+}
+
+/** Stock that arrived: adds a cost layer with the cost, the batch and the expiry date. */
+export async function receiveStock(actor: Actor, input: ReceiveInput): Promise<MoveResult> {
+  const companyId = actor.companyId;
+  if (!companyId) throw new ValidationError('A company is needed.');
+  if (input.expiresOn && input.expiresOn < new Date().toISOString().slice(0, 10))
+    throw new ValidationError('This batch has already expired.');
+  const { data, error } = await getAdminSupabase().rpc('kd_stock_apply', {
+    p_company: companyId,
+    p_product: input.productId,
+    p_variant: input.variantId,
+    p_warehouse: input.warehouseId,
+    p_delta: input.quantity,
+    p_target: null,
+    p_kind: 'receipt',
+    p_reason: null,
+    p_ref_type: 'manual',
+    p_ref_id: null,
+    p_note: input.note,
+    p_by: actor.userId,
+    p_key: null,
+    p_unit_cost: input.unitCost,
+    p_batch: input.batchNo,
+    p_expires: input.expiresOn,
+    p_source_movement: null,
+  });
+  if (error) mapMoveError(error);
+  const r = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+  if (!r) throw new InternalError(new Error('stock receipt returned nothing'));
+  await getService('audit').record({
+    action: 'stock.received',
+    resourceType: 'product',
+    resourceId: input.productId,
+    companyId,
+    metadata: { quantity: input.quantity, batch: input.batchNo, by: actor.userId },
+  });
+  return {
+    movementId: r.movement_id ? String(r.movement_id) : null,
+    balance: dec(r.balance),
+    alert: null,
+    applied: dec(r.applied),
+    replay: r.replay === true,
+  };
 }

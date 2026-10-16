@@ -5,7 +5,8 @@
 - [x] 08.3 client data management (2026-10-16)
 - [x] 08.4 products and services (2026-10-16)
 - [x] 08.5 inventory core (2026-10-16)
-- [ ] 08.6 inventory valuation and documents
+- [x] 08.6a inventory valuation, cost layers, batches and expiry (2026-10-16)
+- [ ] 08.6b inventory documents, stock count, returns and barcode
 - [ ] 08.7 suppliers and purchase orders
 - [ ] 08.8 supplier bills, payments and statements
 - [ ] 08.9 import and export framework

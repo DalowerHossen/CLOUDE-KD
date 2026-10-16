@@ -105,6 +105,7 @@ export const productInputSchema = z
       .max(20)
       .regex(/^[0-9A-Za-z.-]*$/, { message: 'Use letters, digits . and - only.' }),
     trackInventory: z.boolean(),
+    valuationMethod: z.enum(['average', 'fifo', 'lifo']),
     status: z.enum(PRODUCT_STATUSES),
     customFields: customValuesSchema,
     volumeTiers: z.array(volumeTierSchema).max(10),

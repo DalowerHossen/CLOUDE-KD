@@ -64,6 +64,10 @@ export function StockPanel({
   const [toWarehouse, setToWarehouse] = useState('');
   const [moveQty, setMoveQty] = useState('');
   const [reorder, setReorder] = useState(reorderLevel ?? '');
+  const [recvQty, setRecvQty] = useState('');
+  const [recvCost, setRecvCost] = useState('');
+  const [recvBatch, setRecvBatch] = useState('');
+  const [recvExpiry, setRecvExpiry] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -120,6 +124,75 @@ export function StockPanel({
           ))}
         </ul>
       )}
+
+      {canAdjust ? (
+        <form
+          className="space-y-sp-8 rounded-md border p-sp-12"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(
+              () =>
+                send('/api/inventory/receive', 'POST', {
+                  productId,
+                  variantId: variantId || null,
+                  warehouseId,
+                  quantity: recvQty,
+                  unitCost: recvCost,
+                  batchNo: recvBatch,
+                  expiresOn: recvExpiry,
+                  note: '',
+                }),
+              () => {
+                setRecvQty('');
+                setRecvBatch('');
+                setRecvExpiry('');
+              },
+            );
+          }}
+        >
+          <h3 className="font-medium">{t('s08Crm.valuation.receiveTitle')}</h3>
+          <p className="text-muted-foreground">{t('s08Crm.valuation.receiveHelp')}</p>
+          <div className="grid gap-sp-8 sm:grid-cols-4">
+            <label>
+              <span className="block">{t('s08Crm.inventory.amount')}</span>
+              <Input
+                inputMode="decimal"
+                value={recvQty}
+                maxLength={20}
+                onChange={(e) => setRecvQty(e.target.value)}
+              />
+            </label>
+            <label>
+              <span className="block">{t('s08Crm.valuation.unitCost')}</span>
+              <Input
+                inputMode="decimal"
+                value={recvCost}
+                maxLength={20}
+                onChange={(e) => setRecvCost(e.target.value)}
+              />
+            </label>
+            <label>
+              <span className="block">{t('s08Crm.valuation.batchNo')}</span>
+              <Input
+                value={recvBatch}
+                maxLength={40}
+                onChange={(e) => setRecvBatch(e.target.value)}
+              />
+            </label>
+            <label>
+              <span className="block">{t('s08Crm.valuation.expiresOn')}</span>
+              <Input
+                type="date"
+                value={recvExpiry}
+                onChange={(e) => setRecvExpiry(e.target.value)}
+              />
+            </label>
+          </div>
+          <Button type="submit" disabled={busy || recvQty.trim() === '' || warehouseId === ''}>
+            {t('s08Crm.valuation.receive')}
+          </Button>
+        </form>
+      ) : null}
 
       {canAdjust ? (
         <form

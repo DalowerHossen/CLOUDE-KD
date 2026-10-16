@@ -35,6 +35,8 @@ import {
 } from '@/lib/catalog/products';
 import { marginPercent, resolveUnitPrice } from '@/lib/catalog/resolve';
 import {
+  cogsQuery,
+  receiveSchema,
   adjustSchema,
   levelsQuery,
   movementsQuery,
@@ -475,6 +477,7 @@ async function main(): Promise<void> {
     categoryId: null,
     hsCode: '',
     trackInventory: true,
+    valuationMethod: 'fifo',
     status: 'active',
     customFields: {},
     volumeTiers: [
@@ -742,6 +745,34 @@ async function main(): Promise<void> {
     assert.ok(!reorderSchema.safeParse({ productId: id, reorderLevel: '-2' }).success);
     assert.ok(!levelsQuery.safeParse({ low: '0' }).success);
     assert.ok(!movementsQuery.safeParse({ kind: 'theft' }).success);
+  });
+  await check('receipt input: cost, batch and expiry', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    const base = {
+      productId: id,
+      variantId: null,
+      warehouseId: id,
+      quantity: '10',
+      unitCost: '2.5',
+      batchNo: 'LOT-7',
+      expiresOn: '2027-06-30',
+      note: '',
+    };
+    const ok = receiveSchema.parse(base);
+    assert.equal(ok.batchNo, 'LOT-7');
+    assert.equal(
+      receiveSchema.parse({ ...base, unitCost: '', batchNo: '', expiresOn: '' }).unitCost,
+      null,
+      'empty cost uses the item cost',
+    );
+    assert.equal(receiveSchema.parse({ ...base, batchNo: '', expiresOn: '' }).expiresOn, null);
+    assert.ok(!receiveSchema.safeParse({ ...base, quantity: '0' }).success, 'quantity above zero');
+    assert.ok(!receiveSchema.safeParse({ ...base, unitCost: '-1' }).success, 'cost not negative');
+    assert.ok(!receiveSchema.safeParse({ ...base, unitCost: '1.23456' }).success, 'four places');
+    assert.ok(!receiveSchema.safeParse({ ...base, batchNo: 'bad batch!' }).success);
+    assert.ok(!receiveSchema.safeParse({ ...base, expiresOn: '30/06/2027' }).success);
+    assert.ok(cogsQuery.safeParse({ from: '2026-01-01', to: '2026-01-31' }).success);
+    assert.ok(!cogsQuery.safeParse({ from: '2026-02-01', to: '2026-01-31' }).success);
   });
 }
 

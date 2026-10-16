@@ -49,6 +49,7 @@ interface State {
   categoryId: string;
   hsCode: string;
   trackInventory: boolean;
+  valuationMethod: 'average' | 'fifo' | 'lifo';
   status: 'active' | 'inactive' | 'archived';
   volumeTiers: { minQty: string; unitPrice: string }[];
   bundleItems: { productId: string; quantity: string }[];
@@ -80,6 +81,7 @@ function initial(p: ProductView | null, kind: Kind): State {
     categoryId: p?.categoryId ?? '',
     hsCode: p?.hsCode ?? '',
     trackInventory: p?.trackInventory ?? false,
+    valuationMethod: p?.valuationMethod ?? 'average',
     status: p?.status ?? 'active',
     volumeTiers: p?.volumeTiers ?? [],
     bundleItems: (p?.bundleItems ?? []).map((i) => ({
@@ -105,6 +107,7 @@ function payload(s: State): Record<string, unknown> {
     categoryId: s.categoryId === '' ? null : s.categoryId,
     hsCode: s.hsCode,
     trackInventory: s.kind === 'product' ? s.trackInventory : false,
+    valuationMethod: s.valuationMethod,
     status: s.status,
     customFields: s.custom,
     volumeTiers: s.volumeTiers,
@@ -427,6 +430,35 @@ export function ProductForm({
               />
               {t('s08Crm.products.trackInventory')}
             </label>
+          ) : null}
+          {s.kind === 'product' && s.trackInventory ? (
+            <FormField
+              id="valuation"
+              label={t('s08Crm.products.valuationMethod')}
+              description={t('s08Crm.products.valuationHelp')}
+            >
+              {(p) => (
+                <NativeSelect
+                  {...p}
+                  value={s.valuationMethod}
+                  onChange={(e) =>
+                    setS({
+                      ...s,
+                      valuationMethod:
+                        e.target.value === 'fifo'
+                          ? 'fifo'
+                          : e.target.value === 'lifo'
+                            ? 'lifo'
+                            : 'average',
+                    })
+                  }
+                >
+                  <option value="average">{t('s08Crm.products.valuationAverage')}</option>
+                  <option value="fifo">{t('s08Crm.products.valuationFifo')}</option>
+                  <option value="lifo">{t('s08Crm.products.valuationLifo')}</option>
+                </NativeSelect>
+              )}
+            </FormField>
           ) : null}
         </section>
 

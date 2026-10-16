@@ -10,15 +10,6 @@ import { strings as s06Public } from './en/s06-public';
 import { strings as s07Company } from './en/s07-company';
 import { strings as s08Crm } from './en/s08-crm';
 
-export const en = {
-  s01Core,
-  s02Governance,
-  s03Auth,
-  s04Security,
-  s05Storage,
-  s06Public,
-  s07Company,
-  s08Crm,
-} as const;
+export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm } as const;
 
 export type Strings = typeof en;

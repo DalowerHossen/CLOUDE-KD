@@ -147,3 +147,53 @@ export const reorderSchema = z
   .strict();
 
 export const LEDGER_PAGE = 50;
+
+export const receiveSchema = z
+  .object({
+    productId: uuid,
+    variantId: uuid.nullable(),
+    warehouseId: uuid,
+    quantity: quantityText,
+    /** US dollars per unit; empty uses the cost of the item. */
+    unitCost: z
+      .string()
+      .trim()
+      .refine(
+        (v) => {
+          if (v === '') return true;
+          try {
+            return !Money.parse(v).isNegative();
+          } catch {
+            return false;
+          }
+        },
+        { message: 'Enter a cost of zero or more with at most four decimal places.' },
+      )
+      .transform((v) => (v === '' ? null : v)),
+    batchNo: z
+      .string()
+      .trim()
+      .max(40)
+      .refine((v) => v === '' || /^[A-Za-z0-9][A-Za-z0-9._/-]{0,39}$/.test(v), {
+        message: 'A batch number uses letters, digits . _ / - only.',
+      })
+      .transform((v) => (v === '' ? null : v)),
+    expiresOn: z
+      .string()
+      .trim()
+      .refine((v) => v === '' || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))), {
+        message: 'Enter a date.',
+      })
+      .transform((v) => (v === '' ? null : v)),
+    note: plain(0, 500),
+  })
+  .strict();
+export type ReceiveInput = z.infer<typeof receiveSchema>;
+
+export const cogsQuery = z
+  .object({
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  })
+  .strict()
+  .refine((v) => v.from <= v.to, { message: 'The start must not be after the end.' });
