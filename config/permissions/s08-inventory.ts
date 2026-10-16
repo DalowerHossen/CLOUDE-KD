@@ -32,4 +32,16 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'inventory.documents',
+    description: 'Create and post receipts, issues, returns, packing slips and delivery notes',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'inventory.count',
+    description: 'Run stock counts',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
 ];

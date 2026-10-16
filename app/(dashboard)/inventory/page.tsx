@@ -88,6 +88,9 @@ export default async function InventoryPage({
             <Link className="underline" href="/inventory/movements">
               {t('s08Crm.inventory.movementsLink')}
             </Link>
+            <Link className="underline" href="/inventory/documents">
+              {t('s08Crm.documents.title')}
+            </Link>
             <Link className="underline" href="/inventory/valuation">
               {t('s08Crm.valuation.link')}
             </Link>

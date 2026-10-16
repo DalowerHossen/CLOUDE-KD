@@ -35,6 +35,18 @@ import {
 } from '@/lib/catalog/products';
 import { marginPercent, resolveUnitPrice } from '@/lib/catalog/resolve';
 import {
+  DOCUMENT_PREFIX,
+  MOVES_STOCK,
+  barcodeQuery,
+  countActionSchema,
+  countSaveSchema,
+  countStartSchema,
+  documentActionSchema,
+  documentInputSchema,
+  documentUpdateSchema,
+  formatNumber,
+} from '@/lib/stock/documents';
+import {
   cogsQuery,
   receiveSchema,
   adjustSchema,
@@ -773,6 +785,90 @@ async function main(): Promise<void> {
     assert.ok(!receiveSchema.safeParse({ ...base, expiresOn: '30/06/2027' }).success);
     assert.ok(cogsQuery.safeParse({ from: '2026-01-01', to: '2026-01-31' }).success);
     assert.ok(!cogsQuery.safeParse({ from: '2026-02-01', to: '2026-01-31' }).success);
+  });
+  await check('stock documents, counts and barcode input', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    const line = {
+      productId: id,
+      variantId: null,
+      quantity: '5',
+      unitCost: '',
+      batchNo: 'LOT-1',
+      expiresOn: '2027-01-01',
+      note: '',
+    };
+    const doc = {
+      kind: 'receipt',
+      warehouseId: id,
+      partyType: 'supplier',
+      partyId: null,
+      partyName: 'Acme Supply',
+      reference: '',
+      note: '',
+      lines: [line],
+    };
+    const parsed = documentInputSchema.parse(doc);
+    assert.equal(parsed.lines[0]?.unitCost, null, 'empty cost uses the item cost');
+    assert.ok(!documentInputSchema.safeParse({ ...doc, lines: [] }).success, 'at least one line');
+    assert.ok(
+      !documentInputSchema.safeParse({ ...doc, lines: Array.from({ length: 101 }, () => line) })
+        .success,
+      '100 lines at most',
+    );
+    assert.ok(!documentInputSchema.safeParse({ ...doc, kind: 'invoice' }).success);
+    assert.ok(
+      !documentInputSchema.safeParse({ ...doc, partyType: 'none', partyId: id }).success,
+      'no party, no id',
+    );
+    assert.ok(
+      !documentInputSchema.safeParse({ ...doc, lines: [{ ...line, quantity: '0' }] }).success,
+    );
+    assert.ok(documentUpdateSchema.safeParse({ expectedVersion: 1, document: doc }).success);
+    assert.ok(
+      !documentUpdateSchema.safeParse({ document: doc }).success,
+      'update needs the loaded version',
+    );
+    assert.ok(
+      documentActionSchema.safeParse({ action: 'post' }).success &&
+        !documentActionSchema.safeParse({ action: 'delete' }).success,
+    );
+    assert.equal(formatNumber(DOCUMENT_PREFIX.receipt, 2026, 7), 'GRN-2026-0007');
+    assert.equal(
+      formatNumber('PO', 2026, 12345),
+      'PO-2026-12345',
+      'longer numbers keep every digit',
+    );
+    assert.deepEqual([...MOVES_STOCK].sort(), [
+      'issue',
+      'purchase_return',
+      'receipt',
+      'sales_return',
+    ]);
+    assert.ok(countStartSchema.safeParse({ warehouseId: id, note: '' }).success);
+    assert.ok(
+      countSaveSchema.safeParse({
+        counts: [
+          { lineId: id, countedQty: '3' },
+          { lineId: id, countedQty: null },
+        ],
+      }).success,
+    );
+    assert.ok(
+      !countSaveSchema.safeParse({ counts: [{ lineId: id, countedQty: '-3' }] }).success,
+      'a count is not negative',
+    );
+    assert.ok(!countSaveSchema.safeParse({ counts: [] }).success);
+    assert.ok(
+      countActionSchema.safeParse({ action: 'complete' }).success &&
+        !countActionSchema.safeParse({ action: 'reopen' }).success,
+    );
+    assert.ok(barcodeQuery.safeParse({ code: '4006381333931' }).success);
+    assert.ok(barcodeQuery.safeParse({ code: 'BW-1/L' }).success);
+    assert.ok(
+      !barcodeQuery.safeParse({ code: 'a" or true' }).success,
+      'a code cannot carry filter syntax',
+    );
+    assert.ok(!barcodeQuery.safeParse({ code: '' }).success);
   });
 }
 
