@@ -4,7 +4,7 @@
 - [x] 04.2 sanitizer, rich text, zod helpers, safe-regex check (2026-10-16)
 - [x] 04.3 request proxy, CSRF, bot check, nonce CSP (2026-10-16)
 - [x] 04.4 rate limiting, IP bans, security events, Turnstile, idempotency service (2026-10-16)
-- [ ] 04.5
+- [x] 04.5 network intelligence, Tor list, whitelist, admin page (2026-10-16)
 - [ ] 04.6
 - [ ] 04.7
 - [ ] 04.8

@@ -66,3 +66,13 @@ export const RATE_POLICIES: Readonly<Record<string, RatePolicy>> = {
 export const BAN_AFTER_DENIALS = 20;
 export const BAN_WINDOW_SECONDS = 300;
 export const BAN_SECONDS = 900;
+
+/** Network intelligence. Country codes are ISO 3166-1 alpha-2. */
+export const COUNTRY_BLOCKLIST: readonly string[] = [];
+/** When a context lists countries here, only those countries may use it (geo-fencing). */
+export const GEO_FENCE: Readonly<Partial<Record<NetworkContext, readonly string[]>>> = {};
+/** Contexts in which an unreachable intelligence provider blocks the request (fail closed). */
+export const NETWORK_FAIL_CLOSED: readonly NetworkContext[] = ['signup', 'payment', 'kyc', 'admin'];
+export const REPUTATION_TTL_SECONDS = 86_400;
+export const TOR_LIST_URL = 'https://check.torproject.org/torbulkexitlist';
+export const TOR_LIST_TTL_SECONDS = 172_800;

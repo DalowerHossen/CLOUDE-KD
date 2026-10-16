@@ -13,6 +13,11 @@ export interface AuditRequestMeta {
   userAgentHash: string | null;
 }
 
+/** Keyed hash of an address, the same value that audit entries and security events store. */
+export async function hashIp(ip: string): Promise<string> {
+  return hmacSha256Hex(getServerEnv().HMAC_TOKEN_SECRET, `ip:${ip}`);
+}
+
 /** Returns empty metadata outside a request (cron jobs and workers). */
 export async function readRequestMeta(): Promise<AuditRequestMeta> {
   let source: Headers;

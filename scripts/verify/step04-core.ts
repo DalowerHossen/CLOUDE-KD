@@ -24,6 +24,10 @@ import {
   requiresCsrfCheck,
 } from '@/lib/middleware/csrf';
 import { policyFor, rateLimitHeaders } from '@/lib/middleware/rate-limit';
+import { evaluateNetwork } from '@/lib/security/network/evaluate';
+import { parseIpqs, parseMaxmind } from '@/lib/security/network/providers';
+import { EMPTY_SIGNALS } from '@/lib/security/network/types';
+import { parseTorList } from '@/lib/security/network/tor';
 import { SsrfError, resolvePublicAddresses, validateOutboundUrl } from '@/lib/security/ssrf';
 
 /** Builds a character from its hexadecimal code point, so the source file stays ASCII. */
@@ -380,6 +384,92 @@ async function main(): Promise<void> {
     );
     assert.equal(ok['retry-after'], undefined);
     assert.equal(ok['x-ratelimit-remaining'], '4');
+  });
+
+  await check('network policy: block on signup, payment, kyc, admin; flag on login', () => {
+    const vpn = { ...EMPTY_SIGNALS, vpn: true, countryCode: 'DE' };
+    const base = {
+      signals: vpn,
+      whitelisted: false,
+      ipBlocked: false,
+      providerFailed: false,
+      failClosedContexts: ['signup', 'payment', 'kyc', 'admin'] as const,
+    };
+    for (const context of ['signup', 'payment', 'kyc', 'admin'] as const) {
+      const r = evaluateNetwork({ ...base, context });
+      assert.equal(r.allowed, false, context);
+      assert.equal(r.reason, 'anonymizing_network');
+    }
+    const login = evaluateNetwork({ ...base, context: 'login' });
+    assert.equal(login.allowed, true);
+    assert.equal(login.reason, 'flagged_anonymizing_network');
+    const tor = evaluateNetwork({
+      ...base,
+      context: 'payment',
+      signals: { ...EMPTY_SIGNALS, tor: true },
+    });
+    assert.equal(tor.allowed, false);
+    assert.equal(tor.score, 100);
+    assert.equal(evaluateNetwork({ ...base, context: 'payment', whitelisted: true }).allowed, true);
+    assert.equal(
+      evaluateNetwork({ ...base, context: 'login', signals: EMPTY_SIGNALS, ipBlocked: true })
+        .reason,
+      'address_blocked',
+    );
+    assert.equal(
+      evaluateNetwork({ ...base, context: 'signup', signals: EMPTY_SIGNALS }).allowed,
+      true,
+    );
+  });
+
+  await check('network policy: provider outage fails closed only in sensitive contexts', () => {
+    const base = {
+      signals: EMPTY_SIGNALS,
+      whitelisted: false,
+      ipBlocked: false,
+      providerFailed: true,
+      failClosedContexts: ['signup', 'payment', 'kyc', 'admin'] as const,
+    };
+    for (const context of ['signup', 'payment', 'kyc', 'admin'] as const) {
+      const r = evaluateNetwork({ ...base, context });
+      assert.equal(r.allowed, false, context);
+      assert.equal(r.reason, 'provider_unavailable');
+    }
+    assert.equal(evaluateNetwork({ ...base, context: 'login' }).allowed, true);
+    assert.equal(evaluateNetwork({ ...base, context: 'other' }).allowed, true);
+  });
+
+  await check('provider answers are parsed into signals', () => {
+    const q = parseIpqs({
+      success: true,
+      fraud_score: 91,
+      country_code: 'nl',
+      proxy: true,
+      vpn: true,
+      tor: false,
+      connection_type: 'Data Center',
+    });
+    assert.deepEqual(
+      [q.vpn, q.proxy, q.tor, q.datacenter, q.providerScore, q.countryCode],
+      [true, true, false, true, 91, 'NL'],
+    );
+    assert.throws(() => parseIpqs({ success: false, message: 'Invalid key' }), /Invalid key/);
+    assert.equal(parseIpqs({ success: true, active_tor: true }).tor, true);
+    const m = parseMaxmind({
+      country: { iso_code: 'us' },
+      traits: { is_anonymous: true, is_anonymous_vpn: true, is_hosting_provider: true },
+    });
+    assert.deepEqual([m.vpn, m.datacenter, m.tor, m.countryCode], [true, true, false, 'US']);
+    assert.equal(parseMaxmind({ traits: { is_tor_exit_node: true } }).tor, true);
+    assert.equal(parseMaxmind({ traits: { is_residential_proxy: true } }).residentialProxy, true);
+    assert.equal(parseMaxmind({}).vpn, false);
+  });
+
+  await check('tor list parsing keeps valid addresses only', () => {
+    const ips = parseTorList(
+      '# comment\n185.220.101.1\n\n2a0b:f4c2::1\nnot-an-ip\n185.220.101.1\n999.1.1.1\n',
+    );
+    assert.deepEqual(ips.sort(), ['185.220.101.1', '2a0b:f4c2::1'].sort());
   });
 }
 
