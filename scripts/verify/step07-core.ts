@@ -11,6 +11,7 @@ import {
   profileSchema,
 } from '@/lib/company/sections';
 import { en } from '@/lib/i18n';
+import { dnsRecords, evaluateDns, isPublicAddress, validateHostname } from '@/lib/domain/hostnames';
 import { reviewActionSchema } from '@/lib/kyc/review-input';
 import { registerScreeningProvider, runScreening } from '@/lib/kyc/screening';
 import { contractStatus, isExpired, ownersSchema, uploadSchema, DOC_TYPES } from '@/lib/kyc/rules';
@@ -404,6 +405,80 @@ async function main(): Promise<void> {
       result?.summary.includes('two: 1 match.') &&
         result.summary.includes('could not be completed'),
     );
+  });
+
+  await check('domains: hostname rules, DNS records and answers, public addresses only', () => {
+    const platform = 'app.kdsolution.test';
+    assert.equal(validateHostname('billing.example.com', platform), null);
+    assert.equal(
+      validateHostname('Billing.Example.COM.', platform),
+      null,
+      'case and trailing dot are ignored',
+    );
+    for (const bad of [
+      'localhost',
+      'example',
+      '10.0.0.1',
+      'a b.example.com',
+      'bad_name.example.com',
+      '-x.example.com',
+      'host.local',
+      'x.internal',
+      'app.kdsolution.test',
+      'evil.app.kdsolution.test',
+      '',
+      'a.b',
+    ])
+      assert.ok(validateHostname(bad, platform) !== null, bad);
+    assert.ok(
+      validateHostname(`${'a'.repeat(64)}.example.com`, platform) !== null,
+      'label over 63 characters',
+    );
+    const token = 'a'.repeat(32);
+    const records = dnsRecords('billing.example.com', token, platform);
+    assert.deepEqual(
+      records.map((r) => [r.type, r.name, r.value, r.required]),
+      [
+        ['TXT', '_kd-verify.billing.example.com', `kd-verify=${token}`, true],
+        ['CNAME', 'billing.example.com', platform, false],
+      ],
+    );
+    assert.deepEqual(
+      evaluateDns(
+        { txt: [['kd-verify=', token]], cname: ['APP.kdsolution.test.'] },
+        token,
+        platform,
+      ),
+      { ownership: true, routing: true },
+    );
+    assert.deepEqual(evaluateDns({ txt: [['kd-verify=other']], cname: [] }, token, platform), {
+      ownership: false,
+      routing: false,
+    });
+    assert.deepEqual(evaluateDns({ txt: [], cname: ['elsewhere.example.net'] }, token, platform), {
+      ownership: false,
+      routing: false,
+    });
+    for (const ip of [
+      '10.1.2.3',
+      '127.0.0.1',
+      '169.254.169.254',
+      '172.16.0.1',
+      '172.31.255.255',
+      '192.168.1.1',
+      '100.64.0.1',
+      '0.0.0.0',
+      '224.0.0.1',
+      '::1',
+      'fe80::1',
+      'fd00::1',
+      '::ffff:10.0.0.1',
+      '999.1.1.1',
+      'abc',
+    ])
+      assert.equal(isPublicAddress(ip), false, ip);
+    for (const ip of ['8.8.8.8', '203.0.113.10', '172.32.0.1', '2606:4700::1111'])
+      assert.equal(isPublicAddress(ip), true, ip);
   });
 
   await check('wizard input: each step has its own strict shape', () => {

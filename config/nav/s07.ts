@@ -83,4 +83,14 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 70,
   },
+  {
+    id: 'settings-domains',
+    labelKey: 's07Company.nav.domains',
+    href: '/settings/domains',
+    icon: 'globe',
+    group: 'account',
+    roles: ['owner'],
+    order: 460,
+    requiresEntitlement: 'domain.custom',
+  },
 ];
