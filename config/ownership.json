@@ -268,7 +268,10 @@
         "sql/assertions/s06_*",
         "scripts/verify/step06-*",
         "docs/steps/STEP-06/**",
-        "lib/env/s06-public.ts"
+        "lib/env/s06-public.ts",
+        "lib/cms/**",
+        "config/seo.ts",
+        "config/marketing.ts"
       ]
     },
     "07": {

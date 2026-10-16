@@ -1,6 +1,6 @@
 # STEP 06 progress
 
-- [ ] 06.1
+- [x] 06.1 public frame, mega menu, footer, cookie consent banner (2026-10-16)
 - [ ] 06.2
 - [ ] 06.3
 - [ ] 06.4
