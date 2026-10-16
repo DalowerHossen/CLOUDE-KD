@@ -38,4 +38,10 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'client.merge',
+    description: 'Merge duplicate clients',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

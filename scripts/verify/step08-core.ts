@@ -8,6 +8,18 @@ import {
   initials,
   quickClientSchema,
 } from '@/lib/crm/clients';
+import { ageDocuments, bucketOf, daysLate } from '@/lib/crm/aging';
+import {
+  activitySchema,
+  clientListQuery,
+  decodeCursor,
+  duplicateQuery,
+  encodeCursor,
+  mergeSchema,
+  statementQuery,
+  viewCreateSchema,
+} from '@/lib/crm/search';
+import { Money } from '@/lib/utils/currency';
 import { checkCustomValues, type CustomFieldDef } from '@/lib/crm/custom-values';
 import { permissions as registered } from '@/config/permissions';
 import type { PermissionDefinition } from '@/types/contracts';
@@ -279,6 +291,78 @@ async function main(): Promise<void> {
       !byAction.get('client.delete')?.defaultRoles.includes('staff'),
       'staff cannot delete by default',
     );
+  });
+  await check('client list query, cursor and saved views', () => {
+    const q = clientListQuery.parse({});
+    assert.equal(q.sort, 'name');
+    assert.equal(q.desc, '0');
+    assert.ok(
+      !clientListQuery.safeParse({ sort: 'password' }).success,
+      'sort names are a fixed list',
+    );
+    assert.ok(!clientListQuery.safeParse({ country: 'usa' }).success);
+    assert.ok(!clientListQuery.safeParse({ unknown: '1' }).success);
+    const cursor = { v: 'acme ltd', id: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b' };
+    assert.deepEqual(decodeCursor(encodeCursor(cursor)), cursor);
+    assert.equal(decodeCursor('not a cursor'), null);
+    assert.equal(decodeCursor(encodeCursor({ v: 'x', id: 'nope' })), null, 'id must be a uuid');
+    assert.equal(decodeCursor(undefined), null);
+    assert.ok(
+      viewCreateSchema.safeParse({ listKey: 'clients', name: 'VIP', filters: { tag: 'vip' } })
+        .success,
+    );
+    assert.ok(!viewCreateSchema.safeParse({ listKey: 'orders', name: 'VIP', filters: {} }).success);
+    assert.ok(
+      !viewCreateSchema.safeParse({ listKey: 'clients', name: '<b>', filters: {} }).success,
+    );
+  });
+
+  await check('activity, duplicate and merge input', () => {
+    assert.ok(activitySchema.safeParse({ kind: 'call', title: 'Called', body: '' }).success);
+    assert.ok(
+      !activitySchema.safeParse({ kind: 'call', title: '', body: '' }).success,
+      'needs text',
+    );
+    assert.ok(
+      !activitySchema.safeParse({ kind: 'status', title: 'x', body: '' }).success,
+      'system kinds cannot be written',
+    );
+    assert.ok(duplicateQuery.safeParse({ name: 'Acme', email: 'a@b.co' }).success);
+    assert.ok(!duplicateQuery.safeParse({ name: '' }).success);
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    assert.ok(
+      !mergeSchema.safeParse({ keepId: id, removeId: id }).success,
+      'two different clients',
+    );
+    assert.ok(
+      mergeSchema.safeParse({ keepId: id, removeId: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5c' })
+        .success,
+    );
+    assert.ok(statementQuery.safeParse({ from: '2026-01-01', to: '2026-12-31' }).success);
+    assert.ok(!statementQuery.safeParse({ from: '2026-12-31', to: '2026-01-01' }).success);
+    assert.ok(!statementQuery.safeParse({ from: '01/01/2026', to: '2026-12-31' }).success);
+  });
+
+  await check('aging buckets add up exactly', () => {
+    assert.equal(daysLate('2026-03-01', '2026-03-31'), 30);
+    assert.equal(bucketOf(0), 'current');
+    assert.equal(bucketOf(-5), 'current');
+    assert.equal(bucketOf(1), 'd1_30');
+    assert.equal(bucketOf(30), 'd1_30');
+    assert.equal(bucketOf(31), 'd31_60');
+    assert.equal(bucketOf(90), 'd61_90');
+    assert.equal(bucketOf(91), 'd91_plus');
+    const docs = [
+      { number: 'A', issuedOn: '2026-01-01', dueOn: '2026-04-10', due: Money.parse('100.10') },
+      { number: 'B', issuedOn: '2026-01-01', dueOn: '2026-03-20', due: Money.parse('50.20') },
+      { number: 'C', issuedOn: '2026-01-01', dueOn: '2025-12-01', due: Money.parse('0.30') },
+      { number: 'D', issuedOn: '2026-01-01', dueOn: '2026-03-25', due: Money.parse('0.10') },
+    ];
+    const aged = ageDocuments(docs, '2026-03-31');
+    assert.equal(aged.current.toDbString(), '100.1000');
+    assert.equal(aged.d1_30.toDbString(), '50.3000');
+    assert.equal(aged.d91_plus.toDbString(), '0.3000');
+    assert.equal(aged.total.toDbString(), '150.7000', 'no floating point drift');
   });
 }
 

@@ -14,6 +14,12 @@ import { t } from '@/lib/i18n';
 import type { CustomFieldDef } from '@/services/client/custom-fields';
 import type { ClientView } from '@/services/client/clients';
 
+const duplicateShape = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().nullable(),
+  reason: z.enum(['email', 'tax_id', 'name']),
+});
 const errorBody = z.object({
   error: z.object({
     code: z.string().optional(),
@@ -275,14 +281,18 @@ export function ClientForm({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dupes, setDupes] = useState<z.infer<typeof duplicateShape>[] | null>(null);
   const locked = client?.anonymized === true;
 
-  async function submit(): Promise<void> {
+  async function submit(confirmDuplicate = false): Promise<void> {
     setBusy(true);
     setMessage(null);
     setErrors({});
+    setDupes(null);
     try {
-      const body = client ? { ...payload(s), expectedVersion: client.version } : payload(s);
+      const body = client
+        ? { ...payload(s), expectedVersion: client.version }
+        : { ...payload(s), confirmDuplicate };
       const response = await fetch(client ? `/api/clients/${client.id}` : '/api/clients', {
         method: client ? 'PUT' : 'POST',
         headers: { 'content-type': 'application/json' },
@@ -298,11 +308,16 @@ export function ClientForm({
         return;
       }
       const err = errorBody.safeParse(json);
-      if (response.status === 409) setMessage({ ok: false, text: t('s08Crm.form.conflict') });
+      const code = err.success ? err.data.error.code : undefined;
+      if (response.status === 409 && code === 'duplicate') {
+        const list = z.array(duplicateShape).safeParse(err.success ? err.data.error.details : null);
+        setDupes(list.success ? list.data : []);
+      } else if (response.status === 409)
+        setMessage({ ok: false, text: t('s08Crm.form.conflict') });
       else {
         const map: Record<string, string> = {};
         for (const d of (err.success ? err.data.error.details : null) ?? [])
-          map[d.path] = d.message;
+          if (typeof d.path === 'string' && typeof d.message === 'string') map[d.path] = d.message;
         setErrors(map);
         setMessage({
           ok: false,
@@ -326,7 +341,7 @@ export function ClientForm({
       className="space-y-sp-24"
       onSubmit={(e) => {
         e.preventDefault();
-        void submit();
+        void submit(false);
       }}
     >
       <fieldset disabled={locked || busy} className="space-y-sp-24">
@@ -752,6 +767,33 @@ export function ClientForm({
         </section>
       </fieldset>
 
+      {dupes ? (
+        <section
+          role="alert"
+          className="space-y-sp-8 rounded-lg border border-destructive p-sp-16 text-sm"
+        >
+          <h2 className="font-semibold">{t('s08Crm.duplicate.title')}</h2>
+          <p>{t('s08Crm.duplicate.help')}</p>
+          <ul className="space-y-1">
+            {dupes.map((d) => (
+              <li key={d.id}>
+                <a className="underline" href={`/clients/${d.id}`} target="_blank" rel="noreferrer">
+                  {d.name}
+                </a>{' '}
+                {d.email ?? ''} -{' '}
+                {d.reason === 'email'
+                  ? t('s08Crm.duplicate.reasonEmail')
+                  : d.reason === 'tax_id'
+                    ? t('s08Crm.duplicate.reasonTax')
+                    : t('s08Crm.duplicate.reasonName')}
+              </li>
+            ))}
+          </ul>
+          <Button type="button" variant="outline" disabled={busy} onClick={() => void submit(true)}>
+            {t('s08Crm.duplicate.createAnyway')}
+          </Button>
+        </section>
+      ) : null}
       {message ? (
         <p
           role={message.ok ? 'status' : 'alert'}

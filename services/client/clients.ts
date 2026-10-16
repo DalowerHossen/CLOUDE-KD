@@ -3,12 +3,20 @@
 // the signed-in person, so a foreign id is "not found". A change needs the version the editor loaded (optimistic lock).
 import 'server-only';
 import { getService } from '@/lib/container';
-import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
+import {
+  ConflictError,
+  DuplicateError,
+  InternalError,
+  NotFoundError,
+  ValidationError,
+} from '@/lib/errors';
 import { clientDeleteGuards } from '@/lib/crm/hooks';
 import type { ClientInput, ClientUpdate, QuickClient } from '@/lib/crm/clients';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
+import { logClientEvent } from './activity';
 import { checkCustomValues, listDefs } from './custom-fields';
+import { findDuplicates } from './duplicates';
 
 export interface Address {
   line1: string;
@@ -212,8 +220,24 @@ function needCompany(actor: Actor): string {
   return actor.companyId;
 }
 
-export async function createClient(actor: Actor, input: ClientInput): Promise<ClientView> {
+export async function createClient(
+  actor: Actor,
+  input: ClientInput,
+  confirmDuplicate = false,
+): Promise<ClientView> {
   const companyId = needCompany(actor);
+  if (!confirmDuplicate) {
+    const similar = await findDuplicates(companyId, {
+      name: input.name,
+      email: input.email,
+      taxId: input.taxId,
+    });
+    if (similar.length > 0)
+      throw new DuplicateError(
+        'A similar client already exists. Check the list, or confirm to create it anyway.',
+        similar,
+      );
+  }
   const custom = checkCustomValues(await listDefs(companyId, 'client'), input.customFields);
   const { data, error } = await getAdminSupabase()
     .from('clients')
@@ -228,6 +252,7 @@ export async function createClient(actor: Actor, input: ClientInput): Promise<Cl
   if (error) throw new InternalError(error);
   const id = String(data.id);
   await saveContacts(companyId, id, input);
+  await logClientEvent(companyId, id, 'system', 'Client created', '', actor.userId);
   await getService('audit').record({
     action: 'client.created',
     resourceType: 'client',
@@ -248,37 +273,41 @@ export async function quickCreateClient(actor: Actor, input: QuickClient): Promi
   const defs = await listDefs(needCompany(actor), 'client');
   if (defs.some((d) => d.required))
     throw new ValidationError('Your company has required custom fields. Use the full client form.');
-  return createClient(actor, {
-    kind: 'company',
-    name: input.name,
-    contactName: '',
-    email: input.email,
-    billingEmail: null,
-    phone: '',
-    website: '',
-    taxId: '',
-    displayCurrency: 'USD',
-    paymentTermsDays: null,
-    notes: '',
-    tags: [],
-    customFields: {},
-    billing: {
-      line1: '',
-      line2: '',
-      city: '',
-      region: '',
-      postalCode: input.postalCode,
-      country: input.country,
+  return createClient(
+    actor,
+    {
+      kind: 'company',
+      name: input.name,
+      contactName: '',
+      email: input.email,
+      billingEmail: null,
+      phone: '',
+      website: '',
+      taxId: '',
+      displayCurrency: 'USD',
+      paymentTermsDays: null,
+      notes: '',
+      tags: [],
+      customFields: {},
+      billing: {
+        line1: '',
+        line2: '',
+        city: '',
+        region: '',
+        postalCode: input.postalCode,
+        country: input.country,
+      },
+      shipping: { line1: '', line2: '', city: '', region: '', postalCode: '', country: null },
+      openingBalance: '0',
+      creditLimit: null,
+      riskFlag: 'none',
+      doNotContact: false,
+      remindersOptOut: false,
+      portalPrefs: { notifyByEmail: true, showStatement: true },
+      contacts: [],
     },
-    shipping: { line1: '', line2: '', city: '', region: '', postalCode: '', country: null },
-    openingBalance: '0',
-    creditLimit: null,
-    riskFlag: 'none',
-    doNotContact: false,
-    remindersOptOut: false,
-    portalPrefs: { notifyByEmail: true, showStatement: true },
-    contacts: [],
-  });
+    input.confirmDuplicate,
+  );
 }
 
 export async function updateClient(
@@ -334,6 +363,14 @@ export async function setClientStatus(
     .select('id');
   if (r.error) throw new InternalError(r.error);
   if (!r.data || r.data.length === 0) throw new NotFoundError();
+  await logClientEvent(
+    companyId,
+    id,
+    'status',
+    action === 'archive' ? 'Client archived' : 'Client reactivated',
+    '',
+    actor.userId,
+  );
   await getService('audit').record({
     action: `client.${action === 'archive' ? 'archived' : 'reactivated'}`,
     resourceType: 'client',

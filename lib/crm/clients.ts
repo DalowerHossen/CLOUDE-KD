@@ -113,6 +113,12 @@ export const clientInputSchema = z
   .strict();
 export type ClientInput = z.infer<typeof clientInputSchema>;
 
+/** Creating a client first checks for look-alikes; sending `confirmDuplicate: true` creates it anyway. */
+export const clientCreateSchema = clientInputSchema
+  .extend({ confirmDuplicate: z.boolean() })
+  .strict();
+export type ClientCreate = z.infer<typeof clientCreateSchema>;
+
 export const clientUpdateSchema = clientInputSchema
   .extend({ expectedVersion: z.number().int().min(1) })
   .strict();
@@ -125,6 +131,7 @@ export const quickClientSchema = z
     email: optionalEmail,
     postalCode: plain(1, 20),
     country: countryCode,
+    confirmDuplicate: z.boolean(),
   })
   .strict();
 export type QuickClient = z.infer<typeof quickClientSchema>;
