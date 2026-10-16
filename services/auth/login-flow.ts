@@ -8,6 +8,7 @@ import {
   OWNER_2FA_GRACE_DAYS,
 } from '@/config/auth-lock';
 import { getService } from '@/lib/container';
+import { rotateCsrfCookie } from '@/lib/security/csrf-server';
 import { RateLimitError, UnauthorizedError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { getAdminSupabase } from '@/lib/supabase/admin';
@@ -138,6 +139,7 @@ export async function completeLogin(input: {
   const accepted = await recordSuccess(input.identifier, input.user.userId, input.user.companyId);
   if (!accepted) return fail();
   const minted = await mintSession(input.email);
+  await rotateCsrfCookie();
   await clearPendingLogin();
   try {
     await openSessionRecord({

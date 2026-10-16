@@ -2,6 +2,7 @@
 // Sign-out of the current device or of every device. Safe to call without a session.
 import 'server-only';
 import { decodeJwt } from 'jose';
+import { rotateCsrfCookie } from '@/lib/security/csrf-server';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { hashIdentifier } from './lock-service';
@@ -29,6 +30,7 @@ export async function signOutCurrent(everywhere: boolean): Promise<{ signedOut: 
       .eq('auth_session_id', authSessionId);
   }
   await client.auth.signOut({ scope: everywhere ? 'global' : 'local' });
+  await rotateCsrfCookie();
   if (user.email) {
     await recordLoginEvent({
       identifierHash: await hashIdentifier(user.email),

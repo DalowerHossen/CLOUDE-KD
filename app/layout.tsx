@@ -1,4 +1,5 @@
 // path: app/layout.tsx
+import { CsrfInit } from '@/lib/security/csrf-init';
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
@@ -62,6 +63,7 @@ export default async function RootLayout({
         <ThemeInitScript nonce={nonce} />
       </head>
       <body>
+        <CsrfInit />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

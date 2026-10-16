@@ -15,6 +15,14 @@ import {
   SanitizerError,
 } from '@/lib/security/sanitizer';
 import { sanitizeHtml, stripHtml } from '@/lib/security/rich-text';
+import { inspectUserAgent } from '@/lib/middleware/bot-detector';
+import {
+  checkCsrf,
+  createCsrfToken,
+  isValidCsrfToken,
+  isSameOrigin,
+  requiresCsrfCheck,
+} from '@/lib/middleware/csrf';
 import { SsrfError, resolvePublicAddresses, validateOutboundUrl } from '@/lib/security/ssrf';
 
 /** Builds a character from its hexadecimal code point, so the source file stays ASCII. */
@@ -278,6 +286,82 @@ async function main(): Promise<void> {
       assert.equal(clean.includes(bad), false, bad);
     assert.equal(stripHtml('<p>a<b>b</b></p>'), 'ab');
     assert.ok(sanitizeHtml('<a href="https://example.com">ok</a>').includes('https://example.com'));
+  });
+
+  await check('csrf: signed token, origin check, exemptions', async () => {
+    const secret = 's'.repeat(48);
+    const token = await createCsrfToken(secret);
+    assert.equal(await isValidCsrfToken(token, secret), true);
+    assert.equal(await isValidCsrfToken(token, 'z'.repeat(48)), false);
+    assert.equal(await isValidCsrfToken(`${token.split('.')[0]}.${'0'.repeat(64)}`, secret), false);
+    assert.equal(await isValidCsrfToken('abc', secret), false);
+    assert.equal(await isValidCsrfToken(undefined, secret), false);
+    const base = {
+      method: 'POST',
+      pathname: '/api/auth/login',
+      origin: 'https://app.example.com',
+      referer: null,
+      appOrigin: 'https://app.example.com',
+      cookieToken: token,
+      headerToken: token,
+      secret,
+    };
+    assert.equal(await checkCsrf(base), 'ok');
+    assert.equal(await checkCsrf({ ...base, origin: 'https://evil.example' }), 'bad_origin');
+    assert.equal(
+      await checkCsrf({ ...base, origin: null, referer: 'https://app.example.com/login' }),
+      'ok',
+    );
+    assert.equal(await checkCsrf({ ...base, origin: null, referer: null }), 'bad_origin');
+    assert.equal(await checkCsrf({ ...base, headerToken: null }), 'missing_token');
+    assert.equal(
+      await checkCsrf({ ...base, headerToken: await createCsrfToken(secret) }),
+      'mismatch',
+    );
+    const forged = `${'a'.repeat(48)}.${'b'.repeat(64)}`;
+    assert.equal(
+      await checkCsrf({ ...base, cookieToken: forged, headerToken: forged }),
+      'invalid_signature',
+    );
+    assert.equal(
+      await checkCsrf({ ...base, method: 'GET', cookieToken: undefined, headerToken: null }),
+      'ok',
+    );
+    assert.equal(requiresCsrfCheck('POST', '/api/webhooks/stripe'), false);
+    assert.equal(requiresCsrfCheck('POST', '/api/cron/worker-tick'), false);
+    assert.equal(requiresCsrfCheck('DELETE', '/api/auth/oauth/unlink'), true);
+    assert.equal(requiresCsrfCheck('POST', '/login'), false);
+    assert.equal(
+      isSameOrigin('https://app.example.com.evil.io', null, 'https://app.example.com'),
+      false,
+    );
+  });
+
+  await check('bot detector: headless, scanners and malformed user agents', () => {
+    const chrome =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+    assert.deepEqual(inspectUserAgent(chrome, '/login'), { ok: true });
+    assert.deepEqual(inspectUserAgent(null, '/login'), { ok: false, reason: 'missing_user_agent' });
+    assert.deepEqual(inspectUserAgent('', '/login'), { ok: false, reason: 'missing_user_agent' });
+    assert.deepEqual(inspectUserAgent('Mozilla/5.0 HeadlessChrome/120', '/login'), {
+      ok: false,
+      reason: 'headless',
+    });
+    assert.deepEqual(inspectUserAgent('python-requests/2.31', '/api/auth/login'), {
+      ok: false,
+      reason: 'scanner',
+    });
+    assert.deepEqual(inspectUserAgent('sqlmap/1.7', '/'), { ok: false, reason: 'scanner' });
+    assert.deepEqual(inspectUserAgent('x'.repeat(600), '/'), {
+      ok: false,
+      reason: 'invalid_user_agent',
+    });
+    assert.deepEqual(inspectUserAgent('Mozilla/5.0 ' + U('e9'), '/'), {
+      ok: false,
+      reason: 'invalid_user_agent',
+    });
+    assert.deepEqual(inspectUserAgent('curl/8.0', '/api/webhooks/stripe'), { ok: true });
+    assert.deepEqual(inspectUserAgent(null, '/api/cron/worker-tick'), { ok: true });
   });
 }
 
