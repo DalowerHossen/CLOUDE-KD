@@ -4,6 +4,15 @@ import assert from 'node:assert/strict';
 import { buildCsp, buildTrustedTypesPolicy, profileForPath } from '@/lib/security/csp';
 import { securityHeaders } from '@/lib/security/headers';
 import { hasHeaderInjection, safeFileName, stripHeaderInjection } from '@/lib/security/http-safety';
+import {
+  generateOtp,
+  generateToken,
+  hasValidSignature,
+  hashOtp,
+  hashToken,
+  maskToken,
+  normalizeTtlDays,
+} from '@/lib/auth/tokens';
 import { isNonPublicIp } from '@/lib/security/ip';
 import { isAllowedExternalRedirect, safeRedirectPath } from '@/lib/security/redirect';
 import {
@@ -597,6 +606,25 @@ async function main(): Promise<void> {
     assert.ok(new Set(FRAUD_RULES.map((r) => r.id)).size === FRAUD_RULES.length);
     const hijack = rulesForSignal('session_ip_change', 'user')[0];
     assert.ok(hijack?.actions.includes('terminate_sessions'));
+  });
+  await check('tokens: signature, tamper, ttl, otp', async () => {
+    const secret = 'unit-secret-unit-secret-unit-secret-1234';
+    const { token, hash } = await generateToken(secret);
+    assert.ok(await hasValidSignature(token, secret));
+    assert.ok(!(await hasValidSignature(token, 'other-secret-other-secret-other-1234')));
+    const flipped = token.slice(0, -1) + (token.endsWith('A') ? 'B' : 'A');
+    assert.ok(!(await hasValidSignature(flipped, secret)));
+    assert.ok(!(await hasValidSignature('garbage', secret)));
+    assert.equal(hash, await hashToken(token));
+    assert.ok(!maskToken(token).includes(token.slice(5, -3)));
+    assert.equal(normalizeTtlDays(365, null), 365);
+    assert.equal(normalizeTtlDays(365, 30), 30);
+    assert.equal(normalizeTtlDays(45, null), 30);
+    assert.equal(normalizeTtlDays(1, null), 7);
+    assert.match(generateOtp(), /^[0-9]{6}$/);
+    const a = await hashOtp('123456', 'id1', secret);
+    assert.notEqual(a, await hashOtp('123456', 'id2', secret));
+    assert.notEqual(a, await hashOtp('123457', 'id1', secret));
   });
 }
 

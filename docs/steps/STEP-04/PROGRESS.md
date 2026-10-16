@@ -7,7 +7,7 @@
 - [x] 04.5 network intelligence, Tor list, whitelist, admin page (2026-10-16)
 - [x] 04.6 device and behaviour signals (2026-10-16)
 - [x] 04.7 fraud and zero-trust engine, security service, fraud console (2026-10-16)
-- [ ] 04.8
+- [x] 04.8
 - [ ] 04.9
 - [ ] 04.10
 - [ ] 04.11

@@ -182,6 +182,7 @@
         "lib/security/**",
         "lib/middleware/{rate-limit,bot-detector,vpn-detector,csrf,auth,idempotency,headers,shield}.ts",
         "app/api/security/**",
+        "emails/security/**",
         "lib/auth/tokens.ts",
         "lib/webhook/**",
         "services/{security,fraud,incident,alerting,siem}/**",
