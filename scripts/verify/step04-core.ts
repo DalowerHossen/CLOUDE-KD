@@ -13,6 +13,13 @@ import {
   maskToken,
   normalizeTtlDays,
 } from '@/lib/auth/tokens';
+import {
+  checkTimestamp,
+  signPayload,
+  verifyHmacSignature,
+  verifyTimestampedSignature,
+} from '@/lib/webhook/signature';
+import { createReplayCache } from '@/lib/webhook/replay';
 import { isNonPublicIp } from '@/lib/security/ip';
 import { isAllowedExternalRedirect, safeRedirectPath } from '@/lib/security/redirect';
 import {
@@ -625,6 +632,46 @@ async function main(): Promise<void> {
     const a = await hashOtp('123456', 'id1', secret);
     assert.notEqual(a, await hashOtp('123456', 'id2', secret));
     assert.notEqual(a, await hashOtp('123457', 'id1', secret));
+  });
+  await check('webhook helpers: signature, window, replay', async () => {
+    const sig = await signPayload('whsec', 'body');
+    assert.ok(await verifyHmacSignature('whsec', 'body', sig));
+    assert.ok(await verifyHmacSignature('whsec', 'body', `sha256=${sig.toUpperCase()}`));
+    assert.ok(!(await verifyHmacSignature('whsec', 'body2', sig)));
+    assert.ok(!(await verifyHmacSignature('whsec', 'body', 'short')));
+    const now = new Date('2026-01-01T00:10:00Z');
+    const ts = Math.floor(now.getTime() / 1000);
+    assert.ok(checkTimestamp(ts - 299, now).ok);
+    assert.deepEqual(checkTimestamp(ts - 301, now), { ok: false, reason: 'stale' });
+    assert.deepEqual(checkTimestamp(ts + 301, now), { ok: false, reason: 'future' });
+    const good = await signPayload('whsec', `${ts}.body`);
+    assert.ok(
+      (
+        await verifyTimestampedSignature({
+          secret: 'whsec',
+          timestampSeconds: ts,
+          body: 'body',
+          supplied: good,
+          now,
+        })
+      ).ok,
+    );
+    const bad = await verifyTimestampedSignature({
+      secret: 'whsec',
+      timestampSeconds: ts,
+      body: 'tampered',
+      supplied: good,
+      now,
+    });
+    assert.deepEqual(bad, { ok: false, reason: 'bad_signature' });
+    const cache = createReplayCache(1000, 3);
+    assert.ok(cache.firstSeen('a', 0));
+    assert.ok(!cache.firstSeen('a', 500));
+    assert.ok(cache.firstSeen('a', 1600));
+    cache.firstSeen('b', 1601);
+    cache.firstSeen('c', 1602);
+    cache.firstSeen('d', 1603);
+    assert.ok(cache.size() <= 3);
   });
 }
 
