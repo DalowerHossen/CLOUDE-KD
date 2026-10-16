@@ -8,6 +8,13 @@ import { pricingColumns } from '@/lib/cms/pricing';
 import { BLOCK_LABELS, ITEM_TEMPLATES, newBlock } from '@/lib/cms/templates';
 import { sanitizeBlocks } from '@/lib/cms/sanitize-blocks';
 import type { BlockType } from '@/lib/cms/blocks';
+import {
+  EMPTY_PIXELS,
+  PIXEL_KEYS,
+  activeProviders,
+  originsFor,
+  pixelSettingsSchema,
+} from '@/lib/analytics/providers';
 import { plainText, readMinutes, slugify } from '@/lib/blog/text';
 import { postActionSchema, postSaveSchema, publicListQuery } from '@/services/blog/schemas';
 import { PLAN_KEYS } from '@/config/plans';
@@ -198,6 +205,48 @@ async function main(): Promise<void> {
     assert.ok(publicListQuery.safeParse({ page: '2', month: '2026-03' }).success);
     assert.ok(!publicListQuery.safeParse({ month: '2026-13' }).success);
     assert.ok(!publicListQuery.safeParse({ q: 'a' }).success, 'search needs two letters');
+  });
+
+  await check('tracking providers: consent decides, identifiers are checked', () => {
+    const all = Object.fromEntries(
+      PIXEL_KEYS.map((k) => [
+        k,
+        {
+          ga4: 'G-ABC12345',
+          gtm: 'GTM-ABCD12',
+          clarity: 'abcdefgh12',
+          metaPixel: '123456789012',
+          tiktok: 'ABCDEFGH12',
+          linkedin: '1234567',
+          x: 'abcd1',
+          pinterest: '1234567890123',
+        }[k],
+      ]),
+    );
+    const settings = pixelSettingsSchema.parse(all);
+    assert.deepEqual(activeProviders(settings, null), [], 'no choice, nothing runs');
+    assert.deepEqual(activeProviders(settings, { analytics: false, marketing: false }), []);
+    assert.deepEqual(activeProviders(settings, { analytics: true, marketing: false }), [
+      'ga4',
+      'gtm',
+      'clarity',
+    ]);
+    assert.deepEqual(activeProviders(settings, { analytics: false, marketing: true }), [
+      'metaPixel',
+      'tiktok',
+      'linkedin',
+      'x',
+      'pinterest',
+    ]);
+    assert.deepEqual(
+      activeProviders(EMPTY_PIXELS, { analytics: true, marketing: true }),
+      [],
+      'no identifiers, nothing runs',
+    );
+    assert.ok(originsFor(['ga4', 'gtm']).length === 3, 'origins are unique');
+    for (const bad of ['"><script>', 'G-1', 'javascript:1'])
+      assert.ok(!pixelSettingsSchema.safeParse({ ...EMPTY_PIXELS, ga4: bad }).success, bad);
+    assert.ok(!pixelSettingsSchema.safeParse({ ...EMPTY_PIXELS, extra: 'x' }).success);
   });
 
   await check('pricing table is built from the plan catalogue', () => {

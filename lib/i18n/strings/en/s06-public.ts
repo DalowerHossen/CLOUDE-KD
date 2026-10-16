@@ -232,6 +232,26 @@ export const strings = {
     error: 'The settings could not be saved. Check the step-up and the values.',
     nav: 'Search and audit',
   },
+  analyticsAdmin: {
+    title: 'Analytics and pixels',
+    description:
+      'Visits of the public site, counted without cookies, and the tracking providers that run after a visitor agrees.',
+    last30: 'Last 30 days',
+    views: 'Page views',
+    signups: 'Sign-up clicks',
+    contacts: 'Contact messages',
+    tools: 'Free tool uses',
+    topPages: 'Most visited pages',
+    noData: 'No visits counted yet.',
+    pixels: 'Tracking providers',
+    pixelsHelp:
+      'Enter only the identifier of each provider. A provider starts only after the visitor allowed its category, and never on sign-in, payment, client portal or admin pages. Leave a field empty to switch the provider off.',
+    analytics: 'analytics cookies',
+    marketing: 'marketing cookies',
+    saved: 'Providers saved.',
+    error: 'The providers could not be saved. Check the step-up and the identifiers.',
+    nav: 'Analytics and pixels',
+  },
   nav: {
     product: 'Product',
     productDescription: 'What the platform does',

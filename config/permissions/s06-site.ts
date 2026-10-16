@@ -53,4 +53,16 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin', 'ceo'],
     approvalLevel: 'L1',
   },
+  {
+    action: 'analytics.read',
+    description: 'See visit counters and which tracking providers are set',
+    defaultRoles: [...staff],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'analytics.edit',
+    description: 'Set the identifiers of tracking providers',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L1',
+  },
 ];

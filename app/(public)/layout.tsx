@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { visibleNavItems } from '@/components/layout/nav-utils';
 import { PublicFrame } from '@/components/marketing/public-frame';
 import { navMap } from '@/config/nav-map';
+import { readPixels } from '@/services/analytics/pixels';
 import { readSeoSettings } from '@/services/seo/settings';
 
 /** Site verification tags for search engines, from the SEO settings. */
@@ -22,9 +23,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function PublicLayout({ children }: { children: ReactNode }): JSX.Element {
+export default async function PublicLayout({
+  children,
+}: {
+  children: ReactNode;
+}): Promise<JSX.Element> {
+  const pixels = await readPixels();
   return (
     <PublicFrame
+      pixels={pixels}
       headerItems={visibleNavItems(navMap, 'public-header', null)}
       footerItems={visibleNavItems(navMap, 'public-footer', null)}
     >

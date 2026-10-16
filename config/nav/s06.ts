@@ -144,4 +144,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 62,
   },
+  {
+    id: 'admin-analytics',
+    labelKey: 's06Public.analyticsAdmin.nav',
+    href: '/admin/analytics',
+    icon: 'bar-chart',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 63,
+  },
 ];

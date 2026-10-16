@@ -6,6 +6,7 @@ import { Turnstile } from '@/app/(auth)/_components/turnstile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { trackConversion } from '@/lib/analytics/start-provider';
 import { getPublicEnv } from '@/lib/env/public';
 import { t } from '@/lib/i18n';
 
@@ -45,6 +46,7 @@ export function ContactForm({ email }: { email?: string }): JSX.Element {
       });
       if (response.ok) {
         setDone(true);
+        trackConversion('contact_sent');
       } else {
         const parsed = errorBody.safeParse(await response.json().catch(() => null));
         setError(parsed.success ? parsed.data.error.message : t('s06Public.contact.error'));
