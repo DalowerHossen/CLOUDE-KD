@@ -3,6 +3,7 @@
 // edit the wording, and the messages carry no unsubscribe header (they are documents, not newsletters).
 import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
+import { PurchaseOrderEmail } from './purchase-order';
 import { StatementEmail } from './statement';
 
 export interface CrmEmailTemplate {
@@ -31,5 +32,23 @@ export const crmEmailTemplates: readonly CrmEmailTemplate[] = [
       ],
     },
     component: StatementEmail as ComponentType<never>,
+  },
+  {
+    definition: {
+      id: 'invoice.purchase-order',
+      subject: 'Purchase order {number} from {companyName}',
+      variables: [
+        'supplierName',
+        'companyName',
+        'number',
+        'orderDate',
+        'expectedDate',
+        'total',
+        'shipTo',
+        'notes',
+        'lines',
+      ],
+    },
+    component: PurchaseOrderEmail as ComponentType<never>,
   },
 ];

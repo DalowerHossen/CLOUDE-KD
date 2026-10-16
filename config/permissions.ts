@@ -17,5 +17,6 @@ import { permissions as s07Team } from './permissions/s07-team';
 import { permissions as s08Catalog } from './permissions/s08-catalog';
 import { permissions as s08Clients } from './permissions/s08-clients';
 import { permissions as s08Inventory } from './permissions/s08-inventory';
+import { permissions as s08Purchasing } from './permissions/s08-purchasing';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing];

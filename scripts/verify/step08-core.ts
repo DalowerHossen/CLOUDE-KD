@@ -19,6 +19,10 @@ import {
   statementQuery,
   viewCreateSchema,
 } from '@/lib/crm/search';
+import { supplierInputSchema, supplierListQuery } from '@/lib/procurement/suppliers';
+import { poActionSchema, poInputSchema, poListQuery } from '@/lib/procurement/orders';
+import { computeTotals } from '@/lib/procurement/totals';
+import { PurchaseOrderEmail } from '@/emails/crm/purchase-order';
 import { Money } from '@/lib/utils/currency';
 import { render } from '@react-email/render';
 import { crmEmailTemplates } from '@/emails/crm';
@@ -869,6 +873,94 @@ async function main(): Promise<void> {
       'a code cannot carry filter syntax',
     );
     assert.ok(!barcodeQuery.safeParse({ code: '' }).success);
+  });
+
+  await check('suppliers and purchase orders: input, totals, permissions, e-mail', async () => {
+    const sid = '0190a0a0-0000-7000-8000-000000000001';
+    const supplier = {
+      name: 'Acme Supply',
+      contactName: '',
+      email: 'sales@acme.example',
+      phone: '+1 555 0100',
+      website: 'https://acme.example',
+      taxId: '',
+      category: 'Parts',
+      paymentTermsDays: 30,
+      addressLine1: '',
+      addressLine2: '',
+      addressCity: '',
+      addressRegion: '',
+      addressPostalCode: '',
+      addressCountry: 'US',
+      notes: '',
+      customFields: {},
+    };
+    assert.ok(supplierInputSchema.safeParse(supplier).success);
+    assert.ok(!supplierInputSchema.safeParse({ ...supplier, website: 'http://x.example' }).success);
+    assert.ok(!supplierInputSchema.safeParse({ ...supplier, paymentTermsDays: 400 }).success);
+    assert.ok(!supplierInputSchema.safeParse({ ...supplier, extra: 1 }).success);
+    assert.ok(supplierListQuery.safeParse({ status: 'archived' }).success);
+    const line = {
+      productId: sid,
+      variantId: null,
+      description: '',
+      quantity: '3',
+      unitCost: '2.5',
+      taxRate: '10',
+    };
+    const po = {
+      supplierId: sid,
+      warehouseId: sid,
+      orderDate: '2026-01-10',
+      expectedDate: '2026-01-20',
+      supplierReference: '',
+      notes: '',
+      lines: [line],
+    };
+    assert.ok(poInputSchema.safeParse(po).success);
+    assert.ok(!poInputSchema.safeParse({ ...po, expectedDate: '2026-01-01' }).success);
+    assert.ok(!poInputSchema.safeParse({ ...po, lines: [] }).success);
+    assert.ok(!poInputSchema.safeParse({ ...po, lines: [{ ...line, unitCost: '-1' }] }).success);
+    assert.ok(poActionSchema.safeParse({ action: 'send' }).success);
+    assert.ok(!poActionSchema.safeParse({ action: 'delete' }).success);
+    assert.ok(
+      poActionSchema.safeParse({
+        action: 'receive',
+        lines: [{ lineId: sid, quantity: '2', batchNo: '', expiresOn: '' }],
+      }).success,
+    );
+    assert.ok(poListQuery.safeParse({ status: 'partial' }).success);
+    const totals = computeTotals([
+      { quantity: '3', unitCost: '2.5', taxRate: '10' },
+      { quantity: '0.1', unitCost: '0.2', taxRate: '0' },
+    ]);
+    assert.equal(totals.subtotal, '7.5200');
+    assert.equal(totals.taxTotal, '0.7500');
+    assert.equal(totals.total, '8.2700');
+    const names = new Set(registered.map((p) => p.action));
+    for (const a of [
+      'supplier.read',
+      'supplier.write',
+      'po.read',
+      'po.write',
+      'po.send',
+      'po.receive',
+    ])
+      assert.ok(names.has(a), `permission ${a}`);
+    const html = await render(
+      PurchaseOrderEmail({
+        supplierName: 'Acme',
+        companyName: 'Demo Co',
+        number: 'PO-2026-0001',
+        orderDate: '2026-01-10',
+        expectedDate: '',
+        total: '$8.27',
+        shipTo: 'Main',
+        notes: '',
+        lines: '3 x Widget',
+      }),
+    );
+    assert.ok(html.includes('PO-2026-0001'));
   });
 }
 
