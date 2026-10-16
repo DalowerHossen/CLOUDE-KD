@@ -9,6 +9,8 @@ import { PLANS, PLAN_KEYS } from '@/config/plans';
 import type { Block } from '@/lib/cms/blocks';
 import { pricingColumns } from '@/lib/cms/pricing';
 import { ContactForm } from '../contact-form';
+import { AbHero } from './ab-hero';
+import { HeroView } from './hero-view';
 import { BlockIcon } from './icons';
 
 type Of<T extends Block['type']> = Extract<Block, { type: T }>;
@@ -31,51 +33,6 @@ function Heading({
       <H className={first ? 'text-h1 font-bold tracking-tight' : heading2}>{text}</H>
       {intro ? <p className="text-lead text-muted-foreground">{intro}</p> : null}
     </div>
-  );
-}
-
-function CtaLink({
-  cta,
-  variant,
-}: {
-  cta: { label: string; href: string };
-  variant?: 'default' | 'outline';
-}): JSX.Element {
-  const external = cta.href.startsWith('https://') || cta.href.startsWith('mailto:');
-  return (
-    <Button asChild variant={variant ?? 'default'} size="lg">
-      {external ? (
-        <a href={cta.href} rel="noopener noreferrer">
-          {cta.label}
-        </a>
-      ) : (
-        <Link href={cta.href}>{cta.label}</Link>
-      )}
-    </Button>
-  );
-}
-
-function Hero({ b, first }: { b: Of<'hero'>; first: boolean }): JSX.Element {
-  const H = first ? 'h1' : 'h2';
-  return (
-    <section className="bg-gradient-to-b from-muted/60 to-background">
-      <div className={`${section} space-y-sp-16 py-sp-64`}>
-        {b.eyebrow ? (
-          <p className="text-sm font-semibold uppercase tracking-wide text-primary">{b.eyebrow}</p>
-        ) : null}
-        <H className="max-w-4xl text-display font-bold tracking-tight">{b.heading}</H>
-        {b.subheading ? (
-          <p className="max-w-3xl text-lead text-muted-foreground">{b.subheading}</p>
-        ) : null}
-        {b.primaryCta || b.secondaryCta ? (
-          <div className="flex flex-wrap gap-3 pt-2">
-            {b.primaryCta ? <CtaLink cta={b.primaryCta} /> : null}
-            {b.secondaryCta ? <CtaLink cta={b.secondaryCta} variant="outline" /> : null}
-          </div>
-        ) : null}
-        {b.note ? <p className="text-caption text-muted-foreground">{b.note}</p> : null}
-      </div>
-    </section>
   );
 }
 
@@ -373,7 +330,11 @@ function Columns({ b }: { b: Of<'columns'> }): JSX.Element {
 export function BlockView({ block, first }: { block: Block; first: boolean }): JSX.Element | null {
   switch (block.type) {
     case 'hero':
-      return <Hero b={block} first={first} />;
+      return block.experiment ? (
+        <AbHero block={block} first={first} />
+      ) : (
+        <HeroView b={block} first={first} />
+      );
     case 'features':
       return <Features b={block} />;
     case 'steps':

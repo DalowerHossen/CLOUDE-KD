@@ -52,6 +52,8 @@ for (const path of files) {
     const lib =
       path.startsWith('lib/analytics/') ||
       path.startsWith('services/analytics/') ||
+      path.startsWith('services/marketing/') ||
+      path.startsWith('lib/marketing/') ||
       path.startsWith('app/api/');
     if (!marketing && !lib && !LOADER_USERS.has(path) && !path.startsWith('components/marketing/'))
       fail(`${path}: tracking code is used outside the public site`);

@@ -68,6 +68,11 @@ export const blockSchema = z.discriminatedUnion('type', [
       primaryCta: cta.optional(),
       secondaryCta: cta.optional(),
       note: optionalText(160),
+      /** Key of an A/B experiment that changes the heading, summary and button text of this block. */
+      experiment: z
+        .string()
+        .regex(/^[a-z0-9]([a-z0-9-]{1,38}[a-z0-9])$/)
+        .optional(),
     })
     .strict(),
   z

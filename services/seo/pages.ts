@@ -64,6 +64,13 @@ export async function indexablePages(): Promise<IndexablePage[]> {
     });
   }
   pages.push({ path: '/legal', slug: 'legal', kind: 'page', lastModified: null });
+  for (const tool of [
+    'tools',
+    'tools/invoice-generator',
+    'tools/late-fee-calculator',
+    'tools/sales-tax-calculator',
+  ])
+    pages.push({ path: `/${tool}`, slug: tool, kind: 'page', lastModified: null });
   pages.push({ path: '/blog', slug: 'blog', kind: 'blog_index', lastModified: null });
   try {
     for (const p of await publishedSlugs())

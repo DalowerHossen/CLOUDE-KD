@@ -129,6 +129,6 @@ export const ITEM_TEMPLATES: Readonly<Record<string, unknown>> = {
 
 /** Parts a block may have but does not have yet: the editor offers to add them. */
 export const OPTIONAL_PARTS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
-  hero: { primaryCta: cta, secondaryCta: cta },
+  hero: { primaryCta: cta, secondaryCta: cta, experiment: 'new-experiment' },
   cta: { secondary: cta },
 };

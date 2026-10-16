@@ -160,9 +160,10 @@ export function startProvider(key: PixelKey, id: string, nonce?: string): void {
 }
 
 /** Reports a named conversion to the providers that are running, and counts it in the first-party counter. */
-export function trackConversion(name: 'signup_click' | 'contact_sent'): void {
+export function trackConversion(name: 'signup_click' | 'contact_sent' | 'free_tool_used'): void {
   if (typeof window === 'undefined') return;
   const w = window as unknown as Win;
+  window.dispatchEvent(new CustomEvent('kd:conversion', { detail: name }));
   const path = window.location.pathname;
   void fetch('/api/public-site/hit', {
     method: 'POST',
@@ -170,6 +171,7 @@ export function trackConversion(name: 'signup_click' | 'contact_sent'): void {
     body: JSON.stringify({ path, event: name }),
     keepalive: true,
   }).catch(() => undefined);
+  if (name === 'free_tool_used') return;
   const lead = name === 'contact_sent' ? 'Lead' : 'CompleteRegistration';
   const eventId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
   if (started.has('metaPixel') && typeof w.fbq === 'function') {

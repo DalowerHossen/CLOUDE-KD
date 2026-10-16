@@ -15,6 +15,9 @@ import {
   originsFor,
   pixelSettingsSchema,
 } from '@/lib/analytics/providers';
+import { invoiceTotals, lateFee, salesTax, formatUsd } from '@/lib/marketing/tools';
+import { normalCdf, significance } from '@/lib/marketing/significance';
+import { experimentSchema, leadCaptureSchema } from '@/services/marketing/schemas';
 import { plainText, readMinutes, slugify } from '@/lib/blog/text';
 import { postActionSchema, postSaveSchema, publicListQuery } from '@/services/blog/schemas';
 import { PLAN_KEYS } from '@/config/plans';
@@ -247,6 +250,112 @@ async function main(): Promise<void> {
     for (const bad of ['"><script>', 'G-1', 'javascript:1'])
       assert.ok(!pixelSettingsSchema.safeParse({ ...EMPTY_PIXELS, ga4: bad }).success, bad);
     assert.ok(!pixelSettingsSchema.safeParse({ ...EMPTY_PIXELS, extra: 'x' }).success);
+  });
+
+  await check('free tools: exact money arithmetic and refused input', () => {
+    const t = invoiceTotals(
+      [
+        { description: 'Design', quantity: '3', unitPrice: '19.99' },
+        { description: 'Hosting', quantity: '1.5', unitPrice: '0.1' },
+      ],
+      '10',
+      '8.25',
+    );
+    assert.ok(t);
+    assert.equal(t.subtotal.toString(), '60.1200');
+    assert.equal(t.discount.toString(), '6.0120');
+    assert.equal(t.tax.toString(), '4.4639');
+    assert.equal(t.total.toString(), '58.5719');
+    assert.equal(formatUsd(t.total), '$58.57');
+    assert.equal(
+      formatUsd(
+        invoiceTotals([{ description: 'x', quantity: '1', unitPrice: '1234567.5' }], '0', '0')!
+          .total,
+      ),
+      '$1,234,567.50',
+    );
+    assert.equal(
+      invoiceTotals([{ description: 'x', quantity: '1e3', unitPrice: '1' }], '0', '0'),
+      null,
+      'exponent text',
+    );
+    assert.equal(
+      invoiceTotals([{ description: 'x', quantity: '1', unitPrice: '1' }], '101', '0'),
+      null,
+      'discount over 100',
+    );
+    const late = lateFee('1000', '10', '30', '5');
+    assert.ok(late);
+    assert.equal(late.interest.toString(), '8.2192');
+    assert.equal(late.amountDue.toString(), '1013.2192');
+    assert.equal(lateFee('abc', '10', '30', '0'), null);
+    const add = salesTax('100', '8', 'add');
+    assert.equal(add?.gross.toString(), '108.0000');
+    const out = salesTax('108', '8', 'extract');
+    assert.equal(out?.net.toString(), '100.0000');
+    assert.equal(out?.tax.toString(), '8.0000');
+    assert.equal(salesTax('100', '0.07', 'extract')?.net.toString(), '99.9300');
+  });
+
+  await check('A/B significance and marketing input shapes', () => {
+    assert.ok(Math.abs(normalCdf(0) - 0.5) < 1e-6);
+    assert.ok(Math.abs(normalCdf(1.96) - 0.975) < 1e-3);
+    assert.equal(
+      significance({ exposures: 0, conversions: 0 }, { exposures: 50, conversions: 5 }).significant,
+      false,
+    );
+    assert.equal(
+      significance({ exposures: 1000, conversions: 100 }, { exposures: 1000, conversions: 100 })
+        .significant,
+      false,
+    );
+    const clear = significance(
+      { exposures: 1000, conversions: 100 },
+      { exposures: 1000, conversions: 150 },
+    );
+    assert.ok(clear.significant && clear.pValue < 0.01, String(clear.pValue));
+    assert.equal(
+      significance({ exposures: 50, conversions: 5 }, { exposures: 50, conversions: 20 })
+        .significant,
+      false,
+      'too few visitors',
+    );
+    const variants = [
+      { key: 'control', heading: '', subheading: '', ctaLabel: '' },
+      { key: 'b', heading: 'New', subheading: '', ctaLabel: '' },
+    ];
+    const ok = {
+      id: null,
+      key: 'hero-test',
+      name: 'Hero test',
+      goalEvent: 'signup_click',
+      variants,
+    };
+    assert.ok(experimentSchema.safeParse(ok).success);
+    assert.ok(
+      !experimentSchema.safeParse({ ...ok, variants: [variants[1], variants[0]] }).success,
+      'control first',
+    );
+    assert.ok(
+      !experimentSchema.safeParse({ ...ok, variants: [variants[0]] }).success,
+      'two variants',
+    );
+    assert.ok(!experimentSchema.safeParse({ ...ok, goalEvent: 'purchase' }).success);
+    const lead = {
+      email: 'A@Example.com',
+      source: 'newsletter',
+      marketingOk: false,
+      turnstileToken: 'x',
+    };
+    assert.equal(leadCaptureSchema.parse(lead).email, 'a@example.com');
+    assert.ok(
+      !leadCaptureSchema.safeParse({ ...lead, source: 'contact' }).success,
+      'internal source',
+    );
+    assert.ok(
+      !leadCaptureSchema.safeParse({ ...lead, marketingOk: undefined }).success,
+      'agreement must be explicit',
+    );
   });
 
   await check('pricing table is built from the plan catalogue', () => {

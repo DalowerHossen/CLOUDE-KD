@@ -153,4 +153,15 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 63,
   },
+  {
+    id: 'admin-marketing',
+    labelKey: 's06Public.marketingAdmin.nav',
+    href: '/admin/marketing',
+    icon: 'mail',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 64,
+  },
+  pub('pub-tools', 's06Public.nav.tools', '/tools', 27, 'public-header', 'pub-resources'),
+  pub('foot-tools', 's06Public.nav.tools', '/tools', 22, 'public-footer', 'foot-resources'),
 ];

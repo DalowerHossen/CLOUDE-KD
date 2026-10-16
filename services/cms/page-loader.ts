@@ -6,6 +6,7 @@ import { pageContentSchema, type Block } from '@/lib/cms/blocks';
 import { defaultPage } from '@/lib/cms/defaults';
 import { createLogger } from '@/lib/logger';
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { approvedTestimonials, decidedVariant } from '@/services/marketing/admin';
 
 const log = createLogger({ component: 'cms-loader' });
 
@@ -57,16 +58,56 @@ export async function loadStoredPage(slug: string): Promise<LoadedPage | null> {
   };
 }
 
+/**
+ * Fills blocks that take their content from other places: a testimonials block without items shows the approved
+ * testimonials, and a hero block of a finished experiment shows the winning text. A problem leaves the block as it is.
+ */
+async function withDynamicBlocks(page: LoadedPage): Promise<LoadedPage> {
+  let testimonials: Awaited<ReturnType<typeof approvedTestimonials>> | null = null;
+  const blocks: Block[] = [];
+  for (const b of page.blocks) {
+    try {
+      if (b.type === 'testimonials' && b.items.length === 0) {
+        testimonials = testimonials ?? (await approvedTestimonials());
+        blocks.push({ ...b, items: testimonials });
+        continue;
+      }
+      if (b.type === 'hero' && b.experiment) {
+        const winner = await decidedVariant(b.experiment);
+        if (winner) {
+          const { experiment: _done, ...rest } = b;
+          blocks.push({
+            ...rest,
+            ...(winner.heading ? { heading: winner.heading } : {}),
+            ...(winner.subheading ? { subheading: winner.subheading } : {}),
+            ...(winner.ctaLabel && b.primaryCta
+              ? { primaryCta: { ...b.primaryCta, label: winner.ctaLabel } }
+              : {}),
+          });
+          continue;
+        }
+      }
+    } catch (error) {
+      log.warn('dynamic block content could not be read', {
+        slug: page.slug,
+        error: error instanceof Error ? error.message : 'failed',
+      });
+    }
+    blocks.push(b);
+  }
+  return { ...page, blocks };
+}
+
 export async function loadPage(slug: string): Promise<LoadedPage | null> {
   try {
     const stored = await loadStoredPage(slug);
-    if (stored) return stored;
+    if (stored) return withDynamicBlocks(stored);
   } catch (error) {
     log.error('stored page could not be read; built-in content is shown', { slug, error });
   }
   const def = defaultPage(slug);
   if (!def) return null;
-  return {
+  return withDynamicBlocks({
     slug,
     title: def.title,
     description: def.description,
@@ -75,5 +116,5 @@ export async function loadPage(slug: string): Promise<LoadedPage | null> {
     noindex: false,
     updatedAt: null,
     versionNo: null,
-  };
+  });
 }

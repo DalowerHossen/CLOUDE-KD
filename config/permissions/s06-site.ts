@@ -65,4 +65,34 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin', 'ceo'],
     approvalLevel: 'L1',
   },
+  {
+    action: 'marketing.read',
+    description: 'See testimonials, campaigns and A/B experiments',
+    defaultRoles: [...staff],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'marketing.edit',
+    description: 'Manage testimonials, campaign drafts and A/B experiments',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L1',
+  },
+  {
+    action: 'marketing.send',
+    description: 'Send e-mail campaigns to leads',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L2',
+  },
+  {
+    action: 'leads.read',
+    description: 'See leads captured on the public site',
+    defaultRoles: [...staff],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'leads.edit',
+    description: 'Change the status and notes of leads',
+    defaultRoles: [...staff],
+    approvalLevel: 'L0',
+  },
 ];
