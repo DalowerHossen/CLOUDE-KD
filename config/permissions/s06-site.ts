@@ -22,4 +22,23 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: [...staff],
     approvalLevel: 'L2',
   },
+  {
+    action: 'blog.read',
+    description: 'See blog posts, drafts, authors, categories and tags',
+    defaultRoles: [...staff],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'blog.edit',
+    description: 'Write and edit blog posts, authors, categories and tags',
+    defaultRoles: [...staff],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'blog.publish',
+    description:
+      'Publish, schedule, call back and delete blog posts (content managers need approval)',
+    defaultRoles: [...staff],
+    approvalLevel: 'L2',
+  },
 ];

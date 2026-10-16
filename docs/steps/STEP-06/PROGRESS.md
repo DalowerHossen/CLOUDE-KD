@@ -4,7 +4,7 @@
 - [x] 06.2 block system, eight core pages, contact form (2026-10-16)
 - [x] 06.3
 - [x] 06.4
-- [ ] 06.5
+- [x] 06.5
 - [ ] 06.6
 - [ ] 06.7
 - [ ] 06.8

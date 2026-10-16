@@ -8,6 +8,8 @@ import { pricingColumns } from '@/lib/cms/pricing';
 import { BLOCK_LABELS, ITEM_TEMPLATES, newBlock } from '@/lib/cms/templates';
 import { sanitizeBlocks } from '@/lib/cms/sanitize-blocks';
 import type { BlockType } from '@/lib/cms/blocks';
+import { plainText, readMinutes, slugify } from '@/lib/blog/text';
+import { postActionSchema, postSaveSchema, publicListQuery } from '@/services/blog/schemas';
 import { PLAN_KEYS } from '@/config/plans';
 import {
   COOKIE_POLICY_VERSION,
@@ -168,6 +170,34 @@ async function main(): Promise<void> {
       assert.equal(defaultPage(slug), page);
       assert.equal(pathOf(slug), `/${slug}`);
     }
+  });
+
+  await check('blog helpers and input shapes', () => {
+    assert.equal(slugify('  Hello, World! 2026 '), 'hello-world-2026');
+    assert.equal(slugify('!!!'), '');
+    assert.equal(
+      plainText('<h2>Title</h2><p>One &amp; two</p><ul><li>a</li><li>b</li></ul>'),
+      'Title One & two a b',
+    );
+    assert.equal(readMinutes(''), 1);
+    assert.equal(readMinutes(Array(401).fill('word').join(' ')), 3);
+    const base = {
+      slug: 'my-post',
+      title: 'My post',
+      bodyHtml: '<p>x</p>',
+      authorId: '018f0000-0000-7000-8000-000000000001',
+    };
+    assert.ok(postSaveSchema.safeParse(base).success);
+    assert.ok(!postSaveSchema.safeParse({ ...base, slug: 'Bad Slug' }).success, 'slug rule');
+    assert.ok(!postSaveSchema.safeParse({ ...base, extra: 1 }).success, 'unknown field');
+    assert.ok(
+      !postSaveSchema.safeParse({ ...base, tagIds: Array(11).fill(base.authorId) }).success,
+      'tag limit',
+    );
+    assert.ok(!postActionSchema.safeParse({ action: 'publish', id: 'x' }).success);
+    assert.ok(publicListQuery.safeParse({ page: '2', month: '2026-03' }).success);
+    assert.ok(!publicListQuery.safeParse({ month: '2026-13' }).success);
+    assert.ok(!publicListQuery.safeParse({ q: 'a' }).success, 'search needs two letters');
   });
 
   await check('pricing table is built from the plan catalogue', () => {

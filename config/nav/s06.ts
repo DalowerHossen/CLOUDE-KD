@@ -39,6 +39,8 @@ export const nav: NavItem[] = [
   pub('pub-about', 's06Public.nav.about', '/about', 31, 'public-header', 'pub-company'),
   pub('pub-careers', 's06Public.nav.careers', '/careers', 32, 'public-header', 'pub-company'),
   pub('pub-contact', 's06Public.nav.contact', '/contact', 33, 'public-header', 'pub-company'),
+  pub('pub-resources', 's06Public.nav.resources', '/blog', 25, 'public-header'),
+  pub('pub-blog', 's06Public.nav.blog', '/blog', 26, 'public-header', 'pub-resources'),
   // Footer
   pub('foot-product', 's06Public.footer.product', '/features', 10, 'public-footer'),
   pub('foot-features', 's06Public.nav.features', '/features', 11, 'public-footer', 'foot-product'),
@@ -52,6 +54,8 @@ export const nav: NavItem[] = [
   ),
   pub('foot-pricing', 's06Public.nav.pricing', '/pricing', 13, 'public-footer', 'foot-product'),
   pub('foot-security', 's06Public.nav.security', '/security', 14, 'public-footer', 'foot-product'),
+  pub('foot-resources', 's06Public.footer.resources', '/blog', 20, 'public-footer'),
+  pub('foot-blog', 's06Public.nav.blog', '/blog', 21, 'public-footer', 'foot-resources'),
   pub('foot-company', 's06Public.footer.company', '/about', 30, 'public-footer'),
   pub('foot-about', 's06Public.nav.about', '/about', 31, 'public-footer', 'foot-company'),
   pub('foot-careers', 's06Public.nav.careers', '/careers', 32, 'public-footer', 'foot-company'),
@@ -121,5 +125,14 @@ export const nav: NavItem[] = [
     group: 'admin',
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 60,
+  },
+  {
+    id: 'admin-blog',
+    labelKey: 's06Public.blogAdmin.nav',
+    href: '/admin/blog',
+    icon: 'file-text',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 61,
   },
 ];
