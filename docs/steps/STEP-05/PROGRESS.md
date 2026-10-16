@@ -1,7 +1,7 @@
 # STEP 05 progress
 
 - [x] 05.1 encryption library and service (2026-10-16)
-- [ ] 05.2
+- [x] 05.2 file validation pipeline (2026-10-16)
 - [ ] 05.2b
 - [ ] 05.3
 - [ ] 05.4
