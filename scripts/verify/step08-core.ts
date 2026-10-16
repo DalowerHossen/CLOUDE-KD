@@ -22,6 +22,13 @@ import {
 import { supplierInputSchema, supplierListQuery } from '@/lib/procurement/suppliers';
 import { poActionSchema, poInputSchema, poListQuery } from '@/lib/procurement/orders';
 import { computeTotals } from '@/lib/procurement/totals';
+import {
+  billActionSchema,
+  billInputSchema,
+  remittanceInputSchema,
+  supplierStatementQuery,
+} from '@/lib/procurement/bills';
+import { buildStatement } from '@/lib/procurement/statement';
 import { PurchaseOrderEmail } from '@/emails/crm/purchase-order';
 import { Money } from '@/lib/utils/currency';
 import { render } from '@react-email/render';
@@ -961,6 +968,80 @@ async function main(): Promise<void> {
       }),
     );
     assert.ok(html.includes('PO-2026-0001'));
+  });
+
+  await check('supplier bills, remittances and statements: input and arithmetic', () => {
+    const sid = '0190a0a0-0000-7000-8000-000000000001';
+    const line = {
+      poLineId: sid,
+      productId: sid,
+      description: '',
+      quantity: '2',
+      unitCost: '3',
+      taxRate: '0',
+    };
+    const bill = {
+      supplierId: sid,
+      purchaseOrderId: sid,
+      supplierInvoiceNo: 'INV-77',
+      billDate: '2026-02-01',
+      dueDate: '2026-03-01',
+      notes: '',
+      lines: [line],
+    };
+    assert.ok(billInputSchema.safeParse(bill).success);
+    assert.ok(!billInputSchema.safeParse({ ...bill, dueDate: '2026-01-01' }).success);
+    assert.ok(
+      !billInputSchema.safeParse({ ...bill, lines: [{ ...line, productId: null }] }).success,
+      'a line needs an item or a description',
+    );
+    assert.ok(
+      billInputSchema.safeParse({
+        ...bill,
+        lines: [{ ...line, poLineId: null, productId: null, description: 'Freight' }],
+      }).success,
+    );
+    assert.ok(billActionSchema.safeParse({ action: 'post', override: false }).success);
+    assert.ok(!billActionSchema.safeParse({ action: 'post' }).success);
+    const remit = {
+      supplierId: sid,
+      amount: '10.5',
+      paidOn: '2026-02-02',
+      method: 'bank_transfer',
+      reference: '',
+      allocations: [
+        { billId: sid, amount: '10' },
+        { billId: '0190a0a0-0000-7000-8000-000000000002', amount: '0.5' },
+      ],
+    };
+    assert.ok(remittanceInputSchema.safeParse(remit).success);
+    assert.ok(!remittanceInputSchema.safeParse({ ...remit, amount: '11' }).success, 'must add up');
+    assert.ok(!remittanceInputSchema.safeParse({ ...remit, amount: '0' }).success);
+    assert.ok(
+      !remittanceInputSchema.safeParse({
+        ...remit,
+        amount: '20',
+        allocations: [
+          { billId: sid, amount: '10' },
+          { billId: sid, amount: '10' },
+        ],
+      }).success,
+      'a bill appears once',
+    );
+    assert.ok(!remittanceInputSchema.safeParse({ ...remit, method: 'bitcoin' }).success);
+    assert.ok(!supplierStatementQuery.safeParse({ from: '2026-03-01', to: '2026-01-01' }).success);
+    const built = buildStatement('100.0000', [
+      { on: '2026-02-05', kind: 'remittance', reference: 'RM-1', amount: '40' },
+      { on: '2026-02-05', kind: 'bill', reference: 'BILL-2', amount: '0.1' },
+      { on: '2026-02-01', kind: 'bill', reference: 'BILL-1', amount: '0.2' },
+    ]);
+    assert.deepEqual(
+      built.lines.map((l) => l.reference),
+      ['BILL-1', 'BILL-2', 'RM-1'],
+      'bills before payments on the same day',
+    );
+    assert.equal(built.lines[1]?.balance, '100.3000');
+    assert.equal(built.closing, '60.3000');
   });
 }
 

@@ -44,4 +44,28 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner', 'staff'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'bill.read',
+    description: 'See supplier bills, payables aging and supplier statements',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'bill.write',
+    description: 'Write, post and void supplier bills',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'bill.override',
+    description: 'Post a supplier bill that does not match the order and the goods received',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'remittance.write',
+    description: 'Record and cancel money paid to suppliers',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

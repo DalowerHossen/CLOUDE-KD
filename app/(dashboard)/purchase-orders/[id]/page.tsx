@@ -38,10 +38,11 @@ export default async function OrderPage({
     throw error;
   }
   const perms = getService('permissions');
-  const [canWrite, canSend, canReceive, warehouses, suppliers] = await Promise.all([
+  const [canWrite, canSend, canReceive, canBill, warehouses, suppliers] = await Promise.all([
     perms.can(actor, 'po.write', { type: 'purchase_order' }),
     perms.can(actor, 'po.send', { type: 'purchase_order' }),
     perms.can(actor, 'po.receive', { type: 'purchase_order' }),
+    perms.can(actor, 'bill.write', { type: 'supplier_bill' }),
     listWarehouses(companyId).catch(() => []),
     searchSuppliers(companyId, { status: 'active' }).catch(() => ({ rows: [], next: null })),
   ]);
@@ -72,6 +73,13 @@ export default async function OrderPage({
       {order.rejectedReason ? (
         <p role="alert" className="text-sm text-destructive">
           {t('s08Crm.orders.rejected', { reason: order.rejectedReason })}
+        </p>
+      ) : null}
+      {['sent', 'partial', 'received'].includes(order.status) && canBill ? (
+        <p className="text-sm print:hidden">
+          <Link className="underline" href={`/bills/new?order=${order.id}`}>
+            {t('s08Crm.bills.fromOrder')}
+          </Link>
         </p>
       ) : null}
       <PoActions

@@ -79,9 +79,14 @@ export default async function SupplierPage({
       <PageHeader
         title={t('s08Crm.suppliers.detailTitle', { name: supplier.name })}
         actions={
-          <Link className="underline" href="/suppliers">
-            {t('s08Crm.suppliers.back')}
-          </Link>
+          <>
+            <Link className="underline" href={`/suppliers/${supplier.id}/statement`}>
+              {t('s08Crm.bills.statement.link')}
+            </Link>
+            <Link className="underline" href="/suppliers">
+              {t('s08Crm.suppliers.back')}
+            </Link>
+          </>
         }
       />
       <SupplierActions

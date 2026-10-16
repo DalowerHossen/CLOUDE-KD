@@ -47,4 +47,13 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 160,
   },
+  {
+    id: 'bills',
+    labelKey: 's08Crm.nav.bills',
+    href: '/bills',
+    icon: 'receipt',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 170,
+  },
 ];
