@@ -11,4 +11,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 230,
   },
+  {
+    id: 'admin-impersonation',
+    labelKey: 's03Auth.nav.impersonation',
+    href: '/admin/impersonation',
+    icon: 'user',
+    group: 'admin',
+    roles: ['super_admin'],
+    order: 240,
+  },
 ];

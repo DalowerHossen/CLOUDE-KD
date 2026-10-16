@@ -19,6 +19,7 @@ import { checkLock, hashIdentifier, recordFailure } from './lock-service';
 import { recordLoginEvent } from './login-events';
 import { changePassword, enforcePasswordRules } from './password-service';
 import { assertStepUp } from '@/lib/auth/step-up';
+import { assertNotImpersonating } from './impersonation-flow';
 import {
   beginEnrollment,
   confirmEnrollment,
@@ -113,6 +114,7 @@ export async function listSessions(actor: Actor, includeCompany: boolean): Promi
 
 /** Revokes one session. A user may end own sessions; an owner may end sessions of staff in the same company. */
 export async function revokeSession(actor: Actor, sessionId: string): Promise<void> {
+  assertNotImpersonating(actor);
   const admin = getAdminSupabase();
   const { data, error } = await admin
     .from('user_sessions')
@@ -141,6 +143,7 @@ export async function revokeSession(actor: Actor, sessionId: string): Promise<vo
 }
 
 export async function revokeOtherSessions(actor: Actor): Promise<number> {
+  assertNotImpersonating(actor);
   const { data: current } = await getAdminSupabase()
     .from('user_sessions')
     .select('auth_session_id')
@@ -164,6 +167,7 @@ export async function changeOwnPassword(
   actor: Actor,
   input: z.infer<typeof passwordChangeSchema>,
 ): Promise<void> {
+  assertNotImpersonating(actor);
   const identifier = await hashIdentifier(actor.email);
   if ((await checkLock(identifier)).locked) throw new UnauthorizedError(GENERIC_LOGIN_MESSAGE);
   if (!(await verifyPassword(actor.email, input.currentPassword))) {
@@ -223,10 +227,12 @@ export async function securitySummary(actor: Actor): Promise<SecuritySummary> {
 }
 
 export function beginAccountEnrollment(actor: Actor): Promise<EnrollmentStart> {
+  assertNotImpersonating(actor);
   return beginEnrollment(actor.userId, actor.companyId, actor.email);
 }
 
 export async function confirmAccountEnrollment(actor: Actor, code: string): Promise<string[]> {
+  assertNotImpersonating(actor);
   const codes = await confirmEnrollment(actor.userId, actor.companyId, code);
   if (!codes) throw new ValidationError('The code is not correct.');
   await getService('audit').record({
@@ -238,6 +244,7 @@ export async function confirmAccountEnrollment(actor: Actor, code: string): Prom
 }
 
 export async function regenerateCodes(actor: Actor): Promise<string[]> {
+  assertNotImpersonating(actor);
   assertStepUp(actor);
   if (!(await isTwoFactorActive(actor.userId))) throw new ForbiddenError();
   const codes = await storeNewBackupCodes(actor.userId, actor.companyId);
@@ -251,6 +258,7 @@ export async function regenerateCodes(actor: Actor): Promise<string[]> {
 
 /** Only an owner may turn 2FA off, with a fresh step-up. Staff and platform roles must keep it on. */
 export async function disableOwnTwoFactor(actor: Actor): Promise<void> {
+  assertNotImpersonating(actor);
   if (actor.role !== 'owner') throw new ForbiddenError();
   assertStepUp(actor);
   await disableTwoFactor(actor.userId);

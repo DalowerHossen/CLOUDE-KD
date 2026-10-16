@@ -31,6 +31,7 @@ import {
   isOAuthProvider,
   redirectUri,
 } from '@/lib/auth/oauth';
+import { checkImpersonation, impersonationEnd } from '@/lib/auth/impersonation';
 import { isDisposableEmail } from '@/services/auth/disposable-emails';
 
 let failures = 0;
@@ -224,6 +225,31 @@ async function main(): Promise<void> {
     assert.equal(isOAuthProvider('github'), true);
     assert.equal(isOAuthProvider('facebook'), false);
   });
+
+  await check(
+    'impersonation rules: super admin only, never another platform user, one hour at most',
+    () => {
+      const base = {
+        actorRole: 'super_admin' as const,
+        actorId: 'a',
+        targetRole: 'owner' as const,
+        targetId: 'b',
+        targetActive: true,
+        stepUpFresh: true,
+      };
+      assert.equal(checkImpersonation(base), 'ok');
+      assert.equal(checkImpersonation({ ...base, actorRole: 'ceo' }), 'not_super_admin');
+      assert.equal(checkImpersonation({ ...base, stepUpFresh: false }), 'no_step_up');
+      assert.equal(checkImpersonation({ ...base, targetId: 'a' }), 'self');
+      assert.equal(checkImpersonation({ ...base, targetRole: 'ceo' }), 'target_is_platform_role');
+      assert.equal(checkImpersonation({ ...base, targetRole: null }), 'target_is_platform_role');
+      assert.equal(checkImpersonation({ ...base, targetActive: false }), 'inactive');
+      const t0 = new Date('2026-10-16T10:00:00Z');
+      assert.equal(impersonationEnd(t0).toISOString(), '2026-10-16T11:00:00.000Z');
+      assert.equal(impersonationEnd(t0, 99999).toISOString(), '2026-10-16T11:00:00.000Z');
+      assert.equal(impersonationEnd(t0, 600).toISOString(), '2026-10-16T10:10:00.000Z');
+    },
+  );
 }
 
 main()

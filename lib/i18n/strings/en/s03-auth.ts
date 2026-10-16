@@ -145,4 +145,24 @@ export const strings = {
     stepUpSubmit: 'Confirm',
     stepUpDone: 'Confirmed for 5 minutes.',
   },
+  impersonation: {
+    title: 'Impersonation',
+    description:
+      'Sign in as a company user to help with a support case. Every action is recorded with your name. Sessions end after one hour.',
+    startTitle: 'Start a support session',
+    startBody:
+      'Enter the e-mail address of an owner or staff member and the reason. You will be signed out of your own session when it ends.',
+    targetEmail: 'E-mail address of the user',
+    reason: 'Reason (at least 10 characters)',
+    start: 'Start impersonation',
+    banner: 'You are acting as {email}. All actions are recorded under your administrator account.',
+    end: 'End and sign out',
+    caption: 'Impersonation sessions',
+    colTarget: 'User',
+    colAdmin: 'Administrator',
+    colStart: 'Started (UTC)',
+    colEnd: 'Ended or expires (UTC)',
+    emptyTitle: 'No sessions yet',
+    emptyBody: 'Support sessions appear here.',
+  },
 } as const;

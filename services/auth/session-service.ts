@@ -20,6 +20,10 @@ export interface SessionOpenInput {
   rememberMe: boolean;
   aal: 'aal1' | 'aal2';
   impersonatedBy?: string | null;
+  /** Overrides the normal session end (impersonation is limited to one hour). */
+  expiresAt?: Date;
+  /** No new-device message (used for impersonated sessions). */
+  quiet?: boolean;
 }
 
 /** Records the session and the device. Returns true when the device was not known before (new device). */
@@ -69,14 +73,14 @@ export async function openSessionRecord(
       ip_hash: meta.ipHash,
       user_agent_label: label,
       aal: input.aal,
-      expires_at: sessionExpiry(new Date(), input.rememberMe).toISOString(),
+      expires_at: (input.expiresAt ?? sessionExpiry(new Date(), input.rememberMe)).toISOString(),
       impersonated_by: input.impersonatedBy ?? null,
     })
     .select('id')
     .single();
   if (inserted.error) throw new InternalError(inserted.error);
 
-  if (newDevice) {
+  if (newDevice && input.quiet !== true) {
     await recordLoginEvent({
       identifierHash: input.identifier,
       type: 'new_device',
