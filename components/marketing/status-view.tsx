@@ -7,7 +7,7 @@ import {
   type Level,
   type PublicIncident,
 } from '@/lib/support/status';
-import type { StatusData } from '@/services/support/status';
+import type { StatusData } from '@/services/help/status';
 
 const COLOR: Record<Level, string> = {
   operational: 'bg-emerald-500',

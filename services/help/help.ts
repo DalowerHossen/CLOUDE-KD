@@ -1,4 +1,4 @@
-// path: services/support/help.ts
+// path: services/help/help.ts
 // The help center list: built-in articles plus articles staff added or edited in the CMS (kind "help").
 import 'server-only';
 import { HELP_CATEGORIES, HELP_PAGES } from '@/lib/cms/defaults';

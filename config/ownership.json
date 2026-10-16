@@ -271,7 +271,11 @@
         "lib/env/s06-public.ts",
         "lib/cms/**",
         "config/seo.ts",
-        "config/marketing.ts"
+        "config/marketing.ts",
+        "lib/{blog,marketing,support}/**",
+        "services/{analytics,help}/**",
+        "app/api/{analytics,marketing}/**",
+        "app/.well-known/**"
       ]
     },
     "07": {

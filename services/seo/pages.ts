@@ -5,7 +5,7 @@ import { DEFAULT_PAGES, LEGAL_PAGES, pathOf } from '@/lib/cms/defaults';
 import { InternalError } from '@/lib/errors';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { publishedSlugs } from '@/services/blog/public';
-import { listHelpArticles } from '@/services/support/help';
+import { listHelpArticles } from '@/services/help/help';
 
 export interface IndexablePage {
   path: string;

@@ -1,4 +1,4 @@
-// path: services/support/status.ts
+// path: services/help/status.ts
 // Data of the public status page. It reads the incident list of the incident service and the database check of the
 // health service, and keeps only the public-safe fields (see lib/support/status.ts).
 import 'server-only';

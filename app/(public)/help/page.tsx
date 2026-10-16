@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { HelpSearch } from '@/components/marketing/help-search';
 import { t } from '@/lib/i18n';
-import { groupByCategory, listHelpArticles } from '@/services/support/help';
+import { groupByCategory, listHelpArticles } from '@/services/help/help';
 
 export const revalidate = 300;
 export const metadata: Metadata = {

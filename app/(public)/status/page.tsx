@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import { StatusView } from '@/components/marketing/status-view';
 import { t } from '@/lib/i18n';
-import { loadStatus } from '@/services/support/status';
+import { loadStatus } from '@/services/help/status';
 
 export const revalidate = 60;
 export const metadata: Metadata = {
