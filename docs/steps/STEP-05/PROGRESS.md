@@ -1,6 +1,6 @@
 # STEP 05 progress
 
-- [ ] 05.1
+- [x] 05.1 encryption library and service (2026-10-16)
 - [ ] 05.2
 - [ ] 05.2b
 - [ ] 05.3
