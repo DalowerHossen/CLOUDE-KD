@@ -17,7 +17,7 @@ import {
   type QueueQuery,
   type SlaState,
   type TicketStatus,
-} from '@/lib/support/rules';
+} from '@/lib/helpdesk/rules';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { onDutyNow } from '@/services/team/admin-staff';
 import type { Actor } from '@/types/contracts';

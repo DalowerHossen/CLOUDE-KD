@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { CATEGORIES } from '@/lib/support/rules';
+import { CATEGORIES } from '@/lib/helpdesk/rules';
 import { t, type StringKey } from '@/lib/i18n';
 
 const result = z.object({ data: z.object({ id: z.string().uuid() }) });

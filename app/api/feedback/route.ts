@@ -1,7 +1,7 @@
 // path: app/api/feedback/route.ts
 import { withApi } from '@/lib/api/with-api';
 import { ForbiddenError } from '@/lib/errors';
-import { feedbackActionSchema } from '@/lib/support/opinion';
+import { feedbackActionSchema } from '@/lib/helpdesk/opinion';
 import { promptDue, submitFeedback } from '@/services/support/opinion';
 
 const permission = { action: 'feedback.send', resourceType: 'feedback' } as const;

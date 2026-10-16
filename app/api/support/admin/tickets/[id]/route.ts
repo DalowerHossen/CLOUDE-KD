@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { withApi } from '@/lib/api/with-api';
 import { ForbiddenError } from '@/lib/errors';
-import { agentTicketActionSchema } from '@/lib/support/rules';
+import { agentTicketActionSchema } from '@/lib/helpdesk/rules';
 import { agentDetail, runAgentAction } from '@/services/support/tickets';
 
 const params = z.object({ id: z.string().uuid() }).strict();

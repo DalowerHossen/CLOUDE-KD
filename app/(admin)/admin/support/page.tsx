@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState, ErrorState } from '@/components/shared/state-views';
 import { Badge } from '@/components/ui/badge';
 import { t, type StringKey } from '@/lib/i18n';
-import { queueQuery, QUEUE_PAGE_SIZE } from '@/lib/support/rules';
+import { queueQuery, QUEUE_PAGE_SIZE } from '@/lib/helpdesk/rules';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { queue, type TicketRow } from '@/services/support/tickets';
 

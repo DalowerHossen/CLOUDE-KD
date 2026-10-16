@@ -10,7 +10,7 @@ import {
   summarizeNps,
   type FeedbackAction,
   type NpsSummary,
-} from '@/lib/support/opinion';
+} from '@/lib/helpdesk/opinion';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 

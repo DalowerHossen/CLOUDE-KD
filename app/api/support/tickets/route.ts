@@ -1,7 +1,7 @@
 // path: app/api/support/tickets/route.ts
 import { withApi } from '@/lib/api/with-api';
 import { ForbiddenError } from '@/lib/errors';
-import { createTicketSchema, ownListQuery } from '@/lib/support/rules';
+import { createTicketSchema, ownListQuery } from '@/lib/helpdesk/rules';
 import { createTicket, listOwn } from '@/services/support/tickets';
 
 export const GET = withApi(

@@ -1,4 +1,4 @@
-// path: lib/support/opinion.ts
+// path: lib/helpdesk/opinion.ts
 // Feedback and NPS rules and input. Safe to import in the browser.
 import { z } from 'zod';
 

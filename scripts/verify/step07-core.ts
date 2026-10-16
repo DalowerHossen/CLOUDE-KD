@@ -39,8 +39,8 @@ import {
   firstResponseState,
   ownTicketActionSchema,
   queueQuery,
-} from '@/lib/support/rules';
-import { feedbackActionSchema, npsPromptDue, summarizeNps } from '@/lib/support/opinion';
+} from '@/lib/helpdesk/rules';
+import { feedbackActionSchema, npsPromptDue, summarizeNps } from '@/lib/helpdesk/opinion';
 import { ssoSchema } from '@/lib/company/sections';
 import { peopleActionSchema, tenantListQuery, userListQuery } from '@/lib/company/admin-input';
 

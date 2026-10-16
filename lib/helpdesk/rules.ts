@@ -1,4 +1,4 @@
-// path: lib/support/rules.ts
+// path: lib/helpdesk/rules.ts
 // Support ticket rules and input shapes. Safe to import in the browser.
 import { z } from 'zod';
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { PRIORITIES, STATUSES } from '@/lib/support/rules';
+import { PRIORITIES, STATUSES } from '@/lib/helpdesk/rules';
 import { t, type StringKey } from '@/lib/i18n';
 import { z } from 'zod';
 

@@ -1,7 +1,7 @@
 // path: app/api/support/admin/queue/route.ts
 import { withApi } from '@/lib/api/with-api';
 import { ForbiddenError } from '@/lib/errors';
-import { queueQuery } from '@/lib/support/rules';
+import { queueQuery } from '@/lib/helpdesk/rules';
 import { queue } from '@/services/support/tickets';
 
 export const GET = withApi(
