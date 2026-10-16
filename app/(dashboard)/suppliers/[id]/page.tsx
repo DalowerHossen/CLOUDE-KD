@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { SupplierActions } from '@/components/inventory/supplier-actions';
 import { SupplierForm } from '@/components/inventory/supplier-form';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
+import { RecordPresence } from '@/components/crm/record-presence';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState } from '@/components/shared/state-views';
 import { Badge } from '@/components/ui/badge';
@@ -88,6 +89,12 @@ export default async function SupplierPage({
             </Link>
           </>
         }
+      />
+      <RecordPresence
+        userId={actor.userId}
+        name={actor.email || actor.userId}
+        companyId={actor.companyId}
+        resource={`supplier:${id}`}
       />
       <SupplierActions
         id={supplier.id}

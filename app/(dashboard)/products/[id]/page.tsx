@@ -8,6 +8,7 @@ import { ProductActions } from '@/components/inventory/product-actions';
 import { ProductForm } from '@/components/inventory/product-form';
 import { RatesPanel } from '@/components/inventory/rates-panel';
 import { VariantsPanel } from '@/components/inventory/variants-panel';
+import { RecordPresence } from '@/components/crm/record-presence';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
 import { getService } from '@/lib/container';
@@ -93,6 +94,12 @@ export default async function ProductPage({
             {t('s08Crm.products.back')}
           </Link>
         }
+      />
+      <RecordPresence
+        userId={actor.userId}
+        name={actor.email || actor.userId}
+        companyId={actor.companyId}
+        resource={`product:${id}`}
       />
       <div className="flex flex-wrap items-center gap-sp-8">
         <Badge variant="outline">

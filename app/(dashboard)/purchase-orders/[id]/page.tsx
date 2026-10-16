@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PoActions } from '@/components/inventory/po-actions';
 import { PoForm } from '@/components/inventory/po-form';
+import { RecordPresence } from '@/components/crm/record-presence';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
 import { getService } from '@/lib/container';
@@ -58,6 +59,12 @@ export default async function OrderPage({
             {t('s08Crm.orders.back')}
           </Link>
         }
+      />
+      <RecordPresence
+        userId={actor.userId}
+        name={actor.email || actor.userId}
+        companyId={actor.companyId}
+        resource={`po:${id}`}
       />
       <div className="flex flex-wrap items-center gap-sp-8">
         <Badge variant="outline">{t(`s08Crm.orders.statuses.${order.status}` as StringKey)}</Badge>

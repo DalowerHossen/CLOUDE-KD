@@ -11,5 +11,5 @@
 - [x] 08.8 supplier bills, payments and statements
 - [x] 08.9 import and export framework
 - [x] 08.10 import and export for clients, products and suppliers
-- [ ] 08.11 UI completion
+- [x] 08.11 UI completion
 - [ ] 08.12 fragments, verification and closure

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { BillActions } from '@/components/inventory/bill-actions';
 import { BillForm, billLinesOf } from '@/components/inventory/bill-form';
 import { PayForm } from '@/components/inventory/pay-form';
+import { RecordPresence } from '@/components/crm/record-presence';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
 import { getService } from '@/lib/container';
@@ -58,6 +59,12 @@ export default async function BillPage({
             {t('s08Crm.bills.back')}
           </Link>
         }
+      />
+      <RecordPresence
+        userId={actor.userId}
+        name={actor.email || actor.userId}
+        companyId={actor.companyId}
+        resource={`bill:${id}`}
       />
       <div className="flex flex-wrap items-center gap-sp-8 text-sm">
         <Badge variant="outline">{t(`s08Crm.bills.statuses.${bill.status}` as StringKey)}</Badge>
