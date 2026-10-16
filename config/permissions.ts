@@ -14,5 +14,6 @@ import { permissions as s07Domain } from './permissions/s07-domain';
 import { permissions as s07Kyc } from './permissions/s07-kyc';
 import { permissions as s07Support } from './permissions/s07-support';
 import { permissions as s07Team } from './permissions/s07-team';
+import { permissions as s08Clients } from './permissions/s08-clients';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Clients];

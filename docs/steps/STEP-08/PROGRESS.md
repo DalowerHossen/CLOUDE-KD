@@ -1,6 +1,6 @@
 # STEP 08 progress
 
-- [ ] 08.1 clients core
+- [x] 08.1 clients core (2026-10-16)
 - [ ] 08.2 client search, views, activity, duplicates and merge
 - [ ] 08.3 client data management
 - [ ] 08.4 products and services
