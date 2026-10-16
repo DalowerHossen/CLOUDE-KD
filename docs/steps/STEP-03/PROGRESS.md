@@ -13,5 +13,5 @@
 - [x] 03.9 auth service registered (2026-10-16)
 - [x] 03.10 unlock workflow (2026-10-16)
 - [x] 03.11 impersonation (2026-10-16)
-- [ ] 03.12
+- [x] 03.12 account security page (2026-10-16)
 - [ ] 03.13

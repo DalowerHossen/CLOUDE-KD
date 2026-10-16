@@ -19,17 +19,34 @@ const begin = z.object({
 });
 const confirm = z.object({
   backupCodes: z.array(z.string()),
-  redirectTo: z.enum(['/dashboard', '/admin']),
+  redirectTo: z.enum(['/dashboard', '/admin']).optional(),
 });
 
 type Phase =
   | { name: 'loading' }
   | { name: 'failed' }
   | { name: 'scan'; manualCode: string; qr: string }
-  | { name: 'codes'; codes: string[]; redirectTo: string };
+  | { name: 'codes'; codes: string[]; redirectTo: string | null };
 
 /** Setup step used both in the sign-in flow and (with another API base) on the security page. */
-export function TwoFactorSetup(): JSX.Element {
+interface SetupEndpoints {
+  begin: string;
+  confirm: string;
+}
+
+const PENDING_ENDPOINTS: SetupEndpoints = {
+  begin: '/api/auth/2fa/setup/begin',
+  confirm: '/api/auth/2fa/setup/confirm',
+};
+
+export function TwoFactorSetup({
+  endpoints = PENDING_ENDPOINTS,
+  onFinished,
+}: {
+  endpoints?: SetupEndpoints;
+  /** Called when the person confirms that the backup codes are saved. Without it the page goes to the dashboard. */
+  onFinished?: () => void;
+}): JSX.Element {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ name: 'loading' });
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +54,7 @@ export function TwoFactorSetup(): JSX.Element {
 
   useEffect(() => {
     let active = true;
-    postJson('/api/auth/2fa/setup/begin', {}, begin).then((result) => {
+    postJson(endpoints.begin, {}, begin).then((result) => {
       if (!active) return;
       setPhase(
         result.ok
@@ -48,7 +65,7 @@ export function TwoFactorSetup(): JSX.Element {
     return () => {
       active = false;
     };
-  }, []);
+  }, [endpoints.begin]);
 
   async function submit(data: FormData): Promise<void> {
     setError(null);
@@ -61,7 +78,11 @@ export function TwoFactorSetup(): JSX.Element {
       setError(t('s03Auth.twoFactor.failed'));
       return;
     }
-    setPhase({ name: 'codes', codes: result.data.backupCodes, redirectTo: result.data.redirectTo });
+    setPhase({
+      name: 'codes',
+      codes: result.data.backupCodes,
+      redirectTo: result.data.redirectTo ?? null,
+    });
   }
 
   if (phase.name === 'loading') return <LoadingState rows={3} />;
@@ -119,7 +140,13 @@ export function TwoFactorSetup(): JSX.Element {
             {copied ? t('s03Auth.twoFactor.copied') : ''}
           </span>
         </div>
-        <Button type="button" className="w-full" onClick={() => router.replace(phase.redirectTo)}>
+        <Button
+          type="button"
+          className="w-full"
+          onClick={() =>
+            onFinished ? onFinished() : router.replace(phase.redirectTo ?? '/dashboard')
+          }
+        >
           {t('s03Auth.twoFactor.backupSaved')}
         </Button>
       </div>

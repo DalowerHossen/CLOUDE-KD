@@ -20,4 +20,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin'],
     order: 240,
   },
+  {
+    id: 'account-security',
+    labelKey: 's03Auth.nav.security',
+    href: '/account/security',
+    icon: 'shield',
+    group: 'account',
+    roles: 'any',
+    order: 20,
+  },
 ];
