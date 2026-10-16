@@ -25,7 +25,7 @@ import {
 import { prepareUpload } from './prepare';
 import { getAdapter } from './providers';
 import { assertWithinQuota, recordMonthlyUsage } from './quota';
-import { resolveProvider } from './resolver';
+import { putWithFallback } from './resolver';
 import type { FileCategory } from '@/types/contracts';
 
 const log = createLogger({ component: 'storage' });
@@ -93,14 +93,13 @@ export async function putFile(input: PutInput): Promise<FileRecord> {
   const fileId = uuidv7();
   const { purpose, scope } = cryptoFor({ category: input.category, company_id: input.companyId });
   const sealed = await getService('encryption').encrypt(purpose, file.bytes, scope);
-  const provider = await resolveProvider(input.companyId);
-  const stored = await getAdapter(provider).put({
+  const stored = await putWithFallback({
     companyId: input.companyId,
     category: input.category,
     fileId,
     bytes: Buffer.from(sealed.ciphertext, 'base64'),
   });
-
+  const provider = stored.provider;
   const { data, error } = await getAdminSupabase()
     .from('files')
     .insert({

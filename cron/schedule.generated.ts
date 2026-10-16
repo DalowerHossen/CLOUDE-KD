@@ -12,6 +12,7 @@ import { job as s04RateLimitPurge } from './jobs/s04-rate-limit-purge';
 import { job as s04Siem } from './jobs/s04-siem';
 import { job as s04TorList } from './jobs/s04-tor-list';
 import { job as s05FileRetention } from './jobs/s05-file-retention';
+import { job as s05StorageHealth } from './jobs/s05-storage-health';
 import { job as s05UploadPurge } from './jobs/s05-upload-purge';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05FileRetention, s05UploadPurge];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05FileRetention, s05StorageHealth, s05UploadPurge];

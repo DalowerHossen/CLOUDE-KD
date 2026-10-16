@@ -4,7 +4,7 @@
 - [x] 05.2 file validation pipeline (2026-10-16)
 - [x] 05.2b upload preparation, quarantine, scanner hook, resumable sessions, quota (2026-10-16)
 - [x] 05.3 storage adapters, put/get/remove/restore, signed links, retention, upload APIs (2026-10-16)
-- [ ] 05.4
+- [x] 05.4 provider chain, fallback with audit and notice, health job (2026-10-16)
 - [ ] 05.5
 - [ ] 05.6
 - [ ] 05.7a
