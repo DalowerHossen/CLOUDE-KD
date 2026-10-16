@@ -9,6 +9,7 @@ import { getService } from '@/lib/container';
 import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import {
   DOC_TYPES,
+  EXPIRY_WARNING_DAYS,
   MAX_DOC_BYTES,
   MIN_IMAGE,
   OPEN_STATUSES,
@@ -147,9 +148,14 @@ async function editableSubmission(
   if (
     row &&
     row.status === 'approved' &&
-    !(row.expires_at && Date.parse(String(row.expires_at)) <= Date.now())
+    !(
+      row.expires_at &&
+      Date.parse(String(row.expires_at)) - Date.now() <= EXPIRY_WARNING_DAYS * 86_400_000
+    )
   )
-    throw new ValidationError('Your business is already verified.');
+    throw new ValidationError(
+      'Your business is already verified. You can renew it in the last 30 days.',
+    );
   return startAgain(companyId, row ? Number(row.round) + 1 : 1);
 }
 

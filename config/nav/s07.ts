@@ -74,4 +74,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 455,
   },
+  {
+    id: 'admin-kyc',
+    labelKey: 's07Company.nav.adminKyc',
+    href: '/admin/kyc',
+    icon: 'shield',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 70,
+  },
 ];

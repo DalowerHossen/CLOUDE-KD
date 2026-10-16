@@ -11,6 +11,8 @@ import {
   profileSchema,
 } from '@/lib/company/sections';
 import { en } from '@/lib/i18n';
+import { reviewActionSchema } from '@/lib/kyc/review-input';
+import { registerScreeningProvider, runScreening } from '@/lib/kyc/screening';
 import { contractStatus, isExpired, ownersSchema, uploadSchema, DOC_TYPES } from '@/lib/kyc/rules';
 import { validateStaffGrants } from '@/lib/auth/permissions';
 import { STAFF_PRESETS, expandPreset, matrix } from '@/lib/team/presets';
@@ -339,6 +341,69 @@ async function main(): Promise<void> {
     );
     assert.ok(!uploadSchema.safeParse({ ...up, docType: 'selfie' }).success);
     assert.ok(!uploadSchema.safeParse({ ...up, dataBase64: 'not base64!!' }).success);
+  });
+
+  await check('kyc review input and screening hook', async () => {
+    const id = '018f0000-0000-7000-8000-000000000001';
+    assert.ok(reviewActionSchema.safeParse({ action: 'start' }).success);
+    assert.ok(
+      reviewActionSchema.safeParse({
+        action: 'documents',
+        documents: [{ id, status: 'rejected', reason: 'Blurry' }],
+      }).success,
+    );
+    assert.ok(
+      !reviewActionSchema.safeParse({ action: 'documents', documents: [] }).success,
+      'at least one document',
+    );
+    assert.ok(
+      !reviewActionSchema.safeParse({ action: 'documents', documents: [{ id, status: 'pending' }] })
+        .success,
+    );
+    assert.ok(
+      !reviewActionSchema.safeParse({ action: 'reject', reason: 'no' }).success,
+      'a reason is needed',
+    );
+    assert.ok(
+      !reviewActionSchema.safeParse({
+        action: 'request_changes',
+        reason: '<script>alert(1)</script>',
+      }).success,
+      'markup',
+    );
+    assert.ok(
+      reviewActionSchema.safeParse({ action: 'note', risk: 'high', note: 'Looks fine' }).success,
+    );
+    assert.ok(!reviewActionSchema.safeParse({ action: 'note', risk: 'extreme', note: '' }).success);
+    assert.ok(
+      !reviewActionSchema.safeParse({ action: 'approve' }).success,
+      'a reviewer cannot approve, only recommend',
+    );
+    assert.equal(
+      await runScreening([{ name: 'A', countryCode: null, kind: 'business' }]),
+      null,
+      'no provider, no result',
+    );
+    registerScreeningProvider({
+      id: 'one',
+      screen: async () => ({ status: 'clear', summary: 'one: clear.' }),
+    });
+    registerScreeningProvider({
+      id: 'two',
+      screen: async () => ({ status: 'hits', summary: 'two: 1 match.' }),
+    });
+    registerScreeningProvider({
+      id: 'bad',
+      screen: async () => {
+        throw new Error('down');
+      },
+    });
+    const result = await runScreening([{ name: 'A', countryCode: 'US', kind: 'person' }]);
+    assert.equal(result?.status, 'hits', 'a match beats a clear result and an error');
+    assert.ok(
+      result?.summary.includes('two: 1 match.') &&
+        result.summary.includes('could not be completed'),
+    );
   });
 
   await check('wizard input: each step has its own strict shape', () => {
