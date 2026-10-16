@@ -52,7 +52,6 @@ export function splitTable(rows: readonly string[][]): { headers: string[]; data
 
 /** Removes control characters and angle brackets; limits the length. */
 export function cleanCell(v: string): string {
-  // eslint-disable-next-line no-control-regex
   return v
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f<>]/g, '')
     .trim()

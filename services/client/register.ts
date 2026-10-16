@@ -1,4 +1,5 @@
 // path: services/client/register.ts
+import './tenant-export';
 import { registerService, tryGetService } from '@/lib/container';
 import { InternalError, NotFoundError } from '@/lib/errors';
 import { getAdminSupabase } from '@/lib/supabase/admin';

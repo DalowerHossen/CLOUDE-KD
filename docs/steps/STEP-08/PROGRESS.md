@@ -12,4 +12,4 @@
 - [x] 08.9 import and export framework
 - [x] 08.10 import and export for clients, products and suppliers
 - [x] 08.11 UI completion
-- [ ] 08.12 fragments, verification and closure
+- [x] 08.12 fragments, verification and closure

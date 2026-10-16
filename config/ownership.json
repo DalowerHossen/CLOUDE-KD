@@ -315,10 +315,10 @@
     },
     "08": {
       "owns": [
-        "app/(dashboard)/{clients,products,inventory,suppliers,purchase-orders,imports}/**",
+        "app/(dashboard)/{clients,products,inventory,suppliers,purchase-orders,imports,bills}/**",
         "services/{client,product,inventory,supplier,purchase,import,export}/**",
-        "app/api/{clients,products,inventory,suppliers,purchase-orders,import,export}/**",
-        "components/{crm,inventory}/**",
+        "app/api/{clients,products,inventory,suppliers,purchase-orders,import,export,bills,remittances}/**",
+        "components/{crm,inventory,transfer}/**",
         "lib/i18n/strings/en/s08-*",
         "config/nav/s08.ts",
         "config/permissions/s08-*",
