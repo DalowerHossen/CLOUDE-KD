@@ -1,0 +1,5 @@
+# STEP 09 decisions
+
+- D1 (plan) The SCOPE lists 11 sub-steps; they are split into 17 so that each stays under 15 files and one migration group. Order follows dependencies: calculation, tax and FX, invoice core, numbering, screens, send and contract, PDF, then the document families, billing lifecycle, projects, dashboard, reports, batch, closure.
+- D2 (plan) Public client pages (viewing an invoice by token, approving an estimate with a signature) are STEP 13 (`app/(client-portal)`, services `portal` and `esign`). STEP 09 issues tokens through the `tokens` contract and provides the service functions the portal calls; the missing contract operations (mark viewed, record an estimate decision) go to DEPENDENCY_REQUESTS.
+- D3 (plan) Data that belongs to STEP 10 (payments by method and gateway) and STEP 15 (expenses, cash flow, AP aging, accounting) reaches the reports only through a provider registry in `lib/reports/providers.ts`; until a provider registers, those report sections show a clear "no data from that module yet" state. STEP 09 never reads another STEP's tables.
