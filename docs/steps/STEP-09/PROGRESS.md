@@ -1,6 +1,6 @@
 # STEP 09 progress
 
-- [ ] 09.1 calculation engine
+- [x] 09.1 calculation engine
 - [ ] 09.2 tax rates, tax settings and FX
 - [ ] 09.3 invoice schema and CRUD
 - [ ] 09.4 numbering

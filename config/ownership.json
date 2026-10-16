@@ -361,7 +361,10 @@
         "sql/assertions/s09_*",
         "scripts/verify/step09-*",
         "docs/steps/STEP-09/**",
-        "lib/env/s09-public.ts"
+        "lib/env/s09-public.ts",
+        "lib/{invoice,billing,tax,reports}/**",
+        "workers/{invoice,billing}/**",
+        "lib/pdf/{invoice,shared}/**"
       ]
     },
     "10": {
