@@ -9,6 +9,7 @@ import {
   isPasswordReused,
   matchesHistoryHash,
 } from '@/services/auth/password-hash';
+import { identifierHash, normalizeIdentifier } from '@/lib/auth/lock';
 import { isDisposableEmail } from '@/services/auth/disposable-emails';
 
 let failures = 0;
@@ -92,6 +93,16 @@ async function main(): Promise<void> {
     assert.equal(isDisposableEmail('a@example.com'), false);
     assert.equal(isDisposableEmail('a@notmailinator.com'), false);
     assert.equal(isDisposableEmail('invalid'), false);
+  });
+
+  await check('lock identifier: one counter per normalized address, keyed hash', async () => {
+    const key = 'k'.repeat(48);
+    assert.equal(normalizeIdentifier('  User@Example.COM '), 'user@example.com');
+    const a = await identifierHash('User@Example.com', key);
+    assert.equal(a, await identifierHash(' user@example.com', key));
+    assert.notEqual(a, await identifierHash('other@example.com', key));
+    assert.notEqual(a, await identifierHash('user@example.com', 'z'.repeat(48)));
+    assert.match(a, /^[0-9a-f]{64}$/);
   });
 }
 
