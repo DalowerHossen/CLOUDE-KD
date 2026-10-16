@@ -386,7 +386,8 @@ export async function createBill(actor: Actor, input: BillInput): Promise<BillVi
   const t = await admin
     .from('supplier_bills')
     .update({ subtotal: totals.subtotal, tax_total: totals.taxTotal, total: totals.total })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('company_id', companyId);
   if (t.error) throw new InternalError(t.error);
   await getService('audit').record({
     action: 'supplier_bill.created',

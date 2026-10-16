@@ -306,7 +306,8 @@ export async function createOrder(actor: Actor, input: PoInput): Promise<PoView>
   const t = await admin
     .from('purchase_orders')
     .update({ subtotal: totals.subtotal, tax_total: totals.taxTotal, total: totals.total })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('company_id', companyId);
   if (t.error) throw new InternalError(t.error);
   await getService('audit').record({
     action: 'purchase_order.created',
@@ -403,7 +404,8 @@ async function submit(actor: Actor, id: string): Promise<void> {
     await getAdminSupabase()
       .from('purchase_orders')
       .update({ approval_request_id: state.requestId })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('company_id', companyId);
   }
   await getService('audit').record({
     action: 'purchase_order.submitted',
@@ -547,7 +549,7 @@ export async function syncOrderApprovals(): Promise<number> {
   const admin = getAdminSupabase();
   const { data, error } = await admin
     .from('purchase_orders')
-    .select('id, approval_request_id')
+    .select('id, company_id, approval_request_id')
     .eq('status', 'pending_approval')
     .not('approval_request_id', 'is', null)
     .is('deleted_at', null)
@@ -568,6 +570,7 @@ export async function syncOrderApprovals(): Promise<number> {
           : { status: 'draft', rejected_reason: `The approval ended as ${state.status}.` },
       )
       .eq('id', String(row.id))
+      .eq('company_id', String(row.company_id))
       .eq('status', 'pending_approval')
       .select('id');
     if (!r.error && r.data && r.data.length > 0) changed += 1;

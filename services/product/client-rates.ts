@@ -93,12 +93,14 @@ export async function setRate(
     r = await admin
       .from('client_prices')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', String(existing.data.id));
+      .eq('id', String(existing.data.id))
+      .eq('company_id', companyId);
   } else if (existing.data) {
     r = await admin
       .from('client_prices')
       .update({ unit_price: input.unitPrice })
-      .eq('id', String(existing.data.id));
+      .eq('id', String(existing.data.id))
+      .eq('company_id', companyId);
   } else {
     r = await admin.from('client_prices').insert({
       company_id: companyId,

@@ -394,6 +394,7 @@ export async function runImportChunk(jobId: string, companyId: string): Promise<
       .from('import_jobs')
       .update({ status: 'running' })
       .eq('id', jobId)
+      .eq('company_id', companyId)
       .eq('status', 'queued');
   try {
     const table = await readTable(companyId, row);
@@ -446,6 +447,7 @@ export async function runImportChunk(jobId: string, companyId: string): Promise<
           errors,
         })
         .eq('id', jobId)
+        .eq('company_id', companyId)
         .eq('status', 'running')
         .select('id');
       if (save.error) throw new InternalError(save.error);
@@ -456,6 +458,7 @@ export async function runImportChunk(jobId: string, companyId: string): Promise<
         .from('import_jobs')
         .update({ status: 'done', finished_at: new Date().toISOString() })
         .eq('id', jobId)
+        .eq('company_id', companyId)
         .eq('status', 'running');
       await getService('audit').record({
         action: 'import.finished',
@@ -492,6 +495,7 @@ export async function runImportChunk(jobId: string, companyId: string): Promise<
             : 'The import stopped because of an internal error.',
       })
       .eq('id', jobId)
+      .eq('company_id', companyId)
       .in('status', ['queued', 'running']);
     throw error;
   }

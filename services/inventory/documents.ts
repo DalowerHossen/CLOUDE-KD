@@ -262,6 +262,7 @@ async function writeLines(
     expires_on: l.expiresOn,
     note: l.note,
   }));
+  // tenant-ok: every row carries company_id
   const r = await admin.from('inventory_document_lines').insert(rows);
   if (r.error) throw new InternalError(r.error);
 }

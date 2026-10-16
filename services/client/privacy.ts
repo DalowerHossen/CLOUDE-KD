@@ -113,7 +113,8 @@ export async function requestPrivacy(
       await admin
         .from('client_privacy_requests')
         .update({ status: 'failed', result: 'The request could not be completed.' })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('company_id', companyId);
       throw failure;
     }
   } else {
@@ -126,7 +127,8 @@ export async function requestPrivacy(
     await admin
       .from('client_privacy_requests')
       .update({ approval_request_id: state.requestId })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('company_id', companyId);
   }
   await getService('audit').record({
     action: `client.privacy_${input.kind}_${direct ? 'done' : 'requested'}`,
@@ -166,6 +168,7 @@ export async function syncPrivacyRequests(): Promise<number> {
           result: `The approval ended as ${state.status}.`,
         })
         .eq('id', id)
+        .eq('company_id', String(row.company_id))
         .eq('status', 'awaiting_approval');
       continue;
     }
@@ -174,6 +177,7 @@ export async function syncPrivacyRequests(): Promise<number> {
       .from('client_privacy_requests')
       .update({ status: 'completed', decided_at: now })
       .eq('id', id)
+      .eq('company_id', String(row.company_id))
       .eq('status', 'awaiting_approval')
       .select('id');
     if (claim.error || !claim.data || claim.data.length === 0) continue;
@@ -189,7 +193,8 @@ export async function syncPrivacyRequests(): Promise<number> {
       await admin
         .from('client_privacy_requests')
         .update({ status: 'failed', result: 'The request could not be completed.' })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('company_id', String(row.company_id));
     }
   }
   return applied;

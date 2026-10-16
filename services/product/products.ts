@@ -76,7 +76,8 @@ export function toProductView(r: Row, bundleItems: BundleItemView[]): ProductVie
     trackInventory: r.track_inventory === true,
     reorderLevel:
       r.reorder_level === null || r.reorder_level === undefined ? null : dec(r.reorder_level),
-    valuationMethod: r.valuation_method === 'fifo' ? 'fifo' : r.valuation_method === 'lifo' ? 'lifo' : 'average',
+    valuationMethod:
+      r.valuation_method === 'fifo' ? 'fifo' : r.valuation_method === 'lifo' ? 'lifo' : 'average',
     status: String(r.status) as ProductView['status'],
     customFields: (r.custom_fields ?? {}) as ProductView['customFields'],
     imageFileIds: (r.image_file_ids as string[] | null) ?? [],
@@ -328,6 +329,7 @@ export async function deleteProduct(actor: Actor, id: string): Promise<void> {
     .from('product_bundle_items')
     .select('id', { count: 'exact', head: true })
     .eq('item_product_id', id)
+    .eq('company_id', companyId)
     .is('deleted_at', null);
   if ((used.count ?? 0) > 0)
     throw new ValidationError(
@@ -346,6 +348,7 @@ export async function deleteProduct(actor: Actor, id: string): Promise<void> {
     .from('product_variants')
     .update({ deleted_at: new Date().toISOString() })
     .eq('product_id', id)
+    .eq('company_id', companyId)
     .is('deleted_at', null);
   await getService('audit').record({
     action: 'product.deleted',

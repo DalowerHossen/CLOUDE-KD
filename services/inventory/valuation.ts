@@ -185,6 +185,7 @@ export async function notifyExpiring(): Promise<number> {
       .from('stock_cost_layers')
       .update({ expiry_notified_at: new Date().toISOString() })
       .eq('id', String(l.id))
+      .eq('company_id', String(l.company_id))
       .is('expiry_notified_at', null)
       .select('id');
     if (claim.error || !claim.data || claim.data.length === 0) continue;

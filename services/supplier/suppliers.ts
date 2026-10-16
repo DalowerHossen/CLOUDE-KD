@@ -199,6 +199,7 @@ export async function deleteSupplier(actor: Actor, id: string): Promise<void> {
     .from('purchase_orders')
     .select('id', { count: 'exact', head: true })
     .eq('supplier_id', id)
+    .eq('company_id', companyId)
     .is('deleted_at', null);
   if ((used.count ?? 0) > 0)
     throw new ValidationError('This supplier has purchase orders. Archive the supplier instead.');
