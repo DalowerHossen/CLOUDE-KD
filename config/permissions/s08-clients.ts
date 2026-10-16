@@ -44,4 +44,28 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'client.export',
+    description: 'Download all data kept about one client',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'client.privacy',
+    description: 'Ask to anonymize or delete a client (staff requests need the owner)',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L1',
+  },
+  {
+    action: 'client.bulk',
+    description: 'Change many clients at once',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'client.email',
+    description: 'E-mail a statement to a client',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
 ];

@@ -20,6 +20,10 @@ import {
   viewCreateSchema,
 } from '@/lib/crm/search';
 import { Money } from '@/lib/utils/currency';
+import { render } from '@react-email/render';
+import { crmEmailTemplates } from '@/emails/crm';
+import { StatementEmail } from '@/emails/crm/statement';
+import { bulkSchema, privacyRequestSchema, statementMailSchema } from '@/lib/crm/privacy';
 import { checkCustomValues, type CustomFieldDef } from '@/lib/crm/custom-values';
 import { permissions as registered } from '@/config/permissions';
 import type { PermissionDefinition } from '@/types/contracts';
@@ -66,6 +70,8 @@ const client = {
   riskFlag: 'none',
   doNotContact: false,
   remindersOptOut: false,
+  marketingConsent: false,
+  contactPreference: 'email',
   portalPrefs: { notifyByEmail: true, showStatement: true },
   contacts: [{ name: 'Ann', role: 'Finance', email: 'ann@acme.test', phone: '' }],
 };
@@ -363,6 +369,73 @@ async function main(): Promise<void> {
     assert.equal(aged.d1_30.toDbString(), '50.3000');
     assert.equal(aged.d91_plus.toDbString(), '0.3000');
     assert.equal(aged.total.toDbString(), '150.7000', 'no floating point drift');
+  });
+  await check('privacy, bulk and statement mail input', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    assert.ok(
+      privacyRequestSchema.safeParse({
+        clientId: id,
+        kind: 'anonymize',
+        reason: 'The client asked us in writing',
+      }).success,
+    );
+    assert.ok(
+      !privacyRequestSchema.safeParse({ clientId: id, kind: 'anonymize', reason: 'short' }).success,
+    );
+    assert.ok(
+      !privacyRequestSchema.safeParse({
+        clientId: id,
+        kind: 'purge',
+        reason: 'The client asked us in writing',
+      }).success,
+    );
+    assert.ok(bulkSchema.safeParse({ action: 'archive', ids: [id, id] }).success);
+    assert.deepEqual(
+      bulkSchema.parse({ action: 'archive', ids: [id, id] }).ids,
+      [id],
+      'duplicates dropped',
+    );
+    assert.ok(!bulkSchema.safeParse({ action: 'archive', ids: [] }).success, 'at least one');
+    assert.ok(
+      !bulkSchema.safeParse({
+        action: 'archive',
+        ids: Array.from(
+          { length: 201 },
+          (_, i) => `0190a1b2-c3d4-7e5f-8a9b-${String(i).padStart(12, '0')}`,
+        ),
+      }).success,
+      '200 at most',
+    );
+    assert.ok(bulkSchema.safeParse({ action: 'add_tag', ids: [id], value: 'VIP' }).success);
+    assert.ok(!bulkSchema.safeParse({ action: 'add_tag', ids: [id] }).success, 'tag needs a value');
+    assert.ok(!bulkSchema.safeParse({ action: 'set_terms', ids: [id], value: 999 }).success);
+    assert.ok(!bulkSchema.safeParse({ action: 'drop_table', ids: [id] }).success);
+    assert.ok(statementMailSchema.safeParse({ from: '2026-01-01', to: '2026-02-01' }).success);
+    assert.ok(!statementMailSchema.safeParse({ from: '2026-03-01', to: '2026-02-01' }).success);
+  });
+
+  await check('statement e-mail template renders and is registered', async () => {
+    const def = crmEmailTemplates.find((t) => t.definition.id === 'invoice.client-statement');
+    assert.ok(def, 'registered');
+    const html = await render(
+      StatementEmail({
+        clientName: 'Acme',
+        companyName: 'Studio',
+        from: '2026-01-01',
+        to: '2026-03-31',
+        openingBalance: '$0.00',
+        balance: '$150.70',
+        current: '$100.10',
+        d1_30: '$50.30',
+        d31_60: '$0.00',
+        d61_90: '$0.00',
+        d91_plus: '$0.30',
+        lines: 'INV-1, due 2026-04-10: $100.10',
+      }),
+    );
+    assert.ok(html.includes('$150.70') && html.includes('Studio'));
+    for (const v of def?.definition.variables ?? [])
+      assert.ok(typeof v === 'string' && v.length > 0);
   });
 }
 

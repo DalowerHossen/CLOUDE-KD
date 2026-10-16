@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { StatementMailButton } from '@/components/crm/statement-mail-button';
 import { PrintButton } from '@/components/crm/print-button';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
@@ -125,7 +126,10 @@ export default async function StatementPage({
           {t('s08Crm.statement.balance')}: <strong>{money(data.balance)}</strong>
         </p>
       </section>
-      <PrintButton label={t('s08Crm.statement.print')} />
+      <div className="flex flex-wrap gap-sp-8">
+        <PrintButton label={t('s08Crm.statement.print')} />
+        <StatementMailButton clientId={id} from={range.from} to={range.to} />
+      </div>
     </div>
   );
 }

@@ -66,6 +66,8 @@ interface FormState {
   riskFlag: 'none' | 'watch' | 'high';
   doNotContact: boolean;
   remindersOptOut: boolean;
+  marketingConsent: boolean;
+  contactPreference: 'email' | 'phone';
   notifyByEmail: boolean;
   showStatement: boolean;
   contacts: Contact[];
@@ -110,6 +112,8 @@ function initial(c: ClientView | null): FormState {
     riskFlag: c?.riskFlag ?? 'none',
     doNotContact: c?.doNotContact ?? false,
     remindersOptOut: c?.remindersOptOut ?? false,
+    marketingConsent: c?.marketingConsent ?? false,
+    contactPreference: c?.contactPreference ?? 'email',
     notifyByEmail: c?.portalPrefs.notifyByEmail ?? true,
     showStatement: c?.portalPrefs.showStatement ?? true,
     contacts: (c?.contacts ?? []).map((x) => ({
@@ -150,6 +154,8 @@ function payload(s: FormState): Record<string, unknown> {
     riskFlag: s.riskFlag,
     doNotContact: s.doNotContact,
     remindersOptOut: s.remindersOptOut,
+    marketingConsent: s.marketingConsent,
+    contactPreference: s.contactPreference,
     portalPrefs: { notifyByEmail: s.notifyByEmail, showStatement: s.showStatement },
     contacts: s.contacts.filter((c) => c.name.trim() !== ''),
   };
@@ -668,6 +674,7 @@ export function ClientForm({
             [
               ['doNotContact', t('s08Crm.form.doNotContact')],
               ['remindersOptOut', t('s08Crm.form.remindersOptOut')],
+              ['marketingConsent', t('s08Crm.form.marketingConsent')],
               ['notifyByEmail', t('s08Crm.form.portalNotify')],
               ['showStatement', t('s08Crm.form.portalStatement')],
             ] as const
@@ -681,6 +688,18 @@ export function ClientForm({
               {label}
             </label>
           ))}
+          <label className="block">
+            <span className="block font-medium">{t('s08Crm.form.contactPreference')}</span>
+            <NativeSelect
+              value={s.contactPreference}
+              onChange={(e) =>
+                setS({ ...s, contactPreference: e.target.value === 'phone' ? 'phone' : 'email' })
+              }
+            >
+              <option value="email">{t('s08Crm.form.contactEmail')}</option>
+              <option value="phone">{t('s08Crm.form.contactPhone')}</option>
+            </NativeSelect>
+          </label>
         </section>
 
         {defs.length > 0 ? (

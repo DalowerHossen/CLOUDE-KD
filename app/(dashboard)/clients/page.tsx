@@ -1,6 +1,7 @@
 // path: app/(dashboard)/clients/page.tsx
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { BulkBar } from '@/components/crm/bulk-bar';
 import { ViewsPanel } from '@/components/crm/views-panel';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
@@ -23,6 +24,18 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Clients' };
 
 const columns: readonly DataColumn<ClientListItem>[] = [
+  {
+    key: 'select',
+    header: '',
+    cell: (r) => (
+      <input
+        type="checkbox"
+        name="ids"
+        value={r.id}
+        aria-label={t('s08Crm.bulk.selectRow', { name: r.name })}
+      />
+    ),
+  },
   {
     key: 'name',
     header: t('s08Crm.clients.name'),
@@ -118,7 +131,19 @@ export default async function ClientsPage({
   } catch {
     result = null;
   }
-  const canMerge = await getService('permissions').can(actor, 'client.merge', { type: 'client' });
+  const perms = getService('permissions');
+  const [canMerge, canBulk, canArchive, canDelete, canUpdate] = await Promise.all([
+    perms.can(actor, 'client.merge', { type: 'client' }),
+    perms.can(actor, 'client.bulk', { type: 'client' }),
+    perms.can(actor, 'client.archive', { type: 'client' }),
+    perms.can(actor, 'client.delete', { type: 'client' }),
+    perms.can(actor, 'client.update', { type: 'client' }),
+  ]);
+  const bulkActions = [
+    ...(canArchive ? (['archive', 'reactivate'] as const) : []),
+    ...(canUpdate ? (['add_tag', 'remove_tag', 'set_risk', 'set_terms'] as const) : []),
+    ...(canDelete ? (['delete'] as const) : []),
+  ];
   const base = params(effective);
   const nextHref = result?.next
     ? `/clients?${new URLSearchParams({ ...base, after: result.next }).toString()}`
@@ -221,6 +246,7 @@ export default async function ClientsPage({
         </div>
       </form>
       <ViewsPanel listKey="clients" basePath="/clients" views={views} current={base} />
+      {canBulk && bulkActions.length > 0 ? <BulkBar allowed={bulkActions} /> : null}
       {result === null ? (
         <ErrorState description={t('s08Crm.clients.loadError')} />
       ) : (

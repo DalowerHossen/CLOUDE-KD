@@ -334,6 +334,7 @@
         "docs/steps/STEP-08/**",
         "lib/env/s08-public.ts",
         "lib/{crm,catalog,stock,procurement,transfer}/**",
+        "emails/crm/**",
         "workers/{crm,inventory,transfer}/**"
       ]
     },

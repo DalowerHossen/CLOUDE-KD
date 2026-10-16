@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ClientActions } from '@/components/crm/client-actions';
+import { StepUpForm } from '@/app/(admin)/admin/account-locks/_components/step-up-form';
+import { ClientDataPanel } from '@/components/crm/client-data-panel';
 import { ActivityPanel } from '@/components/crm/activity-panel';
 import { ClientForm } from '@/components/crm/client-form';
 import { PageHeader } from '@/components/shared/page-header';
@@ -15,6 +17,7 @@ import { getClient, type ClientView } from '@/services/client/clients';
 import { timeline } from '@/services/client/activity';
 import { listDefs } from '@/services/client/custom-fields';
 import { findDuplicates } from '@/services/client/duplicates';
+import { listPrivacyRequests } from '@/services/client/privacy';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Client' };
@@ -38,11 +41,24 @@ export default async function ClientPage({
     throw error;
   }
   const perms = getService('permissions');
-  const [canUpdate, canArchive, canDelete, canMerge, defs, activity, similar] = await Promise.all([
+  const [
+    canUpdate,
+    canArchive,
+    canDelete,
+    canMerge,
+    canExport,
+    canPrivacy,
+    defs,
+    activity,
+    similar,
+    requests,
+  ] = await Promise.all([
     perms.can(actor, 'client.update', { type: 'client' }),
     perms.can(actor, 'client.archive', { type: 'client' }),
     perms.can(actor, 'client.delete', { type: 'client' }),
     perms.can(actor, 'client.merge', { type: 'client' }),
+    perms.can(actor, 'client.export', { type: 'client' }),
+    perms.can(actor, 'client.privacy', { type: 'client' }),
     listDefs(companyId, 'client').catch(() => []),
     timeline(companyId, id).catch(() => []),
     findDuplicates(companyId, {
@@ -51,6 +67,7 @@ export default async function ClientPage({
       taxId: client.taxId,
       exclude: id,
     }).catch(() => []),
+    listPrivacyRequests(companyId, id).catch(() => []),
   ]);
   return (
     <div className="mx-auto max-w-4xl space-y-sp-16">
@@ -103,6 +120,14 @@ export default async function ClientPage({
       </p>
       <ClientForm client={canUpdate ? client : { ...client, anonymized: true }} defs={defs} />
       <ActivityPanel clientId={id} items={activity} canAdd={canUpdate} />
+      {canPrivacy ? <StepUpForm /> : null}
+      <ClientDataPanel
+        clientId={id}
+        canExport={canExport}
+        canRequest={canPrivacy}
+        anonymized={client.anonymized}
+        requests={requests}
+      />
     </div>
   );
 }

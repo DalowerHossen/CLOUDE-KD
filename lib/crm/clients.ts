@@ -107,6 +107,8 @@ export const clientInputSchema = z
     riskFlag: z.enum(['none', 'watch', 'high']),
     doNotContact: z.boolean(),
     remindersOptOut: z.boolean(),
+    marketingConsent: z.boolean(),
+    contactPreference: z.enum(['email', 'phone']),
     portalPrefs: z.object({ notifyByEmail: z.boolean(), showStatement: z.boolean() }).strict(),
     contacts: z.array(contactSchema).max(10),
   })

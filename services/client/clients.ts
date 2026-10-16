@@ -2,7 +2,7 @@
 // The client record: create, read, change, archive, reactivate and soft delete. Every query carries the company of
 // the signed-in person, so a foreign id is "not found". A change needs the version the editor loaded (optimistic lock).
 import 'server-only';
-import { getService } from '@/lib/container';
+import { getService, tryGetService } from '@/lib/container';
 import {
   ConflictError,
   DuplicateError,
@@ -55,6 +55,8 @@ export interface ClientView {
   riskFlag: 'none' | 'watch' | 'high';
   doNotContact: boolean;
   remindersOptOut: boolean;
+  marketingConsent: boolean;
+  contactPreference: 'email' | 'phone';
   portalPrefs: { notifyByEmail: boolean; showStatement: boolean };
   status: 'active' | 'archived';
   contacts: ClientContact[];
@@ -68,7 +70,7 @@ export const CLIENT_COLUMNS =
   'id, kind, name, contact_name, email, billing_email, phone, website, tax_id, display_currency, payment_terms_days, notes, tags, custom_fields, status, ' +
   'billing_line1, billing_line2, billing_city, billing_region, billing_postal_code, billing_country, ' +
   'shipping_line1, shipping_line2, shipping_city, shipping_region, shipping_postal_code, shipping_country, ' +
-  'opening_balance, credit_balance, credit_limit, risk_flag, do_not_contact, reminders_opt_out, portal_prefs, anonymized_at, version, created_at, updated_at';
+  'opening_balance, credit_balance, credit_limit, risk_flag, do_not_contact, reminders_opt_out, marketing_consent, contact_preference, portal_prefs, anonymized_at, version, created_at, updated_at';
 
 type Row = Record<string, unknown>;
 const text = (v: unknown): string => (typeof v === 'string' ? v : '');
@@ -117,6 +119,8 @@ export function toView(r: Row, contacts: ClientContact[]): ClientView {
     riskFlag: String(r.risk_flag) as ClientView['riskFlag'],
     doNotContact: r.do_not_contact === true,
     remindersOptOut: r.reminders_opt_out === true,
+    marketingConsent: r.marketing_consent === true,
+    contactPreference: r.contact_preference === 'phone' ? 'phone' : 'email',
     portalPrefs: {
       notifyByEmail: prefs.notifyByEmail !== false,
       showStatement: prefs.showStatement !== false,
@@ -192,6 +196,8 @@ function columns(input: ClientInput): Row {
     risk_flag: input.riskFlag,
     do_not_contact: input.doNotContact,
     reminders_opt_out: input.remindersOptOut,
+    marketing_consent: input.marketingConsent,
+    contact_preference: input.contactPreference,
     portal_prefs: input.portalPrefs,
   };
 }
@@ -213,6 +219,23 @@ async function saveContacts(
     p_rows: rows,
   });
   if (r.error) throw new InternalError(r.error);
+}
+
+/** Writes the marketing consent of a client to the consent log (best effort: the flag on the record is the source). */
+async function recordConsent(clientId: string, given: boolean): Promise<void> {
+  const consent = tryGetService('consent');
+  if (!consent) return;
+  const subject = `client:${clientId}`;
+  if (given)
+    await consent
+      .record({
+        subject,
+        purpose: 'email_marketing',
+        version: '1',
+        text: 'Marketing e-mail consent recorded by the company for this client.',
+      })
+      .catch(() => undefined);
+  else await consent.withdraw(subject, 'email_marketing').catch(() => undefined);
 }
 
 function needCompany(actor: Actor): string {
@@ -245,6 +268,7 @@ export async function createClient(
       company_id: companyId,
       created_by: actor.userId,
       custom_fields: custom,
+      consent_updated_at: input.marketingConsent ? new Date().toISOString() : null,
       ...columns(input),
     })
     .select('id')
@@ -252,6 +276,7 @@ export async function createClient(
   if (error) throw new InternalError(error);
   const id = String(data.id);
   await saveContacts(companyId, id, input);
+  if (input.marketingConsent) await recordConsent(id, true);
   await logClientEvent(companyId, id, 'system', 'Client created', '', actor.userId);
   await getService('audit').record({
     action: 'client.created',
@@ -303,6 +328,8 @@ export async function quickCreateClient(actor: Actor, input: QuickClient): Promi
       riskFlag: 'none',
       doNotContact: false,
       remindersOptOut: false,
+      marketingConsent: false,
+      contactPreference: 'email',
       portalPrefs: { notifyByEmail: true, showStatement: true },
       contacts: [],
     },
@@ -323,7 +350,13 @@ export async function updateClient(
   const { expectedVersion, ...rest } = input;
   const r = await getAdminSupabase()
     .from('clients')
-    .update({ ...columns(rest), custom_fields: custom })
+    .update({
+      ...columns(rest),
+      custom_fields: custom,
+      ...(current.marketingConsent !== rest.marketingConsent
+        ? { consent_updated_at: new Date().toISOString() }
+        : {}),
+    })
     .eq('id', id)
     .eq('company_id', companyId)
     .eq('version', expectedVersion)
@@ -332,6 +365,8 @@ export async function updateClient(
   if (r.error) throw new InternalError(r.error);
   if (!r.data || r.data.length === 0) throw new ConflictError();
   await saveContacts(companyId, id, rest);
+  if (current.marketingConsent !== rest.marketingConsent)
+    await recordConsent(id, rest.marketingConsent);
   await getService('audit').record({
     action: 'client.updated',
     resourceType: 'client',
