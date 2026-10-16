@@ -6,6 +6,7 @@ import { t } from '@/lib/i18n';
 import { breadcrumbs, itemList } from '@/lib/seo/jsonld';
 import { JsonLd } from '../json-ld';
 import { archiveMonths, categoryList, type PostCard as Card } from '@/services/blog/public';
+import { Illustration } from '../art/illustrations';
 import { PostCard } from './post-card';
 
 interface Props {
@@ -105,7 +106,10 @@ export async function BlogList({
         </div>
       ) : null}
       {posts.length === 0 && !featured ? (
-        <p className="mt-sp-32 text-muted-foreground">{t('s06Public.blog.empty')}</p>
+        <div className="mt-sp-32 flex flex-col items-center gap-3 text-center text-muted-foreground">
+          <Illustration kind="empty" />
+          <p>{t('s06Public.blog.empty')}</p>
+        </div>
       ) : (
         <div className="mt-sp-32 grid gap-sp-24 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((p) => (

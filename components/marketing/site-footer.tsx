@@ -16,7 +16,7 @@ export function SiteFooter({ items }: Props): JSX.Element {
   const columns = items.filter((i) => !i.parent);
   const kids = (id: string): NavItem[] => items.filter((i) => i.parent === id);
   return (
-    <footer className="border-t bg-card safe-bottom safe-x">
+    <footer className="no-print border-t bg-card safe-bottom safe-x">
       <div className="mx-auto grid max-w-7xl gap-sp-24 px-sp-16 py-sp-32 md:grid-cols-[1.5fr_repeat(4,1fr)]">
         <div className="space-y-2">
           <Logo />

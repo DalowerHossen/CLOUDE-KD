@@ -88,7 +88,7 @@ export function ConsentBanner(): JSX.Element | null {
           role="dialog"
           aria-modal="false"
           aria-labelledby="consent-title"
-          className="fixed inset-x-0 bottom-0 z-toast border-t bg-background p-sp-16 shadow-lg safe-bottom safe-x"
+          className="no-print fixed inset-x-0 bottom-0 z-toast border-t bg-background p-sp-16 shadow-lg safe-bottom safe-x"
         >
           <div className="mx-auto max-w-4xl space-y-sp-12">
             <h2 id="consent-title" className="text-base font-semibold">

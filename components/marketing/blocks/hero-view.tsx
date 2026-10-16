@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import type { Block } from '@/lib/cms/blocks';
+import { HeroBackdrop } from '../art/illustrations';
 
 export type HeroBlock = Extract<Block, { type: 'hero' }>;
 const section = 'mx-auto w-full max-w-7xl px-sp-16 py-sp-48';
@@ -30,7 +31,8 @@ export function CtaLink({
 export function HeroView({ b, first }: { b: HeroBlock; first: boolean }): JSX.Element {
   const H = first ? 'h1' : 'h2';
   return (
-    <section className="bg-gradient-to-b from-muted/60 to-background">
+    <section className="relative isolate overflow-hidden bg-gradient-to-b from-muted/60 to-background">
+      <HeroBackdrop />
       <div className={`${section} space-y-sp-16 py-sp-64`}>
         {b.eyebrow ? (
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">{b.eyebrow}</p>

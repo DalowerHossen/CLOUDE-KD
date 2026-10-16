@@ -36,7 +36,7 @@ export function SiteHeader({ items }: Props): JSX.Element {
   const top = items.filter((i) => !i.parent);
   const childrenOf = (id: string): NavItem[] => items.filter((i) => i.parent === id);
   return (
-    <header className="sticky top-0 z-sticky border-b bg-background/95 backdrop-blur safe-top safe-x supports-[backdrop-filter]:bg-background/80">
+    <header className="no-print sticky top-0 z-sticky border-b bg-background/95 backdrop-blur safe-top safe-x supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-sp-16">
         <Link
           href="/"

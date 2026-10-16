@@ -2,6 +2,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { z } from 'zod';
+import { Illustration } from './art/illustrations';
 import { Turnstile } from '@/app/(auth)/_components/turnstile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,7 +63,8 @@ export function ContactForm({ email }: { email?: string }): JSX.Element {
 
   if (done) {
     return (
-      <div role="status" className="max-w-2xl rounded-lg border bg-card p-sp-24">
+      <div role="status" className="max-w-2xl space-y-3 rounded-lg border bg-card p-sp-24">
+        <Illustration kind="success" className="h-20 w-auto" />
         <h3 className="text-h4 font-semibold">{t('s06Public.contact.thanksTitle')}</h3>
         <p className="text-muted-foreground">{t('s06Public.contact.thanks')}</p>
       </div>

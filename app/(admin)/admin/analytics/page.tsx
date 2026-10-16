@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
 import { ErrorState } from '@/components/shared/state-views';
+import { BarChart } from '@/components/marketing/charts/bar-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
@@ -62,6 +63,10 @@ export default async function AdminAnalyticsPage(): Promise<JSX.Element> {
               </Card>
             ))}
           </section>
+          <BarChart
+            title={t('s06Public.analyticsAdmin.dailyViews')}
+            data={data.daily.map((d) => ({ label: d.day, value: d.pageViews }))}
+          />
           <DataTable
             columns={columns}
             rows={data.topPages}

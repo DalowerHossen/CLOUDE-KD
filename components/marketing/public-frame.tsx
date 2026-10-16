@@ -4,6 +4,7 @@ import { SkipLink } from '@/components/layout/skip-link';
 import type { NavItem } from '@/config/nav-types';
 import type { PixelSettings } from '@/lib/analytics/providers';
 import { ConsentBanner } from './consent-banner';
+import { EasterEgg } from './easter-egg';
 import { SiteFooter } from './site-footer';
 import { SiteHeader } from './site-header';
 import { TrackingLoader } from './tracking-loader';
@@ -19,7 +20,9 @@ interface Props {
 export function PublicFrame({ headerItems, footerItems, children, pixels }: Props): JSX.Element {
   return (
     <div className="flex min-h-[100dvh] flex-col">
-      <SkipLink />
+      <div className="no-print">
+        <SkipLink />
+      </div>
       <SiteHeader items={headerItems} />
       <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
         {children}
@@ -27,6 +30,7 @@ export function PublicFrame({ headerItems, footerItems, children, pixels }: Prop
       <SiteFooter items={footerItems} />
       <ConsentBanner />
       <TrackingLoader pixels={pixels} />
+      <EasterEgg />
     </div>
   );
 }

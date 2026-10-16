@@ -244,6 +244,7 @@ export const strings = {
     contacts: 'Contact messages',
     tools: 'Free tool uses',
     topPages: 'Most visited pages',
+    dailyViews: 'Page views per day, last 30 days',
     noData: 'No visits counted yet.',
     pixels: 'Tracking providers',
     pixelsHelp:
@@ -408,6 +409,9 @@ export const strings = {
     incidents: 'Incidents',
     none: 'No incidents in the last 90 days.',
     resolvedAt: 'resolved {time} UTC',
+  },
+  polish: {
+    egg: 'You found it. Thanks for reading the fine print.',
   },
   nav: {
     product: 'Product',

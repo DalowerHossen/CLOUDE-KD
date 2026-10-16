@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { t } from '@/lib/i18n';
+import { Illustration } from './art/illustrations';
 
 export interface HelpListItem {
   slug: string;
@@ -47,7 +48,10 @@ export function HelpSearch({
         {t('s06Public.help.results', { count: shown.reduce((n, g) => n + g.articles.length, 0) })}
       </p>
       {shown.length === 0 ? (
-        <p className="text-muted-foreground">{t('s06Public.help.none')}</p>
+        <div className="flex flex-col items-center gap-3 text-center text-muted-foreground">
+          <Illustration kind="search" />
+          <p>{t('s06Public.help.none')}</p>
+        </div>
       ) : (
         shown.map((g) => (
           <section key={g.key} aria-labelledby={`cat-${g.key}`} className="space-y-sp-12">
