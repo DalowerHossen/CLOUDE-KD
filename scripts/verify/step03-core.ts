@@ -10,6 +10,16 @@ import {
   matchesHistoryHash,
 } from '@/services/auth/password-hash';
 import { identifierHash, normalizeIdentifier } from '@/lib/auth/lock';
+import {
+  buildOtpAuthUri,
+  currentTotp,
+  generateBackupCodes,
+  generateTotpSecret,
+  hashBackupCode,
+  looksLikeBackupCode,
+  normalizeBackupCode,
+  verifyTotp,
+} from '@/lib/auth/two-factor';
 import { isDisposableEmail } from '@/services/auth/disposable-emails';
 
 let failures = 0;
@@ -103,6 +113,39 @@ async function main(): Promise<void> {
     assert.notEqual(a, await identifierHash('other@example.com', key));
     assert.notEqual(a, await identifierHash('user@example.com', 'z'.repeat(48)));
     assert.match(a, /^[0-9a-f]{64}$/);
+  });
+
+  await check('totp: accepts the current code once, rejects replay and garbage', () => {
+    const secret = generateTotpSecret();
+    const code = currentTotp(secret);
+    const first = verifyTotp(secret, code, 0);
+    assert.equal(first.ok, true);
+    assert.ok(first.step !== null && first.step > 0);
+    assert.equal(verifyTotp(secret, code, first.step ?? 0).ok, false);
+    assert.equal(verifyTotp(secret, '12345', 0).ok, false);
+    assert.equal(verifyTotp(secret, 'abcdef', 0).ok, false);
+    assert.equal(verifyTotp(generateTotpSecret(), code, 0).ok, false);
+    assert.ok(buildOtpAuthUri('a@example.com', secret).startsWith('otpauth://totp/'));
+  });
+
+  await check('backup codes: ten unique, no look-alike characters, keyed hashes', async () => {
+    const codes = generateBackupCodes();
+    assert.equal(codes.length, 10);
+    assert.equal(new Set(codes).size, 10);
+    for (const c of codes) {
+      assert.match(c, /^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/);
+      assert.equal(looksLikeBackupCode(c), true);
+    }
+    assert.equal(looksLikeBackupCode('123456'), false);
+    assert.equal(normalizeBackupCode(' ab12c-de34f '), 'AB12CDE34F');
+    const key = 'k'.repeat(48);
+    const code = codes[0] ?? '';
+    assert.equal(
+      await hashBackupCode(code, key),
+      await hashBackupCode(code.toLowerCase().replace('-', ' '), key),
+    );
+    assert.notEqual(await hashBackupCode(code, key), await hashBackupCode(codes[1] ?? '', key));
+    assert.notEqual(await hashBackupCode(code, key), await hashBackupCode(code, 'z'.repeat(48)));
   });
 }
 

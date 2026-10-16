@@ -6,7 +6,8 @@
 - [x] 03.4 (2026-10-16)
 - [x] 03.5a server flows and APIs (2026-10-16)
 - [x] 03.5b auth pages (2026-10-16)
-- [ ] 03.6
+- [x] 03.6a TOTP enrollment, login second step, backup codes, pages (2026-10-16)
+- [ ] 03.6b account-side 2FA and step-up (after 03.9)
 - [ ] 03.7
 - [ ] 03.8
 - [ ] 03.9

@@ -29,7 +29,9 @@ export const GENERIC_LOGIN_MESSAGE =
   'Email or password is incorrect, or sign-in is not available right now.';
 
 export type LoginOutcome =
-  { status: 'ok'; redirectTo: string } | { status: 'two_factor_required' } | { status: 'two_factor_setup_required' };
+  | { status: 'ok'; redirectTo: string }
+  | { status: 'two_factor_required' }
+  | { status: 'two_factor_setup_required' };
 
 /** Fixed targets only, so the response can never become an open redirect. */
 export function redirectFor(user: KnownUser): string {
