@@ -1,6 +1,6 @@
 # STEP 04 progress
 
-- [ ] 04.1
+- [x] 04.1 headers, CSP, redirect, SSRF, header safety (2026-10-16)
 - [ ] 04.2
 - [ ] 04.3
 - [ ] 04.4
