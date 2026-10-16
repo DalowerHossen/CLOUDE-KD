@@ -11,6 +11,7 @@ import {
   profileSchema,
 } from '@/lib/company/sections';
 import { en } from '@/lib/i18n';
+import { contractStatus, isExpired, ownersSchema, uploadSchema, DOC_TYPES } from '@/lib/kyc/rules';
 import { validateStaffGrants } from '@/lib/auth/permissions';
 import { STAFF_PRESETS, expandPreset, matrix } from '@/lib/team/presets';
 import { permissions as registered } from '@/config/permissions';
@@ -275,6 +276,69 @@ async function main(): Promise<void> {
       'five decimals',
     );
     assert.ok(!ap.safeParse({ ownerApprovalActions: [], staffAmountCap: '-5' }).success);
+  });
+
+  await check('kyc rules: status mapping, owners, uploads and expiry', () => {
+    assert.equal(contractStatus(null, false), 'not_submitted');
+    assert.equal(contractStatus('draft', false), 'not_submitted');
+    assert.equal(contractStatus('submitted', false), 'submitted');
+    assert.equal(contractStatus('in_review', false), 'in_review');
+    assert.equal(contractStatus('changes_requested', false), 'rejected');
+    assert.equal(contractStatus('rejected', false), 'rejected');
+    assert.equal(contractStatus('approved', false), 'approved');
+    assert.equal(
+      contractStatus('approved', true),
+      'not_submitted',
+      'an ended verification is not verified',
+    );
+    assert.equal(contractStatus('expired', false), 'not_submitted');
+    assert.equal(isExpired(null), false);
+    assert.equal(isExpired('2000-01-01T00:00:00Z'), true);
+    assert.equal(isExpired(new Date(Date.now() + 86_400_000).toISOString()), false);
+    const owner = {
+      fullName: 'Jane Doe',
+      dateOfBirth: '1985-04-12',
+      nationality: 'US',
+      ownershipPercent: '60',
+      idNumber: 'X123',
+    };
+    assert.ok(
+      ownersSchema.safeParse({
+        owners: [owner, { ...owner, fullName: 'John Roe', ownershipPercent: '40' }],
+      }).success,
+    );
+    assert.ok(
+      !ownersSchema.safeParse({ owners: [owner, { ...owner, ownershipPercent: '50' }] }).success,
+      'over 100 percent',
+    );
+    assert.ok(!ownersSchema.safeParse({ owners: [] }).success, 'at least one owner');
+    assert.ok(
+      !ownersSchema.safeParse({ owners: [{ ...owner, dateOfBirth: '2015-01-01' }] }).success,
+      'under 18',
+    );
+    assert.ok(
+      !ownersSchema.safeParse({ owners: [{ ...owner, fullName: '<b>x</b>' }] }).success,
+      'markup',
+    );
+    assert.ok(!ownersSchema.safeParse({ owners: [{ ...owner, ownershipPercent: '101' }] }).success);
+    assert.ok(
+      !ownersSchema.safeParse({ owners: [{ ...owner, extra: 1 }] }).success,
+      'unknown field',
+    );
+    assert.equal(DOC_TYPES.length, 4);
+    const up = {
+      docType: 'id_front',
+      name: 'id.png',
+      mimeType: 'image/png',
+      dataBase64: 'AAAAAAAA',
+    };
+    assert.ok(uploadSchema.safeParse(up).success);
+    assert.ok(
+      !uploadSchema.safeParse({ ...up, mimeType: 'application/x-msdownload' }).success,
+      'executable type',
+    );
+    assert.ok(!uploadSchema.safeParse({ ...up, docType: 'selfie' }).success);
+    assert.ok(!uploadSchema.safeParse({ ...up, dataBase64: 'not base64!!' }).success);
   });
 
   await check('wizard input: each step has its own strict shape', () => {

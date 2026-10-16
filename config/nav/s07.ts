@@ -65,4 +65,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 25,
   },
+  {
+    id: 'settings-kyc',
+    labelKey: 's07Company.nav.kyc',
+    href: '/settings/kyc',
+    icon: 'shield',
+    group: 'account',
+    roles: ['owner'],
+    order: 455,
+  },
 ];
