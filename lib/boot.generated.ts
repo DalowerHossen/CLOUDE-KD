@@ -3,9 +3,11 @@
 
 import { boot as s01Entitlement } from '@/config/boot/s01-entitlement';
 import { boot as s03EmailTemplates } from '@/config/boot/s03-email-templates';
+import { boot as s04Security } from '@/config/boot/s04-security';
 
 /** Runs every boot hook in file-name order (STEP number first). */
 export async function runBootHooks(): Promise<void> {
   await s01Entitlement();
   await s03EmailTemplates();
+  await s04Security();
 }

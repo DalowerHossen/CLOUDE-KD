@@ -181,3 +181,15 @@ begin
   end loop;
 end
 $$;
+
+-- Number of signals of one type for a subject inside a window (used by the fraud rules).
+create or replace function public.kd_signal_count(p_subject_type text, p_ref text, p_type text, p_minutes integer) returns integer
+language sql stable security definer
+set search_path = public
+as $$
+  select count(*)::integer from public.fraud_signals
+  where subject_type = p_subject_type and subject_ref = p_ref and signal_type = p_type
+    and created_at > now() - make_interval(mins => p_minutes)
+$$;
+revoke execute on function public.kd_signal_count(text, text, text, integer) from public, anon, authenticated;
+grant execute on function public.kd_signal_count(text, text, text, integer) to service_role;

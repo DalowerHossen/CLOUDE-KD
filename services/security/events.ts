@@ -38,11 +38,21 @@ export type SecurityEventListener = (event: {
   companyId: string | null;
 }) => Promise<void>;
 
-const listeners: SecurityEventListener[] = [];
+const LISTENERS_KEY = Symbol.for('kd.solution.it.security.listeners');
+
+/** One list per process, shared by separately bundled route modules (same approach as the service container). */
+function listeners(): SecurityEventListener[] {
+  const holder = globalThis as unknown as Record<symbol, SecurityEventListener[] | undefined>;
+  const existing = holder[LISTENERS_KEY];
+  if (existing) return existing;
+  const created: SecurityEventListener[] = [];
+  holder[LISTENERS_KEY] = created;
+  return created;
+}
 
 /** Registers a reaction to security events (zero-tolerance engine, alerting, SIEM forwarding). */
 export function onSecurityEvent(listener: SecurityEventListener): void {
-  listeners.push(listener);
+  if (!listeners().includes(listener)) listeners().push(listener);
 }
 
 export function severityOf(type: SecurityEventType): Severity {
@@ -83,7 +93,7 @@ export async function raiseEvent(
         payload: { type, severity },
       });
     }
-    for (const listener of listeners) {
+    for (const listener of listeners()) {
       await listener({
         type,
         severity,

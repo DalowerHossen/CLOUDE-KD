@@ -11,4 +11,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 300,
   },
+  {
+    id: 'admin-fraud',
+    labelKey: 's04Security.nav.fraud',
+    href: '/admin/fraud',
+    icon: 'alert-triangle',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 310,
+  },
 ];

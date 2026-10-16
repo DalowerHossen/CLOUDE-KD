@@ -1,4 +1,5 @@
 -- path: migrations/S04_003_signals_down.sql
+drop function if exists public.kd_signal_count(text, text, text, integer);
 drop function if exists public.kd_actor_actions(uuid, integer);
 drop function if exists public.kd_last_country(uuid);
 drop function if exists public.kd_signups_for_ip(text, integer);

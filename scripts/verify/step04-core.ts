@@ -37,6 +37,9 @@ import {
   isFingerprintExcluded,
   shouldRefuseSignup,
 } from '@/lib/security/signals';
+import { adaptiveAction, combineRisk, trustScores } from '@/lib/security/risk-scoring';
+import { FRAUD_RULES, evaluateRule, rulesForSignal } from '@/lib/security/fraud-engine';
+import { requiredProof, zeroToleranceFor } from '@/lib/security/zero-trust';
 import { SsrfError, resolvePublicAddresses, validateOutboundUrl } from '@/lib/security/ssrf';
 
 /** Builds a character from its hexadecimal code point, so the source file stays ASCII. */
@@ -545,6 +548,55 @@ async function main(): Promise<void> {
     }
     for (const path of ['/dashboard', '/invoices', '/admin/audit', '/payments'])
       assert.equal(isFingerprintExcluded(path), false, path);
+  });
+
+  await check('risk scoring: combination, trust, adaptive response', () => {
+    assert.equal(combineRisk({}), 0);
+    assert.equal(combineRisk({ user: 40 }), 40);
+    assert.equal(combineRisk({ user: 40, network: 40 }), 50);
+    assert.equal(combineRisk({ user: 100, network: 100, device: 100 }), 100);
+    assert.deepEqual(trustScores({ user: 30, network: 80 }), {
+      user: 70,
+      device: 100,
+      network: 20,
+      transaction: 100,
+    });
+    assert.deepEqual([0, 29, 30, 59, 60, 79, 80, 94, 95, 100].map(adaptiveAction), [
+      'allow',
+      'allow',
+      'monitor',
+      'monitor',
+      'step_up',
+      'step_up',
+      'hold',
+      'hold',
+      'block',
+      'block',
+    ]);
+    assert.equal(requiredProof('step_up'), 'step_up');
+    assert.equal(requiredProof('block'), 'refuse');
+    assert.equal(requiredProof('allow'), 'none');
+  });
+
+  await check('zero tolerance: injection and takeover end in hard actions at once', () => {
+    assert.deepEqual(zeroToleranceFor('sql_injection_attempt')?.actions, ['ban_ip', 'alert']);
+    assert.equal(zeroToleranceFor('xss_attempt')?.banMinutes, 1440);
+    assert.ok(zeroToleranceFor('account_takeover_signal')?.actions.includes('terminate_sessions'));
+    assert.ok(zeroToleranceFor('account_takeover_signal')?.actions.includes('lock_user'));
+    assert.equal(zeroToleranceFor('csrf_failure'), null);
+    assert.equal(zeroToleranceFor('network_blocked'), null);
+  });
+
+  await check('fraud rules fire at their threshold only', () => {
+    const csrf = rulesForSignal('csrf_failure', 'ip')[0];
+    assert.ok(csrf);
+    assert.equal(evaluateRule(csrf, 4), null);
+    assert.equal(evaluateRule(csrf, 5)?.count, 5);
+    assert.ok(csrf.actions.includes('ban_ip'));
+    assert.equal(rulesForSignal('csrf_failure', 'user').length, 0);
+    assert.ok(new Set(FRAUD_RULES.map((r) => r.id)).size === FRAUD_RULES.length);
+    const hijack = rulesForSignal('session_ip_change', 'user')[0];
+    assert.ok(hijack?.actions.includes('terminate_sessions'));
   });
 }
 

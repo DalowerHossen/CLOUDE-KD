@@ -35,6 +35,12 @@ begin
   assert public.kd_users_for_ip(h, 24) = 2, 'two accounts on one address';
   assert public.kd_signups_for_ip(h, 24) = 1, 'sign-ups on one address';
 
+  perform public.kd_risk_add('csrf_failure', 'ip', 'z', 5, null, '{}');
+  perform public.kd_risk_add('csrf_failure', 'ip', 'z', 5, null, '{}');
+  assert public.kd_signal_count('ip', 'z', 'csrf_failure', 5) = 2, 'signal count inside the window';
+  assert public.kd_signal_count('ip', 'z', 'xss_attempt', 5) = 0, 'other types are not counted';
+  assert public.kd_signal_count('ip', 'other', 'csrf_failure', 5) = 0, 'other subjects are not counted';
+
   set local role authenticated;
   begin perform public.kd_risk_add('x', 'ip', 'y', 1, null, null); assert false, 'authenticated writes risk';
   exception when insufficient_privilege then null; end;
