@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { visibleNavItems } from '@/components/layout/nav-utils';
 import { getShellContext } from '@/components/layout/shell-user';
 import { navMap } from '@/config/nav-map';
+import { DeviceCollector } from '@/lib/security/device-collector';
 import { ImpersonationBanner } from '../(admin)/admin/impersonation/_components/impersonation-banner';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,7 @@ export default async function DashboardLayout({
       homeHref="/dashboard"
       notificationsHref={notifications}
     >
+      <DeviceCollector />
       <ImpersonationBanner />
       {children}
     </AppShell>

@@ -1,8 +1,6 @@
 {
   "comment": "Machine-readable copy of docs/execution/OWNERSHIP_MAP.md. The most specific matching pattern decides the owner.",
-  "anyStepMayCreate": [
-    "**/.gitkeep"
-  ],
+  "anyStepMayCreate": ["**/.gitkeep"],
   "steps": {
     "01": {
       "owns": [
@@ -182,7 +180,8 @@
       "owns": [
         "proxy.ts",
         "lib/security/**",
-        "lib/middleware/{rate-limit,bot-detector,vpn-detector,csrf,auth,idempotency,headers}.ts",
+        "lib/middleware/{rate-limit,bot-detector,vpn-detector,csrf,auth,idempotency,headers,shield}.ts",
+        "app/api/security/**",
         "lib/auth/tokens.ts",
         "lib/webhook/**",
         "services/{security,fraud,incident,alerting,siem}/**",

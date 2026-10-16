@@ -11,6 +11,8 @@ import { createLogger } from '@/lib/logger';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { randomHex } from '@/lib/utils/hash';
 import { slugify } from '@/lib/utils/slug';
+import { shouldRefuseSignup } from '@/lib/security/signals';
+import { noteTrialAbuse, signupsFromThisAddress } from '@/services/fraud/signals';
 import { lookupUserByEmail } from './credentials';
 import { hashIdentifier } from './lock-service';
 import { recordLoginEvent } from './login-events';
@@ -76,6 +78,10 @@ export async function startSignup(input: z.infer<typeof signupSchema>, ip: strin
 
   const email = normalizeIdentifier(input.email);
   const identifier = await hashIdentifier(email);
+  // Trial abuse: many sign-ups from one address. The answer stays neutral; nothing is created.
+  const earlier = await signupsFromThisAddress();
+  await noteTrialAbuse(earlier);
+  if (shouldRefuseSignup(earlier)) return;
   if (await lookupUserByEmail(email)) {
     await recordLoginEvent({
       identifierHash: identifier,

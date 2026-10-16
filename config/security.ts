@@ -76,3 +76,55 @@ export const NETWORK_FAIL_CLOSED: readonly NetworkContext[] = ['signup', 'paymen
 export const REPUTATION_TTL_SECONDS = 86_400;
 export const TOR_LIST_URL = 'https://check.torproject.org/torbulkexitlist';
 export const TOR_LIST_TTL_SECONDS = 172_800;
+
+/** Points added to the risk score of a subject by each signal (negative values lower it). Scores run from 0 to 100. */
+export const SIGNAL_WEIGHTS: Readonly<Record<string, number>> = {
+  new_device: 5,
+  device_reuse: 25,
+  multi_account_ip: 20,
+  trial_abuse: 30,
+  country_jump: 35,
+  velocity: 15,
+  insider_bulk_activity: 40,
+  session_ip_change: 30,
+  session_device_mismatch: 60,
+  login_failed: 5,
+  account_locked: 25,
+  sql_injection_attempt: 40,
+  xss_attempt: 40,
+  csrf_failure: 15,
+  brute_force: 30,
+  credential_stuffing: 40,
+  token_abuse: 40,
+  webhook_signature_invalid: 20,
+  network_blocked: 10,
+  account_takeover_signal: 60,
+  data_exfiltration_signal: 60,
+};
+
+export const SIGNAL_THRESHOLDS = {
+  /** Different accounts that signed in or signed up from one address inside 24 hours. */
+  usersPerIp: 3,
+  /** Accounts that used one browser fingerprint. */
+  usersPerFingerprint: 2,
+  /** Sign-ups from one address inside 24 hours (trial abuse). A higher count is refused. */
+  signupsPerIp: 3,
+  signupsPerIpRefuse: 5,
+  /** Another country inside this time counts as impossible travel (the country of an address is all that is known). */
+  countryJumpMinutes: 120,
+  /** Actions of one administrator inside 60 minutes. */
+  adminActionsPerHour: 300,
+} as const;
+
+/** Pages where no browser fingerprint is collected: payment pages, card pages and every page with a password field. */
+export const FINGERPRINT_EXCLUDED_PREFIXES: readonly string[] = [
+  '/pay/',
+  '/portal/pay',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/account/security',
+  '/checkout',
+  '/cards',
+];

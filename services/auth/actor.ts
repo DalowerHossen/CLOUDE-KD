@@ -15,6 +15,7 @@ import { readRequestMeta } from '@/services/audit/request-meta';
 import type { Actor } from '@/types/contracts';
 import { isSessionActive } from '@/lib/auth/session';
 import { hashIdentifier } from './lock-service';
+import { checkInsiderActivity } from '@/services/fraud/signals';
 import { currentDeviceHash } from './device';
 import { recordLoginEvent } from './login-events';
 
@@ -112,8 +113,11 @@ async function resolveActor(): Promise<Actor | null> {
       reason: 'session_ip_change',
     });
   }
-  if (now.getTime() - Date.parse(session.last_active_at) > TOUCH_AFTER_MS)
+  if (now.getTime() - Date.parse(session.last_active_at) > TOUCH_AFTER_MS) {
     updates.last_active_at = now.toISOString();
+    // At most once a minute per session: look for unusual bulk activity of platform staff.
+    void checkInsiderActivity(user.id, role).catch(() => undefined);
+  }
   if (Object.keys(updates).length > 0)
     await admin.from('user_sessions').update(updates).eq('id', session.id);
 

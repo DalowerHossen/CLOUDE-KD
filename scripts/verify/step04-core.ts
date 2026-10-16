@@ -28,6 +28,15 @@ import { evaluateNetwork } from '@/lib/security/network/evaluate';
 import { parseIpqs, parseMaxmind } from '@/lib/security/network/providers';
 import { EMPTY_SIGNALS } from '@/lib/security/network/types';
 import { parseTorList } from '@/lib/security/network/tor';
+import {
+  detectCountryJump,
+  detectDeviceReuse,
+  detectInsiderActivity,
+  detectMultiAccountIp,
+  detectTrialAbuse,
+  isFingerprintExcluded,
+  shouldRefuseSignup,
+} from '@/lib/security/signals';
 import { SsrfError, resolvePublicAddresses, validateOutboundUrl } from '@/lib/security/ssrf';
 
 /** Builds a character from its hexadecimal code point, so the source file stays ASCII. */
@@ -470,6 +479,72 @@ async function main(): Promise<void> {
       '# comment\n185.220.101.1\n\n2a0b:f4c2::1\nnot-an-ip\n185.220.101.1\n999.1.1.1\n',
     );
     assert.deepEqual(ips.sort(), ['185.220.101.1', '2a0b:f4c2::1'].sort());
+  });
+
+  await check(
+    'behaviour signals: country jump, multi account, device reuse, trial abuse, insider activity',
+    () => {
+      const now = new Date('2026-10-16T12:00:00Z');
+      assert.equal(
+        detectCountryJump(
+          { country: 'DE', at: '2026-10-16T11:00:00Z' },
+          { country: 'US', at: now },
+        ),
+        'country_jump',
+      );
+      assert.equal(
+        detectCountryJump(
+          { country: 'DE', at: '2026-10-16T08:00:00Z' },
+          { country: 'US', at: now },
+        ),
+        null,
+      );
+      assert.equal(
+        detectCountryJump(
+          { country: 'DE', at: '2026-10-16T11:00:00Z' },
+          { country: 'DE', at: now },
+        ),
+        null,
+      );
+      assert.equal(
+        detectCountryJump(
+          { country: 'DE', at: '2026-10-16T11:00:00Z' },
+          { country: null, at: now },
+        ),
+        null,
+      );
+      assert.equal(detectCountryJump(null, { country: 'US', at: now }), null);
+      assert.equal(detectMultiAccountIp(2), null);
+      assert.equal(detectMultiAccountIp(3), 'multi_account_ip');
+      assert.equal(detectDeviceReuse(1), null);
+      assert.equal(detectDeviceReuse(2), 'device_reuse');
+      assert.equal(detectTrialAbuse(2), null);
+      assert.equal(detectTrialAbuse(3), 'trial_abuse');
+      assert.equal(shouldRefuseSignup(4), false);
+      assert.equal(shouldRefuseSignup(5), true);
+      assert.equal(detectInsiderActivity('admin_staff', 301), 'insider_bulk_activity');
+      assert.equal(detectInsiderActivity('admin_staff', 300), null);
+      assert.equal(detectInsiderActivity('owner', 5000), null);
+    },
+  );
+
+  await check('fingerprint is never collected on payment, card or password pages', () => {
+    for (const path of [
+      '/pay/abc',
+      '/portal/pay/1',
+      '/login',
+      '/login/two-factor',
+      '/signup',
+      '/forgot-password',
+      '/reset-password',
+      '/account/security',
+      '/checkout/1',
+      '/cards/new',
+    ]) {
+      assert.equal(isFingerprintExcluded(path), true, path);
+    }
+    for (const path of ['/dashboard', '/invoices', '/admin/audit', '/payments'])
+      assert.equal(isFingerprintExcluded(path), false, path);
   });
 }
 
