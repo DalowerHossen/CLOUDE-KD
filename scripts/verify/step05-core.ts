@@ -44,6 +44,13 @@ import {
   unknownVariables,
   wrapInShell,
 } from '@/lib/email/template-body';
+import {
+  EVENT_RULES,
+  buildFromEvent,
+  categoryOf,
+  fillBody,
+  safeHref,
+} from '@/lib/notifications/rules';
 import { createHttpScanner } from '@/lib/storage/scanner';
 import { maskEmail, maskIdentifier, maskName, maskPhone } from '@/lib/encryption/redact';
 
@@ -806,6 +813,45 @@ async function main(): Promise<void> {
       name: '[name]',
       payUrl: 'https://app.example.com/open',
     });
+  });
+  await check('notification rules: categories, safe links, wording', () => {
+    assert.equal(categoryOf('invoice.paid'), 'invoice');
+    assert.equal(categoryOf('dispute.opened'), 'payment');
+    assert.equal(categoryOf('auth.new_device'), 'security');
+    assert.equal(categoryOf('whatever.thing'), 'system');
+    assert.equal(safeHref('/invoices/1?x=2'), '/invoices/1?x=2');
+    for (const bad of [
+      '//evil.test',
+      'https://evil.test',
+      '/\\evil',
+      'javascript:alert(1)',
+      '/a b',
+      '',
+      null,
+      5,
+    ])
+      assert.equal(safeHref(bad), null, String(bad));
+    assert.equal(
+      fillBody('Invoice {number} was paid.', { number: 'INV-7' }),
+      'Invoice INV-7 was paid.',
+    );
+    assert.equal(fillBody('Invoice {number} was paid.', {}), 'Invoice was paid.');
+    assert.equal(
+      fillBody('{clientName} opened invoice {number}.', { clientName: 'Acme' }),
+      'Acme opened invoice.',
+    );
+    const built = buildFromEvent('invoice.paid', {
+      number: 'INV-1',
+      invoiceId: 'abc',
+      href: '/invoices/abc',
+    });
+    assert.equal(built?.body, 'Invoice INV-1 was paid.');
+    assert.equal(built?.href, '/invoices/abc');
+    assert.equal(built?.dedupeSuffix, 'abc');
+    assert.equal(buildFromEvent('invoice.paid', { href: 'https://evil.test' })?.href, null);
+    assert.equal(buildFromEvent('expense.created', {}), null);
+    for (const [name, rule] of Object.entries(EVENT_RULES))
+      assert.ok(rule && rule.title.length > 0 && !name.includes(' '), name);
   });
 }
 

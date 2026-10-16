@@ -38,4 +38,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo'],
     order: 410,
   },
+  {
+    id: 'notifications',
+    labelKey: 's05Storage.nav.notifications',
+    href: '/notifications',
+    icon: 'bell',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 900,
+  },
 ];

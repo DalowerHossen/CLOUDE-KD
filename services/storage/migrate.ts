@@ -5,7 +5,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { getService } from '@/lib/container';
+import { getService, tryGetService } from '@/lib/container';
 import { InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { ProviderUnavailableError } from '@/lib/storage/adapters/base';
@@ -89,6 +89,13 @@ export async function migrateFile(
         source_deleted: options.deleteSource === true,
       },
     });
+    await tryGetService('events')
+      ?.publish({
+        name: 'file.migrated',
+        companyId: row.company_id,
+        payload: { fileId: row.id, from: row.storage_provider, to: target },
+      })
+      .catch(() => undefined);
     return toRecord(moved);
   } catch (error) {
     await destination.remove(stored.ref, row.company_id).catch(() => undefined);

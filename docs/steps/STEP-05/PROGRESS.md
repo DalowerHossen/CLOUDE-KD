@@ -10,5 +10,5 @@
 - [x] 05.7a e-mail core: adapters, outbox, queue, suppression, tracking, feedback (2026-10-16)
 - [x] 05.7b e-mail settings pages, test tools, domain check, suppression list (2026-10-16)
 - [x] 05.8 template system: versions, editor, preview, brand shell, locked templates (2026-10-16)
-- [ ] 05.9
+- [x] 05.9 notifications: service, preferences, realtime page, event consumer, digest (2026-10-16)
 - [ ] 05.10

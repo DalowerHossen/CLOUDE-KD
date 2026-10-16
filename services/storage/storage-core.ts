@@ -4,7 +4,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { RETENTION_YEARS } from '@/config/storage';
-import { getService } from '@/lib/container';
+import { getService, tryGetService } from '@/lib/container';
 import { InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { getContext } from '@/lib/logger/correlation';
@@ -137,6 +137,13 @@ export async function putFile(input: PutInput): Promise<FileRecord> {
     companyId: input.companyId,
     metadata: { category: input.category, provider, size: file.sizeBytes, notes: file.notes },
   });
+  await tryGetService('events')
+    ?.publish({
+      name: 'file.stored',
+      companyId: input.companyId,
+      payload: { fileId, category: input.category, provider },
+    })
+    .catch(() => undefined);
   return toRecord(row);
 }
 

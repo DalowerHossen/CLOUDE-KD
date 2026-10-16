@@ -4,7 +4,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { getService } from '@/lib/container';
+import { getService, tryGetService } from '@/lib/container';
 import { getServerEnv } from '@/lib/env';
 import { AppError, InternalError, RateLimitError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
@@ -82,6 +82,11 @@ async function quarantine(
       source: 'upload',
       reason: 'upload_quarantined',
       code,
+    });
+    await tryGetService('events')?.publish({
+      name: 'file.quarantined',
+      companyId: input.companyId,
+      payload: { category: input.category, code },
     });
   } catch (error) {
     log.error('quarantine record could not be written', { error });
