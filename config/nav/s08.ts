@@ -11,4 +11,13 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 120,
   },
+  {
+    id: 'products',
+    labelKey: 's08Crm.nav.products',
+    href: '/products',
+    icon: 'package',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 130,
+  },
 ];

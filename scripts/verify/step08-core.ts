@@ -24,6 +24,16 @@ import { render } from '@react-email/render';
 import { crmEmailTemplates } from '@/emails/crm';
 import { StatementEmail } from '@/emails/crm/statement';
 import { bulkSchema, privacyRequestSchema, statementMailSchema } from '@/lib/crm/privacy';
+import {
+  bundleItemSchema,
+  clientRateSchema,
+  productCreateSchema,
+  productInputSchema,
+  productListQuery,
+  productUpdateSchema,
+  variantsSaveSchema,
+} from '@/lib/catalog/products';
+import { marginPercent, resolveUnitPrice } from '@/lib/catalog/resolve';
 import { checkCustomValues, type CustomFieldDef } from '@/lib/crm/custom-values';
 import { permissions as registered } from '@/config/permissions';
 import type { PermissionDefinition } from '@/types/contracts';
@@ -200,8 +210,13 @@ async function main(): Promise<void> {
       }).success,
     );
     assert.ok(
-      !quickClientSchema.safeParse({ name: 'Walk-in', email: '', postalCode: '', country: 'US' })
-        .success,
+      !quickClientSchema.safeParse({
+        name: 'Walk-in',
+        email: '',
+        postalCode: '',
+        country: 'US',
+        confirmDuplicate: false,
+      }).success,
     );
     assert.equal(initials('Acme Ltd'), 'AL');
     assert.equal(initials('madonna'), 'MA');
@@ -436,6 +451,202 @@ async function main(): Promise<void> {
     assert.ok(html.includes('$150.70') && html.includes('Studio'));
     for (const v of def?.definition.variables ?? [])
       assert.ok(typeof v === 'string' && v.length > 0);
+  });
+  const product = {
+    kind: 'product',
+    name: 'Blue Widget',
+    description: '',
+    sku: 'BW-1',
+    barcode: '',
+    unit: 'piece',
+    unitPrice: '12.50',
+    costPrice: '7',
+    taxCategory: 'standard',
+    taxRate: '8.25',
+    categoryId: null,
+    hsCode: '',
+    trackInventory: true,
+    status: 'active',
+    customFields: {},
+    volumeTiers: [
+      { minQty: '10', unitPrice: '11' },
+      { minQty: '50', unitPrice: '9.5' },
+    ],
+    bundleItems: [],
+  };
+
+  await check('product input: normalised and strict', () => {
+    const parsed = productInputSchema.parse(product);
+    assert.equal(parsed.barcode, null, 'empty barcode becomes null');
+    assert.equal(parsed.sku, 'BW-1');
+    assert.equal(productInputSchema.parse({ ...product, sku: '' }).sku, null);
+    assert.ok(!productInputSchema.safeParse({ ...product, extra: 1 }).success);
+    assert.ok(!productInputSchema.safeParse({ ...product, sku: '-bad' }).success, 'sku shape');
+    assert.ok(
+      !productInputSchema.safeParse({ ...product, unitPrice: '-1' }).success,
+      'price not negative',
+    );
+    assert.ok(
+      !productInputSchema.safeParse({ ...product, unitPrice: '1.00001' }).success,
+      'four places at most',
+    );
+    assert.ok(
+      !productInputSchema.safeParse({ ...product, taxRate: '101' }).success,
+      'rate is a percentage',
+    );
+    assert.ok(!productInputSchema.safeParse({ ...product, name: '<i>x</i>' }).success);
+    assert.ok(
+      !productInputSchema.safeParse({ ...product, kind: 'service' }).success,
+      'a service has no stock',
+    );
+    assert.ok(
+      productInputSchema.safeParse({ ...product, kind: 'service', trackInventory: false }).success,
+    );
+  });
+
+  await check('product input: tiers and bundles', () => {
+    assert.ok(
+      !productInputSchema.safeParse({
+        ...product,
+        volumeTiers: [
+          { minQty: '50', unitPrice: '9' },
+          { minQty: '10', unitPrice: '8' },
+        ],
+      }).success,
+      'tiers rise',
+    );
+    assert.ok(
+      !productInputSchema.safeParse({
+        ...product,
+        volumeTiers: Array.from({ length: 11 }, (_, i) => ({
+          minQty: String(i + 2),
+          unitPrice: '1',
+        })),
+      }).success,
+      'ten tiers at most',
+    );
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    const bundle = {
+      ...product,
+      kind: 'bundle',
+      trackInventory: false,
+      bundleItems: [{ productId: id, quantity: '2' }],
+    };
+    assert.ok(productInputSchema.safeParse(bundle).success);
+    assert.ok(
+      !productInputSchema.safeParse({ ...bundle, bundleItems: [] }).success,
+      'a bundle needs items',
+    );
+    assert.ok(
+      !productInputSchema.safeParse({ ...product, bundleItems: bundle.bundleItems }).success,
+      'only a bundle has items',
+    );
+    assert.ok(
+      !productInputSchema.safeParse({
+        ...bundle,
+        bundleItems: [bundle.bundleItems[0], bundle.bundleItems[0]],
+      }).success,
+      'each item once',
+    );
+    assert.ok(
+      !bundleItemSchema.safeParse({ productId: id, quantity: '0' }).success,
+      'quantity above zero',
+    );
+    assert.ok(productCreateSchema.safeParse({ product, confirmDuplicate: false }).success);
+    assert.ok(
+      !productUpdateSchema.safeParse({ product }).success,
+      'update needs the loaded version',
+    );
+    assert.ok(productUpdateSchema.safeParse({ expectedVersion: 2, product }).success);
+  });
+
+  await check('product list, variants and client price input', () => {
+    assert.equal(productListQuery.parse({}).sort, 'name');
+    assert.ok(!productListQuery.safeParse({ sort: 'cost' }).success);
+    assert.ok(!productListQuery.safeParse({ category: 'not-a-uuid' }).success);
+    assert.ok(
+      variantsSaveSchema.safeParse({
+        variants: [
+          {
+            id: null,
+            name: 'Large',
+            sku: 'BW-1-L',
+            barcode: '',
+            unitPrice: null,
+            attributes: { size: 'L' },
+            isActive: true,
+          },
+        ],
+      }).success,
+    );
+    assert.ok(
+      !variantsSaveSchema.safeParse({
+        variants: [
+          {
+            id: null,
+            name: 'Large',
+            sku: '',
+            barcode: '',
+            unitPrice: null,
+            attributes: { 'Bad Key': 'L' },
+            isActive: true,
+          },
+        ],
+      }).success,
+      'attribute names are tokens',
+    );
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    assert.ok(
+      clientRateSchema.safeParse({ clientId: id, productId: id, unitPrice: '9.99' }).success,
+    );
+    assert.ok(
+      clientRateSchema.safeParse({ clientId: id, productId: id, unitPrice: null }).success,
+      'null removes',
+    );
+    assert.ok(
+      !clientRateSchema.safeParse({ clientId: id, productId: id, unitPrice: 'free' }).success,
+    );
+  });
+
+  await check('price resolution: client price, tier, variant, base', () => {
+    const tiers = [
+      { minQty: '10', unitPrice: '11' },
+      { minQty: '50', unitPrice: '9.5' },
+    ];
+    assert.deepEqual(resolveUnitPrice({ base: '12.5', tiers, quantity: '1' }), {
+      unitPrice: '12.5000',
+      source: 'base',
+    });
+    assert.deepEqual(resolveUnitPrice({ base: '12.5', tiers, quantity: '10' }), {
+      unitPrice: '11.0000',
+      source: 'tier',
+    });
+    assert.deepEqual(resolveUnitPrice({ base: '12.5', tiers, quantity: '75.5' }), {
+      unitPrice: '9.5000',
+      source: 'tier',
+    });
+    assert.deepEqual(
+      resolveUnitPrice({ base: '12.5', tiers, quantity: '9.9999' }),
+      { unitPrice: '12.5000', source: 'base' },
+      'just under the tier',
+    );
+    assert.deepEqual(
+      resolveUnitPrice({ base: '12.5', variantPrice: '14', tiers: [], quantity: '3' }),
+      { unitPrice: '14.0000', source: 'variant' },
+    );
+    assert.deepEqual(
+      resolveUnitPrice({
+        base: '12.5',
+        variantPrice: '14',
+        tiers,
+        clientPrice: '8',
+        quantity: '100',
+      }),
+      { unitPrice: '8.0000', source: 'client' },
+      'the agreed price wins',
+    );
+    assert.equal(marginPercent('12.5', '10'), '20.0000');
+    assert.equal(marginPercent('0', '1'), null);
   });
 }
 

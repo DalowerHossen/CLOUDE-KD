@@ -40,6 +40,7 @@ const PLAIN_PREFIXES = [
   'app/api/seo/og/',
   'app/api/companies/logo/',
   'app/api/kyc/review/documents/',
+  'app/api/products/[id]/images/[fileId]/',
   'app/api/email/track/',
   'app/api/email/unsubscribe/',
   'app/api/email/webhooks/',

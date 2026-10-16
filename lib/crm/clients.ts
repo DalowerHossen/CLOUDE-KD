@@ -50,6 +50,18 @@ export const moneyText = z
     { message: 'Enter an amount with at most four decimal places.' },
   );
 
+/** Money that cannot be negative (prices, limits). */
+export const moneyNonNegative = moneyText.refine(
+  (v) => {
+    try {
+      return !Money.parse(v).isNegative();
+    } catch {
+      return true; // a malformed amount is already refused by moneyText
+    }
+  },
+  { message: 'The amount cannot be negative.' },
+);
+
 const address = z
   .object({
     line1: plain(0, 200),
@@ -103,7 +115,7 @@ export const clientInputSchema = z
     billing: billingAddress,
     shipping: address,
     openingBalance: moneyText,
-    creditLimit: moneyText.nullable(),
+    creditLimit: moneyNonNegative.nullable(),
     riskFlag: z.enum(['none', 'watch', 'high']),
     doNotContact: z.boolean(),
     remindersOptOut: z.boolean(),
