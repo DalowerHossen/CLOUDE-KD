@@ -20,4 +20,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 310,
   },
+  {
+    id: 'admin-siem',
+    labelKey: 's04Security.nav.siem',
+    href: '/admin/siem',
+    icon: 'activity',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 320,
+  },
 ];

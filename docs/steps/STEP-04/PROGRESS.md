@@ -9,6 +9,6 @@
 - [x] 04.7 fraud and zero-trust engine, security service, fraud console (2026-10-16)
 - [x] 04.8
 - [x] 04.9
-- [ ] 04.10
+- [x] 04.10
 - [ ] 04.11
 - [ ] 04.12

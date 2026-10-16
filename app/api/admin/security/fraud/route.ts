@@ -1,4 +1,4 @@
-// path: app/api/admin/fraud/route.ts
+// path: app/api/admin/security/fraud/route.ts
 import { withApi } from '@/lib/api/with-api';
 import { fraudOverview } from '@/services/fraud/admin-ops';
 

@@ -20,6 +20,9 @@ import {
   verifyTimestampedSignature,
 } from '@/lib/webhook/signature';
 import { createReplayCache } from '@/lib/webhook/replay';
+import { authHeaders, renderBatch, toCef, toLeef, toSyslog } from '@/lib/security/siem/formats';
+import { CORRELATION_RULES } from '@/lib/security/siem/rules';
+import { SIEM_KINDS, type NormalizedEvent } from '@/lib/security/siem/types';
 import { isNonPublicIp } from '@/lib/security/ip';
 import { isAllowedExternalRedirect, safeRedirectPath } from '@/lib/security/redirect';
 import {
@@ -672,6 +675,37 @@ async function main(): Promise<void> {
     cache.firstSeen('c', 1602);
     cache.firstSeen('d', 1603);
     assert.ok(cache.size() <= 3);
+  });
+  await check('siem: formats, escaping, auth headers, rules', () => {
+    const e: NormalizedEvent = {
+      id: '01900000-0000-7000-8000-000000000001',
+      time: '2026-01-01T00:00:00.000Z',
+      type: 'brute_force',
+      severity: 'high',
+      source: 'app',
+      companyId: null,
+      actorId: null,
+      ipMasked: '1.2.x.x',
+      ipHash: null,
+      correlationId: null,
+      details: { note: 'a=b|c\nline' },
+    };
+    assert.ok(toSyslog(e).startsWith('<35>1 2026-01-01T00:00:00.000Z '));
+    const cef = toCef(e);
+    assert.ok(cef.startsWith('CEF:0|KD SOLUTION IT|Platform|1.0|brute_force|brute_force|8|'));
+    assert.ok(!cef.includes('\n'));
+    assert.ok(toLeef(e).startsWith('LEEF:2.0|KD SOLUTION IT|Platform|1.0|brute_force|^|'));
+    for (const kind of SIEM_KINDS) {
+      const out = renderBatch(kind, [e, e]);
+      assert.ok(out.body.length > 0 && out.contentType.length > 0, kind);
+      assert.ok(!out.body.includes('1.2.3.4'), kind);
+    }
+    assert.equal(renderBatch('splunk_hec', [e, e]).body.split('\n').length, 2);
+    assert.equal(renderBatch('elastic', [e]).body.trimEnd().split('\n').length, 2);
+    assert.deepEqual(authHeaders('splunk_hec', 'tok\r\nX: y'), { authorization: 'Splunk tok X: y' });
+    assert.ok('dd-api-key' in authHeaders('datadog', 'abcdefgh'));
+    assert.deepEqual(authHeaders('elastic', null), {});
+    assert.equal(new Set(CORRELATION_RULES.map((r) => r.id)).size, CORRELATION_RULES.length);
   });
 }
 

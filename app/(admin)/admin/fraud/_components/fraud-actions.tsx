@@ -24,7 +24,7 @@ export function FraudActions({ subjectType, refValue }: Props): JSX.Element {
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch('/api/admin/fraud/actions', {
+      const response = await fetch('/api/admin/security/fraud/actions', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),

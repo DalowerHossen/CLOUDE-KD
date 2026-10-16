@@ -1,4 +1,4 @@
-// path: app/api/admin/fraud/actions/route.ts
+// path: app/api/admin/security/fraud/actions/route.ts
 import { withApi } from '@/lib/api/with-api';
 import { ForbiddenError } from '@/lib/errors';
 import { fraudActionSchema, runFraudAction } from '@/services/fraud/admin-ops';
