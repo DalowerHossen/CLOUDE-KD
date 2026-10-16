@@ -2,8 +2,11 @@
 // Logic checks of STEP 05 that need no database or network. Run: npx tsx scripts/verify/step05-core.ts
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { decryptBytes, encryptBytes, type RootKeys } from '@/lib/encryption/aead';
 import { blindIndex, normalizeForIndex } from '@/lib/encryption/blind-index';
+import { createHttpScanner } from '@/lib/storage/scanner';
 import { maskEmail, maskIdentifier, maskName, maskPhone } from '@/lib/encryption/redact';
 
 let failures = 0;
@@ -90,6 +93,69 @@ async function main(): Promise<void> {
     assert.equal(maskIdentifier('12'), '****');
     assert.equal(maskName('Jane Doe'), 'J*** D***');
   });
+  await check(
+    'malware scanner adapter: clean, infected, error and unreadable answers',
+    async () => {
+      const mode = { value: 'clean' };
+      const server = createServer((req, res) => {
+        const chunks: Buffer[] = [];
+        req.on('data', (c: Buffer) => chunks.push(c));
+        req.on('end', () => {
+          const auth = req.headers.authorization;
+          if (auth !== 'Bearer tok-12345') {
+            res.statusCode = 401;
+            res.end();
+            return;
+          }
+          if (mode.value === 'error') {
+            res.statusCode = 500;
+            res.end();
+          } else if (mode.value === 'garbage') {
+            res.end('not json');
+          } else if (mode.value === 'infected') {
+            res.end(JSON.stringify({ infected: true, signature: 'Eicar-Test' }));
+          } else {
+            res.end(
+              JSON.stringify({
+                infected: false,
+                signature: null,
+                size: Buffer.concat(chunks).length,
+              }),
+            );
+          }
+        });
+      });
+      await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+      const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/scan`;
+      try {
+        const scanner = createHttpScanner(url, 'tok-12345', 3000);
+        assert.deepEqual(await scanner.scan(Buffer.from('hello')), { status: 'clean' });
+        mode.value = 'infected';
+        assert.deepEqual(await scanner.scan(Buffer.from('x')), {
+          status: 'infected',
+          signature: 'Eicar-Test',
+        });
+        mode.value = 'error';
+        assert.equal((await scanner.scan(Buffer.from('x'))).status, 'error');
+        mode.value = 'garbage';
+        assert.equal((await scanner.scan(Buffer.from('x'))).status, 'error');
+        assert.equal(
+          (await createHttpScanner(url, 'wrong-token', 3000).scan(Buffer.from('x'))).status,
+          'error',
+        );
+        assert.equal(
+          (
+            await createHttpScanner('http://127.0.0.1:1/scan', undefined, 1000).scan(
+              Buffer.from('x'),
+            )
+          ).status,
+          'error',
+        );
+      } finally {
+        server.close();
+      }
+    },
+  );
 }
 
 main()

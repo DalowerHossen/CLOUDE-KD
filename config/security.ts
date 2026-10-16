@@ -60,6 +60,8 @@ export const RATE_POLICIES: Readonly<Record<string, RatePolicy>> = {
   strict: { limit: 5, windowSeconds: 60 },
   export: { limit: 10, windowSeconds: 600 },
   webhook: { limit: 600, windowSeconds: 60 },
+  upload: { limit: 30, windowSeconds: 60 },
+  download: { limit: 60, windowSeconds: 60 },
 };
 
 /** An address denied this many times inside the window is banned for BAN_SECONDS (brute-force protection). */
