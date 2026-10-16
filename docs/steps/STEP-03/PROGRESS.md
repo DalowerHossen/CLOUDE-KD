@@ -7,10 +7,10 @@
 - [x] 03.5a server flows and APIs (2026-10-16)
 - [x] 03.5b auth pages (2026-10-16)
 - [x] 03.6a TOTP enrollment, login second step, backup codes, pages (2026-10-16)
-- [ ] 03.6b account-side 2FA and step-up (after 03.9)
-- [ ] 03.7
+- [x] 03.6b account-side 2FA APIs and step-up (2026-10-16)
+- [x] 03.7 sessions, devices, revoke, mid-session detection (2026-10-16)
 - [ ] 03.8
-- [ ] 03.9
+- [x] 03.9 auth service registered (2026-10-16)
 - [ ] 03.10
 - [ ] 03.11
 - [ ] 03.12

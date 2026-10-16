@@ -23,7 +23,6 @@ export const PASSWORD_HISTORY_DEPTH = 5;
 /** Sessions. */
 export const SESSION_TIMEOUT_SECONDS = 86_400;
 export const REMEMBER_ME_SECONDS = 30 * 86_400;
-export const INACTIVITY_TIMEOUT_SECONDS = 1800;
 export const STEP_UP_DEFAULT_SECONDS = 300;
 
 /** Links. */

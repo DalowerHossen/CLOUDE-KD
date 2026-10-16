@@ -20,6 +20,9 @@ import {
   normalizeBackupCode,
   verifyTotp,
 } from '@/lib/auth/two-factor';
+import { assertRole, assertStepUp } from '@/lib/auth/step-up';
+import { StepUpRequiredError, ForbiddenError } from '@/lib/errors';
+import { deviceLabel, isIdleTooLong, isSessionActive, sessionExpiry } from '@/lib/auth/session';
 import { isDisposableEmail } from '@/services/auth/disposable-emails';
 
 let failures = 0;
@@ -146,6 +149,43 @@ async function main(): Promise<void> {
     );
     assert.notEqual(await hashBackupCode(code, key), await hashBackupCode(codes[1] ?? '', key));
     assert.notEqual(await hashBackupCode(code, key), await hashBackupCode(code, 'z'.repeat(48)));
+  });
+
+  await check('step-up: fresh within 300 seconds, otherwise required', () => {
+    const now = new Date('2026-10-16T12:00:00Z');
+    assert.doesNotThrow(() => assertStepUp({ lastStepUpAt: '2026-10-16T11:56:00Z' }, {}, now));
+    assert.throws(
+      () => assertStepUp({ lastStepUpAt: '2026-10-16T11:54:00Z' }, {}, now),
+      StepUpRequiredError,
+    );
+    assert.throws(() => assertStepUp({ lastStepUpAt: null }, {}, now), StepUpRequiredError);
+    assert.doesNotThrow(() =>
+      assertStepUp({ lastStepUpAt: '2026-10-16T11:50:00Z' }, { maxAgeSeconds: 900 }, now),
+    );
+    assert.throws(() => assertRole({ role: 'staff' }, ['owner']), ForbiddenError);
+    assert.doesNotThrow(() => assertRole({ role: 'owner' }, ['owner', 'ceo']));
+  });
+
+  await check('session helpers: expiry, remember me, labels, idle', () => {
+    const t0 = new Date('2026-10-16T00:00:00Z');
+    assert.equal(sessionExpiry(t0, false).toISOString(), '2026-10-17T00:00:00.000Z');
+    assert.equal(sessionExpiry(t0, true).toISOString(), '2026-11-15T00:00:00.000Z');
+    assert.equal(isSessionActive({ expiresAt: '2026-10-17T00:00:00Z', revokedAt: null }, t0), true);
+    assert.equal(
+      isSessionActive({ expiresAt: '2026-10-17T00:00:00Z', revokedAt: '2026-10-16T00:00:00Z' }, t0),
+      false,
+    );
+    assert.equal(
+      isSessionActive({ expiresAt: '2026-10-15T00:00:00Z', revokedAt: null }, t0),
+      false,
+    );
+    assert.equal(
+      deviceLabel('Mozilla/5.0 (Windows NT 10.0) Chrome/120 Safari/537'),
+      'Chrome on Windows',
+    );
+    assert.equal(deviceLabel('Mozilla/5.0 (iPhone; CPU iPhone OS 17) Safari/604'), 'Safari on iOS');
+    assert.equal(deviceLabel(null), 'Unknown device');
+    assert.equal(isIdleTooLong('2026-10-15T23:00:00Z', t0, 1800), true);
   });
 }
 

@@ -60,3 +60,18 @@ begin
   exception when unique_violation then null; end;
 end
 $$;
+
+-- single session revoke (S03_003)
+do $$
+declare u uuid := public.uuid_generate_v7(); s1 uuid; s2 uuid;
+begin
+  insert into auth.users (id, email) values (u, 'rev@example.com');
+  insert into public.user_sessions (user_id, expires_at) values (u, now() + interval '1 day') returning id into s1;
+  insert into public.user_sessions (user_id, expires_at) values (u, now() + interval '1 day') returning id into s2;
+  assert public.kd_revoke_session(s1, 'test'), 'revoked';
+  assert not public.kd_revoke_session(s1, 'test'), 'second revoke does nothing';
+  assert (select revoked_at from public.user_sessions where id = s2) is null, 'other session untouched';
+  update public.user_sessions set step_up_at = now() where id = s2;
+  assert (select step_up_at from public.user_sessions where id = s2) is not null, 'step_up_at column';
+end
+$$;
