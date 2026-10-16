@@ -5,5 +5,6 @@ import { z } from 'zod';
 import { serverShape as s01 } from './s01';
 import { serverShape as s03 } from './s03';
 import { serverShape as s05 } from './s05';
+import { serverShape as s06 } from './s06';
 
-export const serverSchema = z.object({ ...s01, ...s03, ...s05 });
+export const serverSchema = z.object({ ...s01, ...s03, ...s05, ...s06 });

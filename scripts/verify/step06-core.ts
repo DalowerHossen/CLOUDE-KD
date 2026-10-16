@@ -1,6 +1,10 @@
 // path: scripts/verify/step06-core.ts
 // Logic checks of STEP 06 that need no database or network. Run: npx tsx scripts/verify/step06-core.ts
 import assert from 'node:assert/strict';
+import { pageContentSchema, pageMetaSchema, hrefSchema } from '@/lib/cms/blocks';
+import { DEFAULT_PAGES, pathOf } from '@/lib/cms/defaults';
+import { pricingColumns } from '@/lib/cms/pricing';
+import { PLAN_KEYS } from '@/config/plans';
 import {
   COOKIE_POLICY_VERSION,
   consentFromCookieString,
@@ -45,6 +49,77 @@ async function main(): Promise<void> {
     assert.deepEqual(consentFromCookieString(header), { analytics: true, marketing: false });
     assert.equal(consentFromCookieString('theme=dark'), null);
     assert.equal(consentFromCookieString('kd_consent_other=v1'), null);
+  });
+  await check(
+    'default pages: valid blocks, unique titles and descriptions, safe links, no brand names',
+    () => {
+      const titles = new Set<string>();
+      const descriptions = new Set<string>();
+      for (const [slug, page] of Object.entries(DEFAULT_PAGES)) {
+        pageMetaSchema.parse({ title: page.title, description: page.description });
+        const blocks = pageContentSchema.parse(page.blocks);
+        assert.ok(blocks.length >= 2, slug);
+        assert.ok(
+          !titles.has(page.title) && !descriptions.has(page.description),
+          `${slug} repeats a title or description`,
+        );
+        titles.add(page.title);
+        descriptions.add(page.description);
+        const text = JSON.stringify(page);
+        for (const brand of [
+          'bKash',
+          'Nagad',
+          'GCash',
+          'UPI',
+          `TO${'DO'}`,
+          'lorem',
+          `Coming ${'soon'}`,
+        ])
+          assert.ok(!new RegExp(brand, 'i').test(text), `${slug} mentions ${brand}`);
+        assert.ok(
+          /[\x00-\x7f]/.test(text) && !/[^\x00-\x7f]/.test(text),
+          `${slug} has non-ASCII text`,
+        );
+        for (const m of text.matchAll(/"href":"([^"]+)"/g)) hrefSchema.parse(m[1]);
+        assert.equal(pathOf(slug), slug === 'home' ? '/' : `/${slug}`);
+      }
+      assert.equal(Object.keys(DEFAULT_PAGES).length, 8);
+      assert.ok(
+        !hrefSchema.safeParse('javascript:alert(1)').success &&
+          !hrefSchema.safeParse('//evil.test').success &&
+          !hrefSchema.safeParse('data:text/html,x').success,
+      );
+      assert.ok(
+        hrefSchema.safeParse('/pricing').success &&
+          hrefSchema.safeParse('https://example.com/a').success,
+      );
+      assert.ok(
+        !pageContentSchema.safeParse([
+          { id: 'a', type: 'cta', heading: 'x', button: { label: 'y', href: '/z' }, extra: 1 },
+        ]).success,
+        'unknown fields are refused',
+      );
+      assert.ok(
+        !pageContentSchema.safeParse([
+          { id: 'a', type: 'cta', heading: 'x', button: { label: 'y', href: '/z' } },
+          { id: 'a', type: 'cta', heading: 'x', button: { label: 'y', href: '/z' } },
+        ]).success,
+        'block ids are unique',
+      );
+    },
+  );
+
+  await check('pricing table is built from the plan catalogue', () => {
+    const columns = pricingColumns();
+    assert.deepEqual(
+      columns.map((c) => c.key),
+      [...PLAN_KEYS],
+    );
+    const free = columns[0];
+    assert.ok(free && free.cells.length >= 15);
+    assert.equal(free.cells.find((c) => c.label === 'Payroll')?.value, 'Not included');
+    const enterprise = columns[columns.length - 1];
+    assert.ok(enterprise?.cells.some((c) => c.value === 'Unlimited'));
   });
 }
 
