@@ -23,6 +23,14 @@ import {
 import { assertRole, assertStepUp } from '@/lib/auth/step-up';
 import { StepUpRequiredError, ForbiddenError } from '@/lib/errors';
 import { deviceLabel, isIdleTooLong, isSessionActive, sessionExpiry } from '@/lib/auth/session';
+import {
+  buildAuthorizeUrl,
+  createPkce,
+  createState,
+  isAllowedAuthorizeUrl,
+  isOAuthProvider,
+  redirectUri,
+} from '@/lib/auth/oauth';
 import { isDisposableEmail } from '@/services/auth/disposable-emails';
 
 let failures = 0;
@@ -186,6 +194,35 @@ async function main(): Promise<void> {
     assert.equal(deviceLabel('Mozilla/5.0 (iPhone; CPU iPhone OS 17) Safari/604'), 'Safari on iOS');
     assert.equal(deviceLabel(null), 'Unknown device');
     assert.equal(isIdleTooLong('2026-10-15T23:00:00Z', t0, 1800), true);
+  });
+
+  await check('oauth: PKCE S256, state, authorize URL and host allow list', async () => {
+    const pkce = await createPkce();
+    const expected = createHash('sha256').update(pkce.verifier).digest('base64url');
+    assert.equal(pkce.challenge, expected);
+    assert.ok(pkce.verifier.length >= 43 && pkce.verifier.length <= 128);
+    assert.notEqual(createState(), createState());
+    const url = new URL(
+      buildAuthorizeUrl({
+        provider: 'google',
+        clientId: 'cid',
+        redirect: redirectUri('https://app.example.com/', 'google'),
+        state: 's'.repeat(30),
+        challenge: pkce.challenge,
+      }),
+    );
+    assert.equal(url.origin + url.pathname, 'https://accounts.google.com/o/oauth2/v2/auth');
+    assert.equal(url.searchParams.get('code_challenge_method'), 'S256');
+    assert.equal(
+      url.searchParams.get('redirect_uri'),
+      'https://app.example.com/oauth/callback/google',
+    );
+    assert.equal(url.searchParams.get('response_type'), 'code');
+    assert.equal(isAllowedAuthorizeUrl(url.toString()), true);
+    assert.equal(isAllowedAuthorizeUrl('https://evil.example.com/auth'), false);
+    assert.equal(isAllowedAuthorizeUrl('javascript:alert(1)'), false);
+    assert.equal(isOAuthProvider('github'), true);
+    assert.equal(isOAuthProvider('facebook'), false);
   });
 }
 

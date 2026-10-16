@@ -131,3 +131,20 @@ export async function hasActiveFactor(userId: string): Promise<boolean> {
 export function pepper(): string {
   return getServerEnv().HMAC_TOKEN_SECRET;
 }
+
+/** Profile lookup by user id (used after a provider sign-in, which identifies the user by provider subject). */
+export async function lookupUserById(
+  userId: string,
+): Promise<(KnownUser & { email: string }) | null> {
+  const { data, error } = await getAdminSupabase()
+    .from('profiles')
+    .select('email')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) throw new InternalError(error);
+  if (!data) return null;
+  const email = String(data.email);
+  const user = await lookupUserByEmail(email);
+  return user ? { ...user, email } : null;
+}

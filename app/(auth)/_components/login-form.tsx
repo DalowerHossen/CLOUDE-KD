@@ -10,7 +10,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { OAuthProvider } from '@/lib/auth/oauth';
 import { t } from '@/lib/i18n';
+import { OAuthButtons } from './oauth-buttons';
 import { postJson } from './auth-client';
 import { PasswordField } from './password-field';
 import { Turnstile } from './turnstile';
@@ -21,7 +23,13 @@ const outcome = z.discriminatedUnion('status', [
   z.object({ status: z.literal('two_factor_setup_required') }),
 ]);
 
-export function LoginForm({ siteKey }: { siteKey: string }): JSX.Element {
+export function LoginForm({
+  siteKey,
+  providers,
+}: {
+  siteKey: string;
+  providers: readonly OAuthProvider[];
+}): JSX.Element {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [needCaptcha, setNeedCaptcha] = useState(false);
@@ -91,6 +99,7 @@ export function LoginForm({ siteKey }: { siteKey: string }): JSX.Element {
       </div>
       {needCaptcha ? <Turnstile siteKey={siteKey} onToken={setToken} resetKey={resetKey} /> : null}
       <SubmitButton className="w-full">{t('s03Auth.login.submit')}</SubmitButton>
+      <OAuthButtons providers={providers} />
       <div className="flex flex-col gap-1 text-sm">
         <Link
           href="/forgot-password"

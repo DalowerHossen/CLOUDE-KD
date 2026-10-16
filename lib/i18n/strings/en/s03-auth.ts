@@ -99,4 +99,14 @@ export const strings = {
     loading: 'Preparing your setup...',
     loadFailed: 'Your sign-in session ended. Sign in again to continue.',
   },
+  oauth: {
+    divider: 'Or continue with',
+    google: 'Continue with Google',
+    github: 'Continue with GitHub',
+    working: 'Finishing sign-in...',
+    linkRequired:
+      'An account with this address already exists. Sign in with your password, then link the provider on the security page.',
+    failed: 'Sign-in with the provider did not work. Try again or use your password.',
+    linked: 'The provider is linked to your account.',
+  },
 } as const;

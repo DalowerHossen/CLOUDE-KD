@@ -92,6 +92,20 @@ export async function startLogin(input: {
     return fail();
   }
 
+  return finishPrimaryAuth({ user, email: input.email, identifier, rememberMe: input.rememberMe });
+}
+
+/**
+ * The first factor (password or provider sign-in) was accepted. Decides between a finished login, the second factor
+ * and the forced 2FA setup.
+ */
+export async function finishPrimaryAuth(input: {
+  user: KnownUser;
+  email: string;
+  identifier: string;
+  rememberMe: boolean;
+}): Promise<LoginOutcome> {
+  const { user, identifier } = input;
   const factor = await hasActiveFactor(user.userId);
   if (factor || mustSetUpTwoFactor(user)) {
     await setPendingLogin({
