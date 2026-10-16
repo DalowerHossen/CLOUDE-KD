@@ -2,7 +2,7 @@
 
 - [x] 07.1 onboarding wizard and settings core (2026-10-16)
 - [x] 07.2 company settings (2026-10-16)
-- [ ] 07.3
+- [x] 07.3 team (2026-10-16)
 - [ ] 07.4
 - [ ] 07.5
 - [ ] 07.6

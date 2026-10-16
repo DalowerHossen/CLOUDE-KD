@@ -2,8 +2,21 @@
 import { z } from 'zod';
 import { withApi } from '@/lib/api/with-api';
 import { EDITABLE_SECTIONS } from '@/lib/company/forms';
-import { ForbiddenError } from '@/lib/errors';
+import { getService } from '@/lib/container';
+import { ForbiddenError, NotFoundError } from '@/lib/errors';
 import { getSection, saveSection } from '@/services/company/settings';
+
+/** Security and approval rules need team.security (owner only); staff may not even read them. */
+async function assertSectionAccess(
+  actor: Parameters<ReturnType<typeof getService<'permissions'>>['can']>[0],
+  section: string,
+): Promise<void> {
+  if (
+    (section === 'security' || section === 'approval') &&
+    !(await getService('permissions').can(actor, 'team.security', { type: 'team' }))
+  )
+    throw new NotFoundError();
+}
 
 const params = z.object({ section: z.enum(EDITABLE_SECTIONS) }).strict();
 
@@ -16,6 +29,7 @@ export const GET = withApi(
   },
   async ({ actor, params: p }) => {
     if (!actor?.companyId) throw new ForbiddenError();
+    await assertSectionAccess(actor, p.section);
     return { data: await getSection(actor.companyId, p.section) };
   },
 );
@@ -33,6 +47,7 @@ export const PUT = withApi(
   },
   async ({ actor, params: p, body }) => {
     if (!actor) throw new ForbiddenError();
+    await assertSectionAccess(actor, p.section);
     return { data: await saveSection(actor, p.section, body.value, body.expectedVersion) };
   },
 );

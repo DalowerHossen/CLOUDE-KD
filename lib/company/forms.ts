@@ -5,6 +5,9 @@ import { COUNTRY_CODES, countryName } from './countries';
 import { DISPLAY_CURRENCIES, DUE_DAYS, FONT_KEYS, type SectionKey } from './sections';
 
 export type FieldKind =
+  | 'bool'
+  | 'lines'
+  | 'nullable_number'
   | 'text'
   | 'textarea'
   | 'email'
@@ -26,6 +29,8 @@ export interface FieldSpec {
   options?: readonly { value: string; label: string }[];
   /** Select values are sent as numbers. */
   numeric?: boolean;
+  /** An empty text is stored as null. */
+  emptyIsNull?: boolean;
   /** Dotted path into the section value, for nested objects. */
   path?: readonly string[];
 }
@@ -121,6 +126,19 @@ export const FORMS: Partial<Record<SectionKey, readonly FieldSpec[]>> = {
     },
     { name: 'weekStart', label: 'weekStart', kind: 'select', options: yesNo('monday', 'sunday') },
   ],
+  security: [
+    { name: 'requireTwoFactor', label: 'requireTwoFactor', kind: 'bool' },
+    {
+      name: 'staffSessionTimeoutMinutes',
+      label: 'staffSessionTimeoutMinutes',
+      kind: 'nullable_number',
+    },
+    { name: 'ipAllowlist', label: 'ipAllowlist', kind: 'lines' },
+  ],
+  approval: [
+    { name: 'ownerApprovalActions', label: 'ownerApprovalActions', kind: 'lines' },
+    { name: 'staffAmountCap', label: 'staffAmountCap', kind: 'text', max: 20, emptyIsNull: true },
+  ],
   notifications: [
     {
       name: 'invoice',
@@ -163,5 +181,7 @@ export const EDITABLE_SECTIONS = [
   'invoice',
   'display',
   'notifications',
+  'security',
+  'approval',
 ] as const;
 export type EditableSection = (typeof EDITABLE_SECTIONS)[number];

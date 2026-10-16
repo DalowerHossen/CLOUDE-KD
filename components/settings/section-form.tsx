@@ -159,6 +159,51 @@ export function SectionForm({
               </fieldset>
             );
           }
+          if (spec.kind === 'bool')
+            return (
+              <label key={spec.name} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={current === true}
+                  onChange={(e) => set(e.target.checked)}
+                />
+                <span>{label(spec.label)}</span>
+              </label>
+            );
+          if (spec.kind === 'lines')
+            return (
+              <label key={spec.name} className={cls}>
+                <span>{label(spec.label)}</span>
+                <Textarea
+                  rows={4}
+                  value={(Array.isArray(current) ? (current as string[]) : []).join('\n')}
+                  onChange={(e) =>
+                    set(
+                      e.target.value
+                        .split('\n')
+                        .map((l) => l.trim())
+                        .filter(Boolean),
+                    )
+                  }
+                />
+                <span className="text-caption text-muted-foreground">
+                  {t('s07Company.settings.onePerLine')}
+                </span>
+              </label>
+            );
+          if (spec.kind === 'nullable_number')
+            return (
+              <label key={spec.name} className={cls}>
+                <span>{label(spec.label)}</span>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder={t('s07Company.settings.platformDefault')}
+                  value={current === null || current === '' ? '' : String(current)}
+                  onChange={(e) => set(e.target.value === '' ? null : Number(e.target.value))}
+                />
+              </label>
+            );
           if (spec.kind === 'multi') {
             const chosen = (Array.isArray(current) ? current : []) as string[];
             return (

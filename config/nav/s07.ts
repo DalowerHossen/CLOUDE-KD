@@ -56,4 +56,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 450,
   },
+  {
+    id: 'team',
+    labelKey: 's07Company.nav.team',
+    href: '/team',
+    icon: 'users',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 25,
+  },
 ];

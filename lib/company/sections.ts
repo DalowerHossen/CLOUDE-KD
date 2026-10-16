@@ -144,6 +144,47 @@ export const notificationsSchema = z
   })
   .strict();
 
+/** An IPv4 or IPv6 address, or an IPv4 range such as 203.0.113.0/24. */
+const ipEntry = z
+  .string()
+  .trim()
+  .max(50)
+  .refine(
+    (v) =>
+      (/^(\d{1,3}\.){3}\d{1,3}(\/(\d|[12]\d|3[0-2]))?$/.test(v) &&
+        v
+          .split('/')[0]!
+          .split('.')
+          .every((n) => Number(n) <= 255)) ||
+      /^[0-9a-fA-F:]{2,45}(\/\d{1,3})?$/.test(v),
+    { message: 'Use an IP address or a range such as 203.0.113.0/24.' },
+  );
+
+export const securitySchema = z
+  .object({
+    /** Staff must have two-factor sign-in. Applied by the sign-in flow of STEP 03. */
+    requireTwoFactor: z.boolean(),
+    /** Idle minutes before a staff session ends; null uses the platform default. */
+    staffSessionTimeoutMinutes: z.number().int().min(15).max(1440).nullable(),
+    /** Staff may sign in only from these addresses; empty means no restriction. The owner is never restricted. */
+    ipAllowlist: z.array(ipEntry).max(20),
+  })
+  .strict();
+
+export const approvalSchema = z
+  .object({
+    /** Actions a staff member can only prepare; the owner approves them before they take effect. */
+    ownerApprovalActions: z
+      .array(z.string().regex(/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/))
+      .max(30),
+    /** Largest amount (US dollars, decimal text) a staff member may approve alone; null means no cap. */
+    staffAmountCap: z
+      .string()
+      .regex(/^\d{1,12}(\.\d{1,4})?$/)
+      .nullable(),
+  })
+  .strict();
+
 export const onboardingSchema = z
   .object({
     status: z.enum(['not_started', 'in_progress', 'completed', 'skipped']),
@@ -160,6 +201,8 @@ export const SECTION_SCHEMAS = {
   invoice: invoiceSchema,
   display: displaySchema,
   notifications: notificationsSchema,
+  security: securitySchema,
+  approval: approvalSchema,
   onboarding: onboardingSchema,
 } as const;
 export type SectionKey = keyof typeof SECTION_SCHEMAS;
@@ -210,6 +253,8 @@ export const SECTION_DEFAULTS: { [K in SectionKey]: SectionValue<K> } = {
     weekStart: 'monday',
   },
   notifications: { recipients: { invoice: 'all', payment: 'all', system: 'all' }, summary: 'off' },
+  security: { requireTwoFactor: false, staffSessionTimeoutMinutes: null, ipAllowlist: [] },
+  approval: { ownerApprovalActions: [], staffAmountCap: null },
   onboarding: {
     status: 'not_started',
     step: 1,

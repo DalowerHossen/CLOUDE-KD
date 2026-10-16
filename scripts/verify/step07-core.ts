@@ -11,6 +11,10 @@ import {
   profileSchema,
 } from '@/lib/company/sections';
 import { en } from '@/lib/i18n';
+import { validateStaffGrants } from '@/lib/auth/permissions';
+import { STAFF_PRESETS, expandPreset, matrix } from '@/lib/team/presets';
+import { permissions as registered } from '@/config/permissions';
+import type { PermissionDefinition } from '@/types/contracts';
 import { FORMS, EDITABLE_SECTIONS } from '@/lib/company/forms';
 import { stepSchema } from '@/lib/company/steps';
 
@@ -149,6 +153,128 @@ async function main(): Promise<void> {
         summary: 'hourly',
       }).success,
     );
+  });
+
+  await check(
+    'team presets expand only to actions staff may receive; staff never get team rights',
+    () => {
+      const defs: PermissionDefinition[] = [
+        {
+          action: 'invoice.read',
+          description: 'x',
+          defaultRoles: ['owner', 'staff'],
+          approvalLevel: 'L0',
+        },
+        {
+          action: 'invoice.create',
+          description: 'x',
+          defaultRoles: ['owner', 'staff'],
+          approvalLevel: 'L0',
+        },
+        {
+          action: 'invoice.delete',
+          description: 'x',
+          defaultRoles: ['owner'],
+          approvalLevel: 'L1',
+        },
+        {
+          action: 'client.read',
+          description: 'x',
+          defaultRoles: ['owner', 'staff'],
+          approvalLevel: 'L0',
+        },
+        {
+          action: 'client.update',
+          description: 'x',
+          defaultRoles: ['owner', 'staff'],
+          approvalLevel: 'L0',
+        },
+        {
+          action: 'payment.read',
+          description: 'x',
+          defaultRoles: ['owner', 'staff'],
+          approvalLevel: 'L0',
+        },
+        {
+          action: 'company.read',
+          description: 'x',
+          defaultRoles: ['owner', 'staff'],
+          approvalLevel: 'L0',
+        },
+        { action: 'team.manage', description: 'x', defaultRoles: ['owner'], approvalLevel: 'L0' },
+      ];
+      assert.deepEqual(expandPreset('sales', defs), [
+        'client.read',
+        'client.update',
+        'invoice.create',
+        'invoice.read',
+      ]);
+      assert.deepEqual(expandPreset('support', defs), ['client.read']);
+      assert.deepEqual(expandPreset('viewer', defs), [
+        'client.read',
+        'company.read',
+        'invoice.read',
+        'payment.read',
+      ]);
+      const manager = expandPreset('manager', defs);
+      assert.ok(
+        !manager.includes('company.read') &&
+          !manager.includes('team.manage') &&
+          !manager.includes('invoice.delete'),
+      );
+      assert.deepEqual(expandPreset('nope', defs), []);
+      assert.deepEqual(
+        matrix(defs).map((r) => r.domain),
+        ['client', 'company', 'invoice', 'payment'],
+      );
+      for (const p of STAFF_PRESETS) {
+        const v = validateStaffGrants(expandPreset(p.key, defs), defs);
+        assert.ok(v.ok, `${p.key}: ${v.rejected.join(',')}`);
+      }
+      // The registered permissions: no team, KYC, billing or role right may ever be handed to staff.
+      for (const d of registered.filter((x) =>
+        /^(team|kyc|roles|flags|storage|email)\./.test(x.action),
+      ))
+        assert.ok(!d.defaultRoles.includes('staff'), `${d.action} must stay closed to staff`);
+      assert.ok(
+        !validateStaffGrants(['team.manage'], registered).ok,
+        'a staff member cannot be given team.manage',
+      );
+      assert.ok(!validateStaffGrants(['team.*'], registered).ok, 'nor the whole team area');
+    },
+  );
+
+  await check('security and approval sections', () => {
+    const sec = SECTION_SCHEMAS.security;
+    const d = SECTION_DEFAULTS.security;
+    assert.ok(
+      sec.safeParse({ ...d, ipAllowlist: ['203.0.113.7', '198.51.100.0/24', '2001:db8::1'] })
+        .success,
+    );
+    assert.ok(!sec.safeParse({ ...d, ipAllowlist: ['999.1.1.1'] }).success, 'octet over 255');
+    assert.ok(!sec.safeParse({ ...d, ipAllowlist: ['10.0.0.1/40'] }).success, 'mask over 32');
+    assert.ok(
+      !sec.safeParse({ ...d, ipAllowlist: ['evil.example.com'] }).success,
+      'names are not addresses',
+    );
+    assert.ok(
+      !sec.safeParse({ ...d, ipAllowlist: Array(21).fill('10.0.0.1') }).success,
+      'twenty entries at most',
+    );
+    assert.ok(
+      !sec.safeParse({ ...d, staffSessionTimeoutMinutes: 5 }).success &&
+        sec.safeParse({ ...d, staffSessionTimeoutMinutes: 60 }).success,
+    );
+    const ap = SECTION_SCHEMAS.approval;
+    assert.ok(
+      ap.safeParse({ ownerApprovalActions: ['invoice.send'], staffAmountCap: '500.25' }).success,
+    );
+    assert.ok(!ap.safeParse({ ownerApprovalActions: ['Invoice'], staffAmountCap: null }).success);
+    assert.ok(
+      !ap.safeParse({ ownerApprovalActions: [], staffAmountCap: '12.34567' }).success,
+      'five decimals',
+    );
+    assert.ok(!ap.safeParse({ ownerApprovalActions: [], staffAmountCap: '-5' }).success);
   });
 
   await check('wizard input: each step has its own strict shape', () => {
