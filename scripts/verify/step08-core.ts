@@ -29,6 +29,18 @@ import {
   supplierStatementQuery,
 } from '@/lib/procurement/bills';
 import { buildStatement } from '@/lib/procurement/statement';
+import { cleanRows, csvCell, parseCsv, toCsv, TransferError } from '@/lib/transfer/csv';
+import {
+  applyMapping,
+  exportSchema,
+  importActionSchema,
+  importUploadSchema,
+  missingRequired,
+  splitTable,
+  suggestMapping,
+} from '@/lib/transfer/mapping';
+import { readXlsx } from '@/lib/transfer/xlsx';
+import { deflateRawSync } from 'node:zlib';
 import { PurchaseOrderEmail } from '@/emails/crm/purchase-order';
 import { Money } from '@/lib/utils/currency';
 import { render } from '@react-email/render';
@@ -72,6 +84,56 @@ import { permissions as registered } from '@/config/permissions';
 import type { PermissionDefinition } from '@/types/contracts';
 
 let failures = 0;
+function crc32(buf: Buffer): number {
+  let c = ~0;
+  for (const b of buf) {
+    c ^= b;
+    for (let k = 0; k < 8; k += 1) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1;
+  }
+  return ~c >>> 0;
+}
+
+/** A minimal zip writer for the xlsx test file. */
+function zip(files: Record<string, string>, stored = false): Uint8Array {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
+  let offset = 0;
+  for (const [name, text] of Object.entries(files)) {
+    const data = Buffer.from(text, 'utf8');
+    const packed = stored ? data : deflateRawSync(data);
+    const n = Buffer.from(name, 'utf8');
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(stored ? 0 : 8, 8);
+    local.writeUInt32LE(crc32(data), 14);
+    local.writeUInt32LE(packed.length, 18);
+    local.writeUInt32LE(data.length, 22);
+    local.writeUInt16LE(n.length, 26);
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(stored ? 0 : 8, 10);
+    central.writeUInt32LE(crc32(data), 16);
+    central.writeUInt32LE(packed.length, 20);
+    central.writeUInt32LE(data.length, 24);
+    central.writeUInt16LE(n.length, 28);
+    central.writeUInt32LE(offset, 42);
+    locals.push(local, n, packed);
+    centrals.push(central, n);
+    offset += 30 + n.length + packed.length;
+  }
+  const cd = Buffer.concat(centrals);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(Object.keys(files).length, 8);
+  end.writeUInt16LE(Object.keys(files).length, 10);
+  end.writeUInt32LE(cd.length, 12);
+  end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...locals, cd, end]);
+}
+
 async function check(name: string, fn: () => Promise<void> | void): Promise<void> {
   try {
     await fn();
@@ -1042,6 +1104,126 @@ async function main(): Promise<void> {
     );
     assert.equal(built.lines[1]?.balance, '100.3000');
     assert.equal(built.closing, '60.3000');
+  });
+  await check('spreadsheet reading: csv, xlsx, mapping, limits', () => {
+    const rows = parseCsv(
+      '' +
+        String.fromCharCode(0xfeff) +
+        'Name;E-mail;Note\r\n"Acme; Ltd";a@x.test;"line1\nline2 ""q"""\r\n\r\nBeta;b@x.test;\r\n',
+    );
+    assert.deepEqual(rows[0], ['Name', 'E-mail', 'Note']);
+    assert.deepEqual(rows[1], ['Acme; Ltd', 'a@x.test', 'line1\nline2 "q"']);
+    assert.equal(cleanRows(rows).length, 3);
+    assert.deepEqual(parseCsv('a,b\n1,2'), [
+      ['a', 'b'],
+      ['1', '2'],
+    ]);
+    assert.deepEqual(parseCsv('a\tb\n1\t2'), [
+      ['a', 'b'],
+      ['1', '2'],
+    ]);
+    assert.throws(() => parseCsv('a,"b'), TransferError);
+    assert.throws(() => parseCsv(`a\n${'x\n'.repeat(5002)}`), TransferError);
+    assert.equal(csvCell('=SUM(A1)'), "'=SUM(A1)");
+    assert.equal(csvCell('-5.0000'), '-5.0000', 'a plain negative number is kept');
+    assert.equal(csvCell('+cmd|x'), '"\'+cmd|x"');
+    assert.equal(csvCell('a,b'), '"a,b"');
+    assert.deepEqual(
+      parseCsv(
+        toCsv([
+          ['n', 'x'],
+          ['=1+1', 'y"z'],
+        ]),
+      ),
+      [
+        ['n', 'x'],
+        ["'=1+1", 'y"z'],
+      ],
+    );
+    assert.equal(
+      cleanRows([['h'], ['# KD-EXPORT 1 | Co'], ['', '']]).length,
+      1,
+      'watermark and empty rows go',
+    );
+
+    const sheet =
+      '<?xml version="1.0"?><worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="C1" t="inlineStr"><is><t>Qty</t></is></c></row><row r="2"><c r="A2" t="s"><v>1</v></c><c r="C2"><v>12.5</v></c></row></sheetData></worksheet>';
+    const parts = {
+      'xl/workbook.xml':
+        '<workbook xmlns:r="x"><sheets><sheet name="S" sheetId="1" r:id="rId1"/></sheets></workbook>',
+      'xl/_rels/workbook.xml.rels':
+        '<Relationships><Relationship Id="rId1" Target="worksheets/data.xml"/></Relationships>',
+      'xl/sharedStrings.xml':
+        '<sst><si><t>Name</t></si><si><r><t>Ac</t></r><r><t>me</t></r></si></sst>',
+      'xl/worksheets/data.xml': sheet,
+    };
+    for (const stored of [false, true]) {
+      const table = readXlsx(zip(parts, stored));
+      assert.deepEqual(table[0], ['Name', '', 'Qty']);
+      assert.deepEqual(table[1], ['Acme', '', '12.5']);
+    }
+    assert.throws(() => readXlsx(Buffer.from('not a zip file at all, really not')), TransferError);
+
+    const fields = [
+      { key: 'name', label: 'Name', required: true, aliases: ['company name'] },
+      { key: 'email', label: 'E-mail', required: false, aliases: ['email address'] },
+      { key: 'phone', label: 'Phone', required: false, aliases: [] },
+    ];
+    const mapping = suggestMapping(['Company Name', 'Email Address', 'Other'], fields);
+    assert.deepEqual(mapping, { name: 'Company Name', email: 'Email Address' });
+    assert.deepEqual(missingRequired(fields, {}), ['Name']);
+    const t = splitTable([
+      ['Company Name', 'Email Address'],
+      ['Acme', 'a@x.test'],
+      ['', ''],
+    ]);
+    assert.equal(t.data.length, 1);
+    assert.deepEqual(applyMapping(t.headers, t.data, mapping), [
+      { name: 'Acme', email: 'a@x.test' },
+    ]);
+    assert.deepEqual(
+      applyMapping(['n'], [['<b>x</b>\u0007 ']], { name: 'n' }),
+      [{ name: 'bx/b' }],
+      'angle brackets and control characters are removed',
+    );
+    assert.throws(
+      () =>
+        splitTable([
+          ['A', 'a'],
+          ['1', '2'],
+        ]),
+      TransferError,
+      'same column name twice',
+    );
+    assert.throws(() => splitTable([['A', 'B']]), TransferError, 'no data rows');
+    assert.ok(
+      importUploadSchema.safeParse({
+        target: 'clients',
+        fileName: 'x.csv',
+        dataBase64: 'QUJDREVGR0g=',
+      }).success,
+    );
+    assert.ok(
+      !importUploadSchema.safeParse({
+        target: 'clients',
+        fileName: 'x.exe',
+        dataBase64: 'QUJDREVGR0g=',
+      }).success,
+    );
+    assert.ok(
+      !importUploadSchema.safeParse({
+        target: 'invoices',
+        fileName: 'x.csv',
+        dataBase64: 'QUJDREVGR0g=',
+      }).success,
+    );
+    assert.ok(importActionSchema.safeParse({ action: 'run' }).success);
+    assert.ok(
+      !importActionSchema.safeParse({ action: 'preview', mapping: {}, duplicateMode: 'merge' })
+        .success,
+    );
+    assert.ok(exportSchema.safeParse({ target: 'products', q: 'a' }).success);
+    assert.ok(!exportSchema.safeParse({ target: 'products', all: true }).success);
   });
 }
 
