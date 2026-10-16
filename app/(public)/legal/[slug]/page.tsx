@@ -3,7 +3,11 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BlockList } from '@/components/marketing/blocks/block-view';
 import { cmsMetadata } from '@/components/marketing/cms-page';
+import { JsonLd } from '@/components/marketing/json-ld';
 import { LegalMeta } from '@/components/marketing/legal-meta';
+import { siteUrl } from '@/lib/cms/site-url';
+import { pageJsonLd } from '@/lib/seo/page-jsonld';
+import { readSeoSettings } from '@/services/seo/settings';
 import { LEGAL_SLUGS, currentLegalVersion } from '@/services/cms/legal';
 import { loadPage } from '@/services/cms/page-loader';
 
@@ -30,8 +34,19 @@ export default async function LegalPage({ params }: Props): Promise<JSX.Element>
   if (!page) notFound();
   const version = await currentLegalVersion(slug);
   const [hero, ...rest] = page.blocks;
+  const settings = await readSeoSettings();
   return (
     <>
+      <JsonLd
+        data={pageJsonLd(
+          siteUrl(),
+          `legal/${slug}`,
+          page.title,
+          page.blocks,
+          settings,
+          page.updatedAt,
+        )}
+      />
       {hero ? <BlockList blocks={[hero]} /> : null}
       <LegalMeta slug={slug} version={version.version} effective={version.effective} />
       <BlockList blocks={rest} />

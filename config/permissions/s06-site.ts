@@ -41,4 +41,16 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: [...staff],
     approvalLevel: 'L2',
   },
+  {
+    action: 'seo.read',
+    description: 'See the SEO audit and the search settings of the public site',
+    defaultRoles: [...staff],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'seo.edit',
+    description: 'Change verification tags, social profiles and organization facts',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L1',
+  },
 ];

@@ -30,11 +30,14 @@ const SCAN_SELF = /^scripts\//;
 const DANGEROUS_INNER_HTML = new Set([
   'components/shared/safe-html.tsx',
   'components/shared/theme-init-script.tsx',
+  // JSON-LD data block; the text is JSON escaped by toScriptText (STEP 06).
+  'components/marketing/json-ld.tsx',
 ]);
 // Routes that are intentionally plain handlers: probes that must not depend on any other service.
 // Whole folders of routes called by mail clients and providers: image, redirect, one-click and signed callbacks.
 const PLAIN_PREFIXES = [
   'app/api/cms/media/[id]/',
+  'app/api/seo/og/',
   'app/api/email/track/',
   'app/api/email/unsubscribe/',
   'app/api/email/webhooks/',

@@ -1,6 +1,10 @@
 // path: components/marketing/blog/blog-list.tsx
 import Link from 'next/link';
+import { SITE_NAME } from '@/config/seo';
+import { siteUrl } from '@/lib/cms/site-url';
 import { t } from '@/lib/i18n';
+import { breadcrumbs, itemList } from '@/lib/seo/jsonld';
+import { JsonLd } from '../json-ld';
 import { archiveMonths, categoryList, type PostCard as Card } from '@/services/blog/public';
 import { PostCard } from './post-card';
 
@@ -44,8 +48,22 @@ export async function BlogList({
     const text = params.toString();
     return text ? `${basePath}?${text}` : basePath;
   };
+  const origin = siteUrl();
+  const listed = featured ? [featured, ...posts] : posts;
   return (
     <div className="mx-auto w-full max-w-7xl px-sp-16 py-sp-48">
+      <JsonLd
+        data={[
+          breadcrumbs(origin, [
+            { name: SITE_NAME, path: '/' },
+            { name: t('s06Public.blog.title'), path: '/blog' },
+          ]),
+          itemList(
+            origin,
+            listed.map((p) => ({ name: p.title, path: `/blog/${p.slug}` })),
+          ),
+        ]}
+      />
       <h1 className="text-h1 font-semibold tracking-tight">{title}</h1>
       {intro ? <p className="mt-sp-12 max-w-3xl text-lg text-muted-foreground">{intro}</p> : null}
       <div className="mt-sp-24 flex flex-wrap items-center gap-sp-12">

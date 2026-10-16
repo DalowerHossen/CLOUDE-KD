@@ -135,4 +135,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 61,
   },
+  {
+    id: 'admin-seo',
+    labelKey: 's06Public.seoAdmin.nav',
+    href: '/admin/seo',
+    icon: 'search',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 62,
+  },
 ];

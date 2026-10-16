@@ -2,10 +2,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { JsonLd } from '@/components/marketing/json-ld';
 import { PostCard, formatDay } from '@/components/marketing/blog/post-card';
 import { ViewCounter } from '@/components/marketing/blog/view-counter';
 import { SafeHtml } from '@/components/shared/safe-html';
-import { absoluteUrl } from '@/lib/cms/site-url';
+import { SITE_NAME } from '@/config/seo';
+import { absoluteUrl, siteUrl } from '@/lib/cms/site-url';
+import { article, breadcrumbs } from '@/lib/seo/jsonld';
 import { t } from '@/lib/i18n';
 import { getPublishedPost, relatedPosts } from '@/services/blog/public';
 import { slugSchema } from '@/services/blog/schemas';
@@ -26,7 +29,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return {};
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.excerpt || post.title;
-  const image = post.coverFileId ? [{ url: `/api/cms/media/${post.coverFileId}` }] : undefined;
+  const image = [
+    post.coverFileId
+      ? { url: `/api/cms/media/${post.coverFileId}`, alt: post.coverAlt || post.title }
+      : { url: `/api/seo/og/post/${post.slug}`, width: 1200, height: 630, alt: post.title },
+  ];
   return {
     title,
     description,
@@ -39,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: post.publishedAt,
       images: image,
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: { card: 'summary_large_image', title, description, images: [image[0]?.url ?? ''] },
   };
 }
 
@@ -68,6 +75,24 @@ export default async function PostPage({ params }: Props): Promise<JSX.Element> 
   ];
   return (
     <article className="mx-auto w-full max-w-3xl px-sp-16 py-sp-48">
+      <JsonLd
+        data={[
+          article(siteUrl(), {
+            slug: post.slug,
+            title: post.title,
+            description: post.seoDescription || post.excerpt || post.title,
+            publishedAt: post.publishedAt,
+            updatedAt: post.updatedAt,
+            authorName: post.authorName,
+            coverUrl: post.coverFileId ? absoluteUrl(`/api/cms/media/${post.coverFileId}`) : null,
+          }),
+          breadcrumbs(siteUrl(), [
+            { name: SITE_NAME, path: '/' },
+            { name: t('s06Public.blog.title'), path: '/blog' },
+            { name: post.title, path: `/blog/${post.slug}` },
+          ]),
+        ]}
+      />
       <ViewCounter slug={post.slug} />
       <header className="space-y-sp-12">
         {post.categoryName && post.categorySlug ? (
