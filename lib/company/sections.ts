@@ -130,6 +130,20 @@ export const displaySchema = z
   })
   .strict();
 
+export const notificationsSchema = z
+  .object({
+    /** Who in the company is told about events of a category. Security and KYC notices always go to the owner. */
+    recipients: z
+      .object({
+        invoice: z.enum(['owner', 'all']),
+        payment: z.enum(['owner', 'all']),
+        system: z.enum(['owner', 'all']),
+      })
+      .strict(),
+    summary: z.enum(['off', 'daily', 'weekly']),
+  })
+  .strict();
+
 export const onboardingSchema = z
   .object({
     status: z.enum(['not_started', 'in_progress', 'completed', 'skipped']),
@@ -145,6 +159,7 @@ export const SECTION_SCHEMAS = {
   branding: brandingSchema,
   invoice: invoiceSchema,
   display: displaySchema,
+  notifications: notificationsSchema,
   onboarding: onboardingSchema,
 } as const;
 export type SectionKey = keyof typeof SECTION_SCHEMAS;
@@ -194,6 +209,7 @@ export const SECTION_DEFAULTS: { [K in SectionKey]: SectionValue<K> } = {
     numberFormat: '1,234.56',
     weekStart: 'monday',
   },
+  notifications: { recipients: { invoice: 'all', payment: 'all', system: 'all' }, summary: 'off' },
   onboarding: {
     status: 'not_started',
     step: 1,

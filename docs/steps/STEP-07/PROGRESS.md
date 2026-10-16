@@ -1,7 +1,7 @@
 # STEP 07 progress
 
 - [x] 07.1 onboarding wizard and settings core (2026-10-16)
-- [ ] 07.2
+- [x] 07.2 company settings (2026-10-16)
 - [ ] 07.3
 - [ ] 07.4
 - [ ] 07.5

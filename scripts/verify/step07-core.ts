@@ -10,6 +10,8 @@ import {
   previewNumber,
   profileSchema,
 } from '@/lib/company/sections';
+import { en } from '@/lib/i18n';
+import { FORMS, EDITABLE_SECTIONS } from '@/lib/company/forms';
 import { stepSchema } from '@/lib/company/steps';
 
 let failures = 0;
@@ -126,6 +128,27 @@ async function main(): Promise<void> {
       assert.ok(!/[^\x00-\x7f]/.test(text), `${key} non-ASCII`);
       assert.ok(!/bkash|nagad|gcash|upi/i.test(text), `${key} brand`);
     }
+  });
+
+  await check('settings forms: every editable section has fields that exist in its schema', () => {
+    for (const section of EDITABLE_SECTIONS) {
+      const specs = FORMS[section];
+      assert.ok(specs && specs.length > 0, section);
+      const shape = (SECTION_SCHEMAS[section] as unknown as { shape: Record<string, unknown> })
+        .shape;
+      for (const spec of specs) {
+        const root = spec.path?.[0] ?? spec.name;
+        assert.ok(root in shape, `${section}.${spec.name} is not in the schema`);
+        assert.ok(spec.label in en.s07Company.settings.fields, `label ${spec.label} has no text`);
+      }
+    }
+    assert.ok(SECTION_SCHEMAS.notifications.safeParse(SECTION_DEFAULTS.notifications).success);
+    assert.ok(
+      !SECTION_SCHEMAS.notifications.safeParse({
+        ...SECTION_DEFAULTS.notifications,
+        summary: 'hourly',
+      }).success,
+    );
   });
 
   await check('wizard input: each step has its own strict shape', () => {
