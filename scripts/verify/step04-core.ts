@@ -23,6 +23,16 @@ import { createReplayCache } from '@/lib/webhook/replay';
 import { authHeaders, renderBatch, toCef, toLeef, toSyslog } from '@/lib/security/siem/formats';
 import { CORRELATION_RULES } from '@/lib/security/siem/rules';
 import { SIEM_KINDS, type NormalizedEvent } from '@/lib/security/siem/types';
+import {
+  channelsFor,
+  incidentSeverityFor,
+  opensIncident,
+  pagerdutyPayload,
+  rosterFor,
+  slackPayload,
+  type ChannelView,
+} from '@/lib/alerting/policy';
+import { scrubSentryEvent } from '@/lib/security/sentry-scrub';
 import { isNonPublicIp } from '@/lib/security/ip';
 import { isAllowedExternalRedirect, safeRedirectPath } from '@/lib/security/redirect';
 import {
@@ -702,10 +712,81 @@ async function main(): Promise<void> {
     }
     assert.equal(renderBatch('splunk_hec', [e, e]).body.split('\n').length, 2);
     assert.equal(renderBatch('elastic', [e]).body.trimEnd().split('\n').length, 2);
-    assert.deepEqual(authHeaders('splunk_hec', 'tok\r\nX: y'), { authorization: 'Splunk tok X: y' });
+    assert.deepEqual(authHeaders('splunk_hec', 'tok\r\nX: y'), {
+      authorization: 'Splunk tok X: y',
+    });
     assert.ok('dd-api-key' in authHeaders('datadog', 'abcdefgh'));
     assert.deepEqual(authHeaders('elastic', null), {});
     assert.equal(new Set(CORRELATION_RULES.map((r) => r.id)).size, CORRELATION_RULES.length);
+  });
+  await check('alerting: severity mapping, channels, roster, payloads', () => {
+    assert.equal(incidentSeverityFor('critical'), 'SEV1');
+    assert.equal(incidentSeverityFor('low'), 'SEV4');
+    assert.ok(opensIncident('critical') && !opensIncident('high'));
+    const base = { kind: 'slack', target: 'https://x.test/h', enabled: true } as const;
+    const channels: ChannelView[] = [
+      { id: 'a', ...base, minSeverity: 'high', fromLevel: 0 },
+      { id: 'b', ...base, minSeverity: 'low', fromLevel: 1 },
+      { id: 'c', ...base, minSeverity: 'high', fromLevel: 0, enabled: false },
+    ];
+    assert.deepEqual(
+      channelsFor(channels, 'medium', 0).map((c) => c.id),
+      [],
+    );
+    assert.deepEqual(
+      channelsFor(channels, 'high', 0).map((c) => c.id),
+      ['a'],
+    );
+    assert.deepEqual(
+      channelsFor(channels, 'low', 1).map((c) => c.id),
+      ['b'],
+    );
+    const now = new Date('2026-01-01T12:00:00Z');
+    const roster = [
+      { email: 'A@x.test', level: 0, startsAt: new Date('2026-01-01T00:00:00Z'), endsAt: null },
+      { email: 'b@x.test', level: 1, startsAt: new Date('2026-01-01T00:00:00Z'), endsAt: null },
+      { email: 'c@x.test', level: 0, startsAt: new Date('2026-01-02T00:00:00Z'), endsAt: null },
+      {
+        email: 'd@x.test',
+        level: 0,
+        startsAt: new Date('2025-12-01T00:00:00Z'),
+        endsAt: new Date('2025-12-02T00:00:00Z'),
+      },
+    ];
+    assert.deepEqual(rosterFor(roster, 0, now), ['a@x.test']);
+    assert.deepEqual(rosterFor(roster, 1, now), ['a@x.test', 'b@x.test']);
+    const alert = {
+      id: 'i',
+      ruleId: 'r',
+      severity: 'critical',
+      title: 'T',
+      body: 'B',
+      level: 1,
+    } as const;
+    assert.match(String(slackPayload(alert).text), /^\[CRITICAL L1\] T/);
+    const pd = pagerdutyPayload(alert, 'key');
+    assert.equal(pd.routing_key, 'key');
+    assert.equal(pd.dedup_key, 'i');
+  });
+  await check('sentry scrub removes personal data', () => {
+    const out = scrubSentryEvent({
+      request: {
+        url: 'https://app.test/p?token=abc',
+        cookies: { a: 'b' },
+        data: { password: 'x' },
+        headers: { cookie: 'c', authorization: 'Bearer z', accept: 'text/html' },
+      },
+      user: { id: 'u1', email: 'a@b.test', ip_address: '1.2.3.4' },
+      message: 'failed for jane@example.com',
+      extra: { api_key: 'secret-value', note: 'ok' },
+    });
+    assert.equal(out.request?.url, 'https://app.test/p');
+    assert.ok(!out.request?.cookies && !out.request?.data);
+    assert.deepEqual(out.request?.headers, { accept: 'text/html' });
+    assert.deepEqual(out.user, { id: 'u1' });
+    assert.ok(!String(out.message).includes('jane@example.com'));
+    assert.equal(out.extra?.api_key, '[REDACTED]');
+    assert.equal(out.extra?.note, 'ok');
   });
 }
 
