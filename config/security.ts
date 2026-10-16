@@ -47,3 +47,22 @@ export const NETWORK_POLICY: Readonly<Record<NetworkContext, 'block' | 'flag'>> 
   login: 'flag',
   other: 'flag',
 };
+
+/** Rate limit policies (fixed window). withApi uses "api-default" unless the route names another policy. */
+export interface RatePolicy {
+  limit: number;
+  windowSeconds: number;
+}
+
+export const RATE_POLICIES: Readonly<Record<string, RatePolicy>> = {
+  'api-default': { limit: 120, windowSeconds: 60 },
+  auth: { limit: 10, windowSeconds: 60 },
+  strict: { limit: 5, windowSeconds: 60 },
+  export: { limit: 10, windowSeconds: 600 },
+  webhook: { limit: 600, windowSeconds: 60 },
+};
+
+/** An address denied this many times inside the window is banned for BAN_SECONDS (brute-force protection). */
+export const BAN_AFTER_DENIALS = 20;
+export const BAN_WINDOW_SECONDS = 300;
+export const BAN_SECONDS = 900;

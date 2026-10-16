@@ -7,5 +7,6 @@ import { job as s02AuditIntegrity } from './jobs/s02-audit-integrity';
 import { job as s02QueuePurge } from './jobs/s02-queue-purge';
 import { job as s02Retention } from './jobs/s02-retention';
 import { job as s02WorkerTick } from './jobs/s02-worker-tick';
+import { job as s04RateLimitPurge } from './jobs/s04-rate-limit-purge';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04RateLimitPurge];

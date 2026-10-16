@@ -23,6 +23,7 @@ import {
   isSameOrigin,
   requiresCsrfCheck,
 } from '@/lib/middleware/csrf';
+import { policyFor, rateLimitHeaders } from '@/lib/middleware/rate-limit';
 import { SsrfError, resolvePublicAddresses, validateOutboundUrl } from '@/lib/security/ssrf';
 
 /** Builds a character from its hexadecimal code point, so the source file stays ASCII. */
@@ -362,6 +363,23 @@ async function main(): Promise<void> {
     });
     assert.deepEqual(inspectUserAgent('curl/8.0', '/api/webhooks/stripe'), { ok: true });
     assert.deepEqual(inspectUserAgent(null, '/api/cron/worker-tick'), { ok: true });
+  });
+
+  await check('rate limit policies and headers', () => {
+    assert.equal(policyFor('auth').limit, 10);
+    assert.equal(policyFor('unknown-policy').limit, policyFor('api-default').limit);
+    const denied = rateLimitHeaders(
+      { allowed: false, remaining: 0, retryAfterSeconds: 17 },
+      policyFor('auth'),
+    );
+    assert.equal(denied['retry-after'], '17');
+    assert.equal(denied['x-ratelimit-limit'], '10');
+    const ok = rateLimitHeaders(
+      { allowed: true, remaining: 4, retryAfterSeconds: 0 },
+      policyFor('auth'),
+    );
+    assert.equal(ok['retry-after'], undefined);
+    assert.equal(ok['x-ratelimit-remaining'], '4');
   });
 }
 
