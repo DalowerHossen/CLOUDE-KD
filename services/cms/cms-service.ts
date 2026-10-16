@@ -9,7 +9,7 @@ import { getService } from '@/lib/container';
 import { ForbiddenError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { pageContentSchema, pageMetaSchema, type BlockInput } from '@/lib/cms/blocks';
-import { DEFAULT_PAGES, pathOf } from '@/lib/cms/defaults';
+import { DEFAULT_PAGES, LEGAL_PAGES, defaultPage, pathOf } from '@/lib/cms/defaults';
 import { sanitizeBlocks } from '@/lib/cms/sanitize-blocks';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
@@ -109,8 +109,8 @@ export async function listPages(kind: 'page' | 'legal' | 'help' = 'page'): Promi
     : { data: [], error: null };
   if (open.error) throw new InternalError(open.error);
   const out = new Map<string, PageListItem>();
-  if (kind === 'page') {
-    for (const [slug, def] of Object.entries(DEFAULT_PAGES))
+  if (kind === 'page' || kind === 'legal') {
+    for (const [slug, def] of Object.entries(kind === 'legal' ? LEGAL_PAGES : DEFAULT_PAGES))
       out.set(slug, {
         slug,
         kind,
@@ -187,9 +187,9 @@ export async function editorData(
       (v) => v.status === 'draft' || v.status === 'pending_approval' || v.status === 'scheduled',
     ) ?? null;
   const live = versions.find((v) => v.status === 'published') ?? null;
-  const def = DEFAULT_PAGES[slug];
+  const def = defaultPage(slug);
   const source = open ?? live;
-  if (!source && !def && !page.data && kind === 'page') {
+  if (!source && !def && !page.data) {
     // A brand new page: the editor starts empty.
     return {
       slug,

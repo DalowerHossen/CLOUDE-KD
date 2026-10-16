@@ -23,7 +23,8 @@ export default async function EditCmsPage({
   const actor = await requirePagePermission('cms.edit', 'platform', 'cms');
   const slug = (await params).slug.map(decodeURIComponent).join('/');
   if (!SLUG.test(slug)) notFound();
-  const data = await editorData(actor, slug, 'page');
+  const kind = slug.startsWith('legal/') ? 'legal' : 'page';
+  const data = await editorData(actor, slug, kind);
   return (
     <div className="space-y-sp-24">
       <PageHeader
@@ -38,7 +39,7 @@ export default async function EditCmsPage({
       <PageEditor
         key={`${data.slug}-${data.open?.id ?? 'none'}-${data.versions[0]?.id ?? 'none'}`}
         slug={data.slug}
-        kind="page"
+        kind={kind}
         initial={{
           title: data.title,
           description: data.description,

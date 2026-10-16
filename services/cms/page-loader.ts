@@ -3,7 +3,7 @@
 // the database or with stored content never takes a page down: the built-in content is shown and the problem is logged.
 import 'server-only';
 import { pageContentSchema, type Block } from '@/lib/cms/blocks';
-import { DEFAULT_PAGES } from '@/lib/cms/defaults';
+import { defaultPage } from '@/lib/cms/defaults';
 import { createLogger } from '@/lib/logger';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 
@@ -17,6 +17,8 @@ export interface LoadedPage {
   source: 'default' | 'cms';
   noindex: boolean;
   updatedAt: string | null;
+  /** Number of the stored version; null for built-in content. */
+  versionNo: number | null;
 }
 
 export async function loadStoredPage(slug: string): Promise<LoadedPage | null> {
@@ -31,7 +33,7 @@ export async function loadStoredPage(slug: string): Promise<LoadedPage | null> {
   if (!page.data?.live_version_id) return null;
   const version = await admin
     .from('cms_page_versions')
-    .select('title, description, blocks, published_at')
+    .select('title, description, blocks, published_at, version_no')
     .eq('id', String(page.data.live_version_id))
     .eq('status', 'published')
     .is('deleted_at', null)
@@ -51,6 +53,7 @@ export async function loadStoredPage(slug: string): Promise<LoadedPage | null> {
     source: 'cms',
     noindex: page.data.noindex === true,
     updatedAt: version.data.published_at ? String(version.data.published_at) : null,
+    versionNo: Number(version.data.version_no),
   };
 }
 
@@ -61,7 +64,7 @@ export async function loadPage(slug: string): Promise<LoadedPage | null> {
   } catch (error) {
     log.error('stored page could not be read; built-in content is shown', { slug, error });
   }
-  const def = DEFAULT_PAGES[slug];
+  const def = defaultPage(slug);
   if (!def) return null;
   return {
     slug,
@@ -71,5 +74,6 @@ export async function loadPage(slug: string): Promise<LoadedPage | null> {
     source: 'default',
     noindex: false,
     updatedAt: null,
+    versionNo: null,
   };
 }

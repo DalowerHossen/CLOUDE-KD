@@ -37,17 +37,36 @@ const columns: readonly DataColumn<PageListItem>[] = [
   },
 ];
 
-export default async function AdminCmsPage(): Promise<JSX.Element> {
+export default async function AdminCmsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ kind?: string }>;
+}): Promise<JSX.Element> {
   await requirePagePermission('cms.read', 'platform', 'cms');
+  const kind = (await searchParams).kind === 'legal' ? 'legal' : 'page';
   let rows: PageListItem[] | null;
   try {
-    rows = await listPages('page');
+    rows = await listPages(kind);
   } catch {
     rows = null;
   }
   return (
     <div className="space-y-sp-24">
       <PageHeader title={t('s06Public.cms.title')} description={t('s06Public.cms.description')} />
+      <nav className="flex gap-sp-12 text-sm" aria-label={t('s06Public.cms.title')}>
+        <Link
+          className={kind === 'page' ? 'font-semibold underline' : 'underline'}
+          href="/admin/cms"
+        >
+          {t('s06Public.cms.tabPages')}
+        </Link>
+        <Link
+          className={kind === 'legal' ? 'font-semibold underline' : 'underline'}
+          href="/admin/cms?kind=legal"
+        >
+          {t('s06Public.cms.tabLegal')}
+        </Link>
+      </nav>
       {rows === null ? (
         <ErrorState description={t('s06Public.cms.loadError')} />
       ) : (
@@ -58,7 +77,7 @@ export default async function AdminCmsPage(): Promise<JSX.Element> {
           caption={t('s06Public.cms.title')}
         />
       )}
-      <NewPageForm />
+      {kind === 'page' ? <NewPageForm /> : null}
     </div>
   );
 }

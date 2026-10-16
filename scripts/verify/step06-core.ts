@@ -2,7 +2,8 @@
 // Logic checks of STEP 06 that need no database or network. Run: npx tsx scripts/verify/step06-core.ts
 import assert from 'node:assert/strict';
 import { pageContentSchema, pageMetaSchema, hrefSchema } from '@/lib/cms/blocks';
-import { DEFAULT_PAGES, pathOf } from '@/lib/cms/defaults';
+import { DEFAULT_PAGES, LEGAL_PAGES, defaultPage, pathOf } from '@/lib/cms/defaults';
+import { ACCEPTABLE_PAGES, LEGAL_LINKS } from '@/lib/cms/legal-pages';
 import { pricingColumns } from '@/lib/cms/pricing';
 import { BLOCK_LABELS, ITEM_TEMPLATES, newBlock } from '@/lib/cms/templates';
 import { sanitizeBlocks } from '@/lib/cms/sanitize-blocks';
@@ -142,6 +143,31 @@ async function main(): Promise<void> {
     const html = JSON.stringify(blocks);
     assert.ok(!/script|onerror/i.test(html), html);
     assert.ok(html.includes('ok'));
+  });
+
+  await check('legal pages: twelve, valid, unique, ASCII, no brand names, listed in links', () => {
+    const slugs = Object.keys(LEGAL_PAGES);
+    assert.equal(slugs.length, 12);
+    assert.deepEqual(
+      LEGAL_LINKS.map((l) => `legal/${l.slug}`).sort(),
+      [...slugs].sort(),
+      'every legal page is listed',
+    );
+    for (const a of ACCEPTABLE_PAGES) assert.ok(`legal/${a}` in LEGAL_PAGES, a);
+    const titles = new Set<string>();
+    for (const [slug, page] of Object.entries(LEGAL_PAGES)) {
+      pageMetaSchema.parse({ title: page.title, description: page.description });
+      const blocks = pageContentSchema.parse(page.blocks);
+      assert.equal(blocks[0]?.type, 'hero', slug);
+      assert.ok(!titles.has(page.title), `${slug} repeats a title`);
+      titles.add(page.title);
+      const text = JSON.stringify(page);
+      assert.ok(!/[^\x00-\x7f]/.test(text), `${slug} has non-ASCII text`);
+      for (const brand of ['bKash', 'Nagad', 'GCash', 'UPI', 'lorem'])
+        assert.ok(!new RegExp(brand, 'i').test(text), `${slug} mentions ${brand}`);
+      assert.equal(defaultPage(slug), page);
+      assert.equal(pathOf(slug), `/${slug}`);
+    }
   });
 
   await check('pricing table is built from the plan catalogue', () => {
