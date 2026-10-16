@@ -20,4 +20,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo'],
     order: 400,
   },
+  {
+    id: 'settings-email',
+    labelKey: 's05Storage.nav.emailSettings',
+    href: '/settings/email',
+    icon: 'mail',
+    group: 'account',
+    roles: ['owner'],
+    order: 420,
+  },
 ];

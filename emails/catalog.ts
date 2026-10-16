@@ -5,6 +5,7 @@ import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
 import { authEmailTemplates } from './auth';
 import { securityEmailTemplates } from './security';
+import { sharedEmailTemplates } from './shared';
 
 export interface CatalogTemplate {
   definition: EmailTemplateDefinition;
@@ -14,4 +15,5 @@ export interface CatalogTemplate {
 export const emailCatalog: readonly CatalogTemplate[] = [
   ...authEmailTemplates,
   ...securityEmailTemplates,
+  ...sharedEmailTemplates,
 ];

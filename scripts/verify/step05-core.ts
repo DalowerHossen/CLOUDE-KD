@@ -28,6 +28,13 @@ import { PermanentEmailError, TemporaryEmailError, type OutgoingMessage } from '
 import { render } from '@react-email/render';
 import { createElement, type ComponentType } from 'react';
 import { emailCatalog } from '@/emails/catalog';
+import {
+  evaluateDkim,
+  evaluateDmarc,
+  evaluateSpf,
+  isValidDomain,
+  scoreReport,
+} from '@/lib/email/dns';
 import { createHttpScanner } from '@/lib/storage/scanner';
 import { maskEmail, maskIdentifier, maskName, maskPhone } from '@/lib/encryption/redact';
 
@@ -668,6 +675,68 @@ async function main(): Promise<void> {
       assert.ok(html.includes('<html'), t.definition.id);
       assert.ok(!/<script/i.test(html), `${t.definition.id} has a script`);
     }
+  });
+  await check('domain check: SPF, DKIM, DMARC evaluation and score', () => {
+    assert.equal(evaluateSpf([], 'sendgrid.net').ok, false);
+    assert.equal(evaluateSpf([['v=spf1 include:sendgrid.net ~all']], 'sendgrid.net').ok, true);
+    assert.equal(evaluateSpf([['v=spf1 include:other.net ~all']], 'sendgrid.net').ok, false);
+    assert.equal(
+      evaluateSpf(
+        [['v=spf1 include:sendgrid.net include:other.net ~all'], ['v=spf1 -all']],
+        'sendgrid.net',
+      ).ok,
+      false,
+      'two records',
+    );
+    assert.equal(evaluateSpf([['v=spf1 +all']], '').ok, false, 'allow all');
+    assert.equal(
+      evaluateSpf([['v=spf1 include:notsendgrid.net ~all']], 'sendgrid.net').ok,
+      false,
+      'include must match exactly',
+    );
+    assert.equal(evaluateSpf([['v=spf1 mx ~all']], '').ok, true);
+    const many = `v=spf1 ${Array.from({ length: 11 }, (_, i) => `include:d${i}.example.com`).join(' ')} ~all`;
+    assert.equal(evaluateSpf([[many]], '').ok, false, 'more than 10 lookups');
+    const key = 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC'.padEnd(60, 'A');
+    assert.deepEqual(
+      evaluateDkim([
+        { selector: 's1', records: [] },
+        { selector: 'google', records: [[`v=DKIM1; k=rsa; p=${key}`]] },
+      ]).selector,
+      'google',
+    );
+    assert.equal(
+      evaluateDkim([{ selector: 's1', records: [['v=DKIM1; p=']] }]).ok,
+      false,
+      'empty key',
+    );
+    assert.deepEqual(evaluateDmarc([['v=DMARC1; p=reject; rua=mailto:a@b.c']]).policy, 'reject');
+    assert.equal(evaluateDmarc([['v=DMARC1; p=none']]).ok, true);
+    assert.equal(evaluateDmarc([['v=DMARC1']]).ok, false);
+    assert.equal(evaluateDmarc([]).ok, false);
+    const spf = { ok: true, detail: '' };
+    assert.equal(scoreReport(spf, { ok: true, detail: '' }, { ok: true, policy: 'reject' }), 100);
+    assert.equal(scoreReport(spf, { ok: false, detail: '' }, { ok: true, policy: 'none' }), 55);
+    assert.equal(
+      scoreReport(
+        { ok: false, detail: '' },
+        { ok: false, detail: '' },
+        { ok: false, policy: null },
+      ),
+      0,
+    );
+    assert.ok(isValidDomain('mail.example.com') && isValidDomain('Example.co'));
+    for (const bad of [
+      'localhost',
+      '1.2.3.4',
+      'a..com',
+      '-a.com',
+      'a.c',
+      'exa mple.com',
+      'example.com/path',
+      '',
+    ])
+      assert.equal(isValidDomain(bad), false, bad);
   });
 }
 

@@ -5,6 +5,6 @@ import type { PermissionDefinition } from '@/types/contracts';
 import { permissions as s02Core } from './permissions/s02-core';
 import { permissions as s03Auth } from './permissions/s03-auth';
 import { permissions as s04Security } from './permissions/s04-security';
-import { permissions as s05Storage } from './permissions/s05-storage';
+import { permissions as s05StorageEmail } from './permissions/s05-storage-email';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05Storage];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail];
