@@ -16,6 +16,10 @@ const EXEMPT_PREFIXES: readonly string[] = [
   '/api/cron/',
   '/api/public/',
   '/api/health',
+  // E-mail providers, mail clients (one-click unsubscribe, images, links) call these without a browser session.
+  '/api/email/webhooks/',
+  '/api/email/unsubscribe/',
+  '/api/email/track/',
 ];
 
 export async function createCsrfToken(secret: string): Promise<string> {

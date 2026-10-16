@@ -7,7 +7,7 @@
 - [x] 05.4 provider chain, fallback with audit and notice, health job (2026-10-16)
 - [x] 05.5 Drive link flow and storage settings page (2026-10-16)
 - [x] 05.6 migration tool, admin storage page, storage service registered (2026-10-16)
-- [ ] 05.7a
+- [x] 05.7a e-mail core: adapters, outbox, queue, suppression, tracking, feedback (2026-10-16)
 - [ ] 05.7b
 - [ ] 05.8
 - [ ] 05.9

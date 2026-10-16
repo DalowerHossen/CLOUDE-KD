@@ -12,6 +12,22 @@ import { ProviderUnavailableError, objectPath, withBackoff } from '@/lib/storage
 import { parseRange } from '@/lib/storage/range';
 import { watermarkPdf } from '@/lib/storage/watermark';
 import { PDFDocument } from 'pdf-lib';
+import { createHmac, generateKeyPairSync, sign } from 'node:crypto';
+import { createHttpAdapter } from '@/lib/email/adapters/http';
+import { mapSmtpError } from '@/lib/email/adapters/smtp';
+import {
+  addTracking,
+  collectLinks,
+  disallowedLinkHosts,
+  htmlToText,
+  scanContent,
+} from '@/lib/email/content';
+import { parseMailgun, parsePostmark, parseResend, parseSendgrid } from '@/lib/email/inbound';
+import { SMTP_PRESETS, presetById } from '@/lib/email/presets';
+import { PermanentEmailError, TemporaryEmailError, type OutgoingMessage } from '@/lib/email/types';
+import { render } from '@react-email/render';
+import { createElement, type ComponentType } from 'react';
+import { emailCatalog } from '@/emails/catalog';
 import { createHttpScanner } from '@/lib/storage/scanner';
 import { maskEmail, maskIdentifier, maskName, maskPhone } from '@/lib/encryption/redact';
 
@@ -405,6 +421,254 @@ async function main(): Promise<void> {
       }
     },
   );
+  const message: OutgoingMessage = {
+    from: { email: 'billing@example.com', name: 'Acme "Billing"' },
+    to: 'jane@example.com',
+    replyTo: 'help@example.com',
+    subject: 'Invoice',
+    html: '<p>Hi</p>',
+    text: 'Hi',
+    headers: { 'Auto-Submitted': 'auto-generated' },
+  };
+
+  await check('http mail adapters: request shape and error mapping', async () => {
+    const seen: { url: string; init: RequestInit }[] = [];
+    const reply = (
+      status: number,
+      body: unknown,
+      headers: Record<string, string> = {},
+    ): typeof fetch =>
+      (async (url: string | URL | Request, init?: RequestInit) => {
+        seen.push({ url: String(url), init: init ?? {} });
+        return new Response(JSON.stringify(body), { status, headers });
+      }) as typeof fetch;
+    const resend = createHttpAdapter('resend', {}, 're_key', reply(200, { id: 'r-1' }));
+    assert.equal((await resend.send(message)).providerMessageId, 'r-1');
+    const sent = JSON.parse(String(seen[0]?.init.body)) as Record<string, unknown>;
+    assert.equal(seen[0]?.url, 'https://api.resend.com/emails');
+    assert.equal(sent.from, '"Acme  Billing " <billing@example.com>');
+    assert.deepEqual(sent.to, ['jane@example.com']);
+    assert.equal(sent.reply_to, 'help@example.com');
+    assert.equal((seen[0]?.init.headers as Record<string, string>).authorization, 'Bearer re_key');
+    const grid = createHttpAdapter(
+      'sendgrid',
+      {},
+      'SG.x',
+      reply(202, '', { 'x-message-id': 'sg-1' }),
+    );
+    assert.equal((await grid.send(message)).providerMessageId, 'sg-1');
+    assert.equal(seen[1]?.url, 'https://api.sendgrid.com/v3/mail/send');
+    const gun = createHttpAdapter(
+      'mailgun',
+      { domain: 'mg.example.com', eu: true },
+      'key-1',
+      reply(200, { id: '<m-1@mg>' }),
+    );
+    assert.equal((await gun.send(message)).providerMessageId, '<m-1@mg>');
+    assert.equal(seen[2]?.url, 'https://api.eu.mailgun.net/v3/mg.example.com/messages');
+    assert.match(
+      String((seen[2]?.init.headers as Record<string, string>).authorization),
+      /^Basic /,
+    );
+    await assert.rejects(
+      createHttpAdapter('mailgun', {}, 'k', reply(200, {})).send(message),
+      PermanentEmailError,
+    );
+    const pm = createHttpAdapter('postmark', {}, 'tok', reply(200, { MessageID: 'pm-1' }));
+    assert.equal((await pm.send(message)).providerMessageId, 'pm-1');
+    assert.equal(
+      (seen[3]?.init.headers as Record<string, string>)['x-postmark-server-token'],
+      'tok',
+    );
+    await assert.rejects(
+      createHttpAdapter('resend', {}, 'k', reply(429, {})).send(message),
+      TemporaryEmailError,
+    );
+    await assert.rejects(
+      createHttpAdapter('resend', {}, 'k', reply(503, {})).send(message),
+      TemporaryEmailError,
+    );
+    await assert.rejects(
+      createHttpAdapter('resend', {}, 'k', reply(401, {})).send(message),
+      (e: unknown) => e instanceof PermanentEmailError && e.scope === 'config',
+    );
+    await assert.rejects(
+      createHttpAdapter('resend', {}, 'k', reply(422, {})).send(message),
+      (e: unknown) => e instanceof PermanentEmailError && e.scope === 'message',
+    );
+    const down = createHttpAdapter('resend', {}, 'k', (async () => {
+      throw new Error('offline');
+    }) as typeof fetch);
+    await assert.rejects(down.send(message), TemporaryEmailError);
+    assert.ok(mapSmtpError({ code: 'EAUTH' }) instanceof PermanentEmailError);
+    assert.ok((mapSmtpError({ responseCode: 550 }) as PermanentEmailError).scope === 'message');
+    assert.ok(mapSmtpError({ responseCode: 451 }) instanceof TemporaryEmailError);
+    assert.ok(mapSmtpError({ code: 'ETIMEDOUT' }) instanceof TemporaryEmailError);
+    assert.equal(presetById('ses')?.host('eu-west-1'), 'email-smtp.eu-west-1.amazonaws.com');
+    assert.ok(
+      SMTP_PRESETS.length >= 13 &&
+        new Set(SMTP_PRESETS.map((p) => p.id)).size === SMTP_PRESETS.length,
+    );
+  });
+
+  await check(
+    'mail content: text part, tracking rewrite, link allow list, phishing signals',
+    () => {
+      const html =
+        '<html><body><p>Pay <a href="https://app.example.com/pay/1?a=1&amp;b=2">here</a> or <a href="mailto:x@y.z">mail</a></p></body></html>';
+      assert.match(htmlToText(html), /here \(https:\/\/app\.example\.com\/pay\/1\?a=1&b=2\)/);
+      const t = addTracking(html, 'tok123456789012345', 'https://app.example.com/');
+      assert.deepEqual(t.links, ['https://app.example.com/pay/1?a=1&b=2']);
+      assert.ok(t.html.includes('/api/email/track/click/tok123456789012345/0'));
+      assert.ok(t.html.includes('/api/email/track/open/tok123456789012345'));
+      assert.ok(t.html.includes('mailto:x@y.z'), 'mailto links stay');
+      assert.ok(
+        !t.html.includes('app.example.com/pay'),
+        'the real address is not in the tracked mail',
+      );
+      assert.deepEqual(collectLinks(html), ['https://app.example.com/pay/1?a=1&b=2']);
+      assert.deepEqual(disallowedLinkHosts(html, ['example.com']), []);
+      assert.deepEqual(
+        disallowedLinkHosts('<a href="https://evil.test/x">x</a>', ['example.com']),
+        ['evil.test'],
+      );
+      assert.deepEqual(
+        disallowedLinkHosts('<a href="https://notexample.com/x">x</a>', ['example.com']),
+        ['notexample.com'],
+      );
+      const bad = scanContent(
+        '<form></form><script></script><a href="https://evil.test/login">https://bank.com/login</a><a href="http://1.2.3.4/x">x</a><a href="https://bit.ly/abc">y</a>You have won!',
+      );
+      const codes = bad.map((f) => f.code);
+      for (const c of [
+        'form',
+        'script',
+        'link_text_mismatch',
+        'ip_address_link',
+        'url_shortener',
+        'spam_phrase',
+      ] as const)
+        assert.ok(codes.includes(c), c);
+      assert.deepEqual(
+        scanContent(
+          '<p>Your invoice <a href="https://app.example.com/i/1">https://app.example.com/i/1</a></p>',
+        ),
+        [],
+      );
+    },
+  );
+
+  await check('provider feedback: signatures are checked before the body is read', () => {
+    const now = Date.now();
+    const ts = String(Math.floor(now / 1000));
+    // Resend (Svix)
+    const secret = `whsec_${Buffer.from('s3cret-key-bytes').toString('base64')}`;
+    const body = JSON.stringify({
+      type: 'email.bounced',
+      data: { email_id: 'r-1', bounce: { type: 'Permanent' } },
+    });
+    const good = createHmac('sha256', Buffer.from('s3cret-key-bytes'))
+      .update(`msg_1.${ts}.${body}`)
+      .digest('base64');
+    const h = (sig: string, stamp = ts): Headers =>
+      new Headers({ 'svix-id': 'msg_1', 'svix-timestamp': stamp, 'svix-signature': `v1,${sig}` });
+    assert.deepEqual(parseResend(h(good), body, secret, now), {
+      ok: true,
+      events: [{ kind: 'bounce_hard', providerMessageId: 'r-1' }],
+    });
+    assert.equal(parseResend(h('AAAA'), body, secret, now).ok, false);
+    assert.equal(parseResend(h(good), body + ' ', secret, now).ok, false);
+    assert.equal(
+      parseResend(h(good, String(Math.floor(now / 1000) - 3600)), body, secret, now).ok,
+      false,
+    );
+    // Mailgun
+    const token = 'tok-abc';
+    const mg = (sigKey: string, event: object): string =>
+      JSON.stringify({
+        signature: {
+          timestamp: ts,
+          token,
+          signature: createHmac('sha256', sigKey).update(`${ts}${token}`).digest('hex'),
+        },
+        'event-data': event,
+      });
+    const failed = mg('sign-key', {
+      event: 'failed',
+      severity: 'permanent',
+      message: { headers: { 'message-id': '<m-1@mg>' } },
+    });
+    assert.deepEqual(parseMailgun(failed, 'sign-key', now), {
+      ok: true,
+      events: [{ kind: 'bounce_hard', providerMessageId: 'm-1@mg' }],
+    });
+    assert.equal(parseMailgun(failed, 'other-key', now).ok, false);
+    assert.deepEqual(
+      parseMailgun(
+        mg('sign-key', {
+          event: 'failed',
+          severity: 'temporary',
+          message: { headers: { 'message-id': 'a' } },
+        }),
+        'sign-key',
+        now,
+      ),
+      { ok: true, events: [{ kind: 'bounce_soft', providerMessageId: 'a' }] },
+    );
+    // Postmark
+    const pmBody = JSON.stringify({ RecordType: 'SpamComplaint', MessageID: 'pm-1' });
+    const auth = `Basic ${Buffer.from('hook:pw').toString('base64')}`;
+    assert.deepEqual(parsePostmark(auth, pmBody, 'hook', 'pw'), {
+      ok: true,
+      events: [{ kind: 'complaint', providerMessageId: 'pm-1' }],
+    });
+    assert.equal(parsePostmark('Basic nope', pmBody, 'hook', 'pw').ok, false);
+    assert.equal(parsePostmark(null, pmBody, 'hook', 'pw').ok, false);
+    // SendGrid (ECDSA P-256)
+    const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+    const pub = publicKey.export({ format: 'der', type: 'spki' }).toString('base64');
+    const sgBody = JSON.stringify([
+      { event: 'bounce', type: 'blocked', sg_message_id: 'sg-1.filter0' },
+      { event: 'open', sg_message_id: 'sg-2.f' },
+      { event: 'processed', sg_message_id: 'x' },
+    ]);
+    const sig = sign('sha256', Buffer.from(`${ts}${sgBody}`), privateKey).toString('base64');
+    const sh = (sg: string): Headers =>
+      new Headers({
+        'x-twilio-email-event-webhook-signature': sg,
+        'x-twilio-email-event-webhook-timestamp': ts,
+      });
+    assert.deepEqual(parseSendgrid(sh(sig), sgBody, pub, now), {
+      ok: true,
+      events: [
+        { kind: 'bounce_soft', providerMessageId: 'sg-1' },
+        { kind: 'opened', providerMessageId: 'sg-2' },
+      ],
+    });
+    assert.equal(parseSendgrid(sh(sig), sgBody.replace('bounce', 'delivered'), pub, now).ok, false);
+    assert.equal(
+      parseSendgrid(sh(sig), sgBody, Buffer.from('junk').toString('base64'), now).ok,
+      false,
+    );
+  });
+  await check('every catalogue template renders with its variables', async () => {
+    assert.ok(emailCatalog.length >= 8);
+    assert.equal(
+      new Set(emailCatalog.map((t) => t.definition.id)).size,
+      emailCatalog.length,
+      'ids are unique',
+    );
+    for (const t of emailCatalog) {
+      const data: Record<string, unknown> = {};
+      for (const v of t.definition.variables)
+        data[v] = v.toLowerCase().includes('until') ? '2026-01-01' : `value-${v}`;
+      const html = await render(
+        createElement(t.component as ComponentType<Record<string, unknown>>, data),
+      );
+      assert.ok(html.includes('<html'), t.definition.id);
+      assert.ok(!/<script/i.test(html), `${t.definition.id} has a script`);
+    }
+  });
 }
 
 main()

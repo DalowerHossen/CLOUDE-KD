@@ -32,6 +32,12 @@ const DANGEROUS_INNER_HTML = new Set([
   'components/shared/theme-init-script.tsx',
 ]);
 // Routes that are intentionally plain handlers: probes that must not depend on any other service.
+// Whole folders of routes called by mail clients and providers: image, redirect, one-click and signed callbacks.
+const PLAIN_PREFIXES = [
+  'app/api/email/track/',
+  'app/api/email/unsubscribe/',
+  'app/api/email/webhooks/',
+];
 const PLAIN_ROUTES = new Set([
   'app/api/storage/drive/callback/route.ts',
   'app/api/storage/download/[token]/route.ts',
@@ -59,7 +65,11 @@ for (const { path, text } of files) {
         fail(path, 'client component imports server code');
     }
   }
-  if (/^app\/api\/.+\/route\.ts$/.test(path) && !PLAIN_ROUTES.has(path)) {
+  if (
+    /^app\/api\/.+\/route\.ts$/.test(path) &&
+    !PLAIN_ROUTES.has(path) &&
+    !PLAIN_PREFIXES.some((p) => path.startsWith(p))
+  ) {
     // Route builders (for example buildApprovalRoutes) create their handlers with withApi.
     if (!text.includes('withApi(') && !/\bbuild\w+Routes\(|soloModeRoute/.test(text))
       fail(path, 'API route does not use withApi');
