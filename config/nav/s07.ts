@@ -93,4 +93,22 @@ export const nav: NavItem[] = [
     order: 460,
     requiresEntitlement: 'domain.custom',
   },
+  {
+    id: 'settings-policy',
+    labelKey: 's07Company.nav.policy',
+    href: '/settings/security',
+    icon: 'key',
+    group: 'account',
+    roles: ['owner'],
+    order: 465,
+  },
+  {
+    id: 'settings-data',
+    labelKey: 's07Company.nav.data',
+    href: '/settings/data',
+    icon: 'layers',
+    group: 'account',
+    roles: ['owner'],
+    order: 470,
+  },
 ];

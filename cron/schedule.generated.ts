@@ -23,5 +23,6 @@ import { job as s06Blog } from './jobs/s06-blog';
 import { job as s06Cms } from './jobs/s06-cms';
 import { job as s07Domains } from './jobs/s07-domains';
 import { job as s07Kyc } from './jobs/s07-kyc';
+import { job as s07Lifecycle } from './jobs/s07-lifecycle';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Domains, s07Kyc];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Domains, s07Kyc, s07Lifecycle];

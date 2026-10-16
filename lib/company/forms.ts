@@ -139,6 +139,24 @@ export const FORMS: Partial<Record<SectionKey, readonly FieldSpec[]>> = {
     { name: 'ownerApprovalActions', label: 'ownerApprovalActions', kind: 'lines' },
     { name: 'staffAmountCap', label: 'staffAmountCap', kind: 'text', max: 20, emptyIsNull: true },
   ],
+  policy: [
+    { name: 'minPasswordLength', label: 'minPasswordLength', kind: 'number' },
+    { name: 'requireComplexity', label: 'requireComplexity', kind: 'bool' },
+    { name: 'loginNotifications', label: 'loginNotifications', kind: 'bool' },
+    { name: 'exportNeedsOwnerApproval', label: 'exportNeedsOwnerApproval', kind: 'bool' },
+  ],
+  backup: [
+    {
+      name: 'schedule',
+      label: 'backupSchedule',
+      kind: 'select',
+      options: [
+        { value: 'off', label: 'off' },
+        { value: 'daily', label: 'daily' },
+        { value: 'weekly', label: 'weekly' },
+      ],
+    },
+  ],
   notifications: [
     {
       name: 'invoice',
@@ -183,5 +201,7 @@ export const EDITABLE_SECTIONS = [
   'notifications',
   'security',
   'approval',
+  'policy',
+  'backup',
 ] as const;
 export type EditableSection = (typeof EDITABLE_SECTIONS)[number];

@@ -47,14 +47,14 @@ export async function getSection<K extends SectionKey>(
   return { value: merged.data as SectionValue<K>, version: Number(data.version) };
 }
 
-/** Saves a whole section. `expectedVersion` is what the editor loaded (0 when nothing was stored). */
-export async function saveSection<K extends SectionKey>(
-  actor: Actor,
+/** Saves a whole section for a person (an actor or a system job acting for the owner). */
+export async function saveSectionFor<K extends SectionKey>(
+  companyId: string,
+  userId: string,
   key: K,
   input: unknown,
   expectedVersion: number,
 ): Promise<LoadedSection<K>> {
-  if (!actor.companyId) throw new ValidationError('A company is needed.');
   const parsed = SECTION_SCHEMAS[key].safeParse(input);
   if (!parsed.success)
     throw new ValidationError(
@@ -62,11 +62,11 @@ export async function saveSection<K extends SectionKey>(
       parsed.error.issues.slice(0, 10).map((i) => ({ path: i.path.join('.'), message: i.message })),
     );
   const { data, error } = await getAdminSupabase().rpc('kd_company_setting_save', {
-    p_company: actor.companyId,
+    p_company: companyId,
     p_section: key,
     p_value: parsed.data,
     p_expected: expectedVersion,
-    p_user: actor.userId,
+    p_user: userId,
   });
   if (error) {
     if (error.code === '40001') throw new ConflictError();
@@ -76,10 +76,21 @@ export async function saveSection<K extends SectionKey>(
     action: 'company.settings_saved',
     resourceType: 'company_settings',
     resourceId: null,
-    companyId: actor.companyId,
-    metadata: { section: key, version: Number(data), by: actor.userId },
+    companyId,
+    metadata: { section: key, version: Number(data), by: userId },
   });
   return { value: parsed.data as SectionValue<K>, version: Number(data) };
+}
+
+/** Saves a whole section. `expectedVersion` is what the editor loaded (0 when nothing was stored). */
+export async function saveSection<K extends SectionKey>(
+  actor: Actor,
+  key: K,
+  input: unknown,
+  expectedVersion: number,
+): Promise<LoadedSection<K>> {
+  if (!actor.companyId) throw new ValidationError('A company is needed.');
+  return saveSectionFor(actor.companyId, actor.userId, key, input, expectedVersion);
 }
 
 /** Records a milestone once and tells the owner about it. Safe to call again. */

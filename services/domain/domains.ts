@@ -126,9 +126,7 @@ async function lookup<T>(run: () => Promise<T>, empty: T): Promise<T> {
 }
 
 /** Looks at the DNS and, when the name points to the platform, asks for the certificate state. */
-async function runChecks(
-  row: Record<string, unknown>,
-): Promise<{
+async function runChecks(row: Record<string, unknown>): Promise<{
   ownership: boolean;
   routing: boolean;
   ssl: 'pending' | 'active' | 'error';

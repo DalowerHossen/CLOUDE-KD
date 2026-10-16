@@ -185,6 +185,26 @@ export const approvalSchema = z
   })
   .strict();
 
+export const policySchema = z
+  .object({
+    /** Shortest password accepted for people of this company. The platform minimum still applies. */
+    minPasswordLength: z.number().int().min(10).max(64),
+    requireComplexity: z.boolean(),
+    /** Tell the owner by e-mail when someone signs in from a new device. */
+    loginNotifications: z.boolean(),
+    /** A data export asked for by staff waits for the owner to approve it. */
+    exportNeedsOwnerApproval: z.boolean(),
+  })
+  .strict();
+
+export const backupSchema = z
+  .object({
+    schedule: z.enum(['off', 'daily', 'weekly']),
+    /** Time the last scheduled backup was started. */
+    lastScheduledAt: z.string().datetime().nullable(),
+  })
+  .strict();
+
 export const onboardingSchema = z
   .object({
     status: z.enum(['not_started', 'in_progress', 'completed', 'skipped']),
@@ -203,6 +223,8 @@ export const SECTION_SCHEMAS = {
   notifications: notificationsSchema,
   security: securitySchema,
   approval: approvalSchema,
+  policy: policySchema,
+  backup: backupSchema,
   onboarding: onboardingSchema,
 } as const;
 export type SectionKey = keyof typeof SECTION_SCHEMAS;
@@ -255,6 +277,13 @@ export const SECTION_DEFAULTS: { [K in SectionKey]: SectionValue<K> } = {
   notifications: { recipients: { invoice: 'all', payment: 'all', system: 'all' }, summary: 'off' },
   security: { requireTwoFactor: false, staffSessionTimeoutMinutes: null, ipAllowlist: [] },
   approval: { ownerApprovalActions: [], staffAmountCap: null },
+  policy: {
+    minPasswordLength: 12,
+    requireComplexity: true,
+    loginNotifications: true,
+    exportNeedsOwnerApproval: true,
+  },
+  backup: { schedule: 'off', lastScheduledAt: null },
   onboarding: {
     status: 'not_started',
     step: 1,

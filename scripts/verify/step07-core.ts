@@ -11,6 +11,7 @@ import {
   profileSchema,
 } from '@/lib/company/sections';
 import { en } from '@/lib/i18n';
+import { registerTenantExport, tenantExports } from '@/lib/lifecycle/registry';
 import { dnsRecords, evaluateDns, isPublicAddress, validateHostname } from '@/lib/domain/hostnames';
 import { reviewActionSchema } from '@/lib/kyc/review-input';
 import { registerScreeningProvider, runScreening } from '@/lib/kyc/screening';
@@ -479,6 +480,50 @@ async function main(): Promise<void> {
       assert.equal(isPublicAddress(ip), false, ip);
     for (const ip of ['8.8.8.8', '203.0.113.10', '172.32.0.1', '2606:4700::1111'])
       assert.equal(isPublicAddress(ip), true, ip);
+  });
+
+  await check('policy and backup sections; export registry refuses secret columns', () => {
+    const p = SECTION_DEFAULTS.policy;
+    assert.ok(SECTION_SCHEMAS.policy.safeParse(p).success);
+    assert.ok(
+      !SECTION_SCHEMAS.policy.safeParse({ ...p, minPasswordLength: 6 }).success,
+      'at least 10',
+    );
+    assert.ok(!SECTION_SCHEMAS.policy.safeParse({ ...p, minPasswordLength: 100 }).success);
+    assert.ok(
+      !SECTION_SCHEMAS.backup.safeParse({ schedule: 'hourly', lastScheduledAt: null }).success,
+    );
+    assert.ok(
+      SECTION_SCHEMAS.backup.safeParse({
+        schedule: 'weekly',
+        lastScheduledAt: '2026-10-01T00:00:00.000Z',
+      }).success,
+    );
+    registerTenantExport({
+      table: 'sample_table',
+      label: 'sample',
+      columns: ['id', 'name', 'created_at'],
+    });
+    assert.ok(tenantExports().some((t) => t.table === 'sample_table'));
+    for (const col of [
+      'password_hash',
+      'token_hash',
+      'api_key',
+      'secret_value',
+      'owners_encrypted',
+      'otp_code',
+      'ciphertext',
+    ])
+      assert.throws(
+        () => registerTenantExport({ table: 'bad_table', label: 'bad', columns: ['id', col] }),
+        col,
+      );
+    assert.throws(() =>
+      registerTenantExport({ table: 'Bad-Table', label: 'bad', columns: ['id'] }),
+    );
+    assert.throws(() =>
+      registerTenantExport({ table: 'ok_table', label: 'bad', columns: ['id; drop table x'] }),
+    );
   });
 
   await check('wizard input: each step has its own strict shape', () => {

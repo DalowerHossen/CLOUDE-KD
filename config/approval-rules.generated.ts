@@ -5,5 +5,6 @@ import type { ApprovalRuleDefinition } from '@/types/contracts';
 import { approvalRules as s02Core } from './approval/s02-core';
 import { approvalRules as s06Cms } from './approval/s06-cms';
 import { approvalRules as s07Kyc } from './approval/s07-kyc';
+import { approvalRules as s07Lifecycle } from './approval/s07-lifecycle';
 
-export const approvalRules: ApprovalRuleDefinition[] = [...s02Core, ...s06Cms, ...s07Kyc];
+export const approvalRules: ApprovalRuleDefinition[] = [...s02Core, ...s06Cms, ...s07Kyc, ...s07Lifecycle];
