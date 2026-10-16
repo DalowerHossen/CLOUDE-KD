@@ -5,7 +5,8 @@ import { strings as s01Core } from './en/s01-core';
 import { strings as s02Governance } from './en/s02-governance';
 import { strings as s03Auth } from './en/s03-auth';
 import { strings as s04Security } from './en/s04-security';
+import { strings as s05Storage } from './en/s05-storage';
 
-export const en = { s01Core, s02Governance, s03Auth, s04Security } as const;
+export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage } as const;
 
 export type Strings = typeof en;

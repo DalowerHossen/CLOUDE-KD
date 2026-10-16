@@ -6,5 +6,6 @@ import { nav as s01 } from './nav/s01';
 import { nav as s02 } from './nav/s02';
 import { nav as s03 } from './nav/s03';
 import { nav as s04 } from './nav/s04';
+import { nav as s05 } from './nav/s05';
 
-export const navMap: NavItem[] = [...s01, ...s02, ...s03, ...s04];
+export const navMap: NavItem[] = [...s01, ...s02, ...s03, ...s04, ...s05];

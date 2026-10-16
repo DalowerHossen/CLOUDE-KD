@@ -33,6 +33,7 @@ const DANGEROUS_INNER_HTML = new Set([
 ]);
 // Routes that are intentionally plain handlers: probes that must not depend on any other service.
 const PLAIN_ROUTES = new Set([
+  'app/api/storage/drive/callback/route.ts',
   'app/api/storage/download/[token]/route.ts',
   'app/api/health/route.ts',
   'app/api/health/ready/route.ts',
