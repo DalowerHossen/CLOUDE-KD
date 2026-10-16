@@ -332,7 +332,9 @@
         "sql/assertions/s08_*",
         "scripts/verify/step08-*",
         "docs/steps/STEP-08/**",
-        "lib/env/s08-public.ts"
+        "lib/env/s08-public.ts",
+        "lib/{crm,catalog,stock,procurement,transfer}/**",
+        "workers/{crm,inventory,transfer}/**"
       ]
     },
     "09": {
