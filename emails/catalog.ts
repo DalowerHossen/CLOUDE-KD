@@ -6,6 +6,7 @@ import type { EmailTemplateDefinition } from '@/types/contracts';
 import { authEmailTemplates } from './auth';
 import { securityEmailTemplates } from './security';
 import { marketingEmailTemplates } from './marketing';
+import { onboardingEmailTemplates } from './onboarding';
 import { sharedEmailTemplates } from './shared';
 
 export interface CatalogTemplate {
@@ -18,4 +19,5 @@ export const emailCatalog: readonly CatalogTemplate[] = [
   ...securityEmailTemplates,
   ...sharedEmailTemplates,
   ...marketingEmailTemplates,
+  ...onboardingEmailTemplates,
 ];

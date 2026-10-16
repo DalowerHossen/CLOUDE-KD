@@ -1,6 +1,6 @@
 # STEP 07 progress
 
-- [ ] 07.1
+- [x] 07.1 onboarding wizard and settings core (2026-10-16)
 - [ ] 07.2
 - [ ] 07.3
 - [ ] 07.4
@@ -9,6 +9,6 @@
 - [ ] 07.7
 - [ ] 07.8
 - [ ] 07.9
-- [ ] 07.10
-- [ ] 07.11
-- [ ] 07.12
+- [x] 07.1 onboarding wizard and settings core (2026-10-16)0
+- [x] 07.1 onboarding wizard and settings core (2026-10-16)1
+- [x] 07.1 onboarding wizard and settings core (2026-10-16)2

@@ -301,7 +301,11 @@
         "scripts/verify/step07-*",
         "docs/steps/STEP-07/**",
         "lib/env/s07-public.ts",
-        "app/(admin)/admin/page.tsx"
+        "app/(admin)/admin/page.tsx",
+        "lib/{company,team,kyc,support,lifecycle,domain}/**",
+        "workers/onboarding/**",
+        "workers/support/**",
+        "config/{kyc,support,company}.ts"
       ]
     },
     "08": {
