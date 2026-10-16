@@ -80,7 +80,7 @@ export const nav: NavItem[] = [
     href: '/admin',
     icon: 'activity',
     group: 'admin',
-    roles: ['super_admin', 'ceo', 'admin_staff'],
+    roles: ['super_admin', 'ceo'],
     order: 50,
   },
   {
@@ -89,7 +89,7 @@ export const nav: NavItem[] = [
     href: '/admin/users',
     icon: 'user',
     group: 'admin',
-    roles: ['super_admin', 'ceo', 'admin_staff'],
+    roles: ['super_admin', 'ceo'],
     order: 55,
   },
   {
@@ -98,7 +98,7 @@ export const nav: NavItem[] = [
     href: '/admin/tenants',
     icon: 'layers',
     group: 'admin',
-    roles: ['super_admin', 'ceo', 'admin_staff'],
+    roles: ['super_admin', 'ceo'],
     order: 60,
   },
   {
@@ -145,6 +145,24 @@ export const nav: NavItem[] = [
     group: 'account',
     roles: ['owner', 'staff'],
     order: 480,
+  },
+  {
+    id: 'support',
+    labelKey: 's07Company.nav.support',
+    href: '/support',
+    icon: 'mail',
+    group: 'account',
+    roles: ['owner', 'staff'],
+    order: 485,
+  },
+  {
+    id: 'admin-support',
+    labelKey: 's07Company.nav.adminSupport',
+    href: '/admin/support',
+    icon: 'mail',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 72,
   },
   {
     id: 'admin-kyc',

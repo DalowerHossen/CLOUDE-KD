@@ -25,5 +25,6 @@ import { job as s07Admin } from './jobs/s07-admin';
 import { job as s07Domains } from './jobs/s07-domains';
 import { job as s07Kyc } from './jobs/s07-kyc';
 import { job as s07Lifecycle } from './jobs/s07-lifecycle';
+import { job as s07Support } from './jobs/s07-support';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle, s07Support];

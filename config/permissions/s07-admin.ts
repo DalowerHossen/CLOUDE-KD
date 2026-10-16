@@ -5,19 +5,19 @@ export const permissions: PermissionDefinition[] = [
   {
     action: 'admin.home',
     description: 'Open the platform home with counters and the recent activity',
-    defaultRoles: ['super_admin', 'ceo', 'admin_staff'],
+    defaultRoles: ['super_admin', 'ceo'],
     approvalLevel: 'L0',
   },
   {
     action: 'people.read',
     description: 'Look up users and tenants and read their details',
-    defaultRoles: ['super_admin', 'ceo', 'admin_staff'],
+    defaultRoles: ['super_admin', 'ceo'],
     approvalLevel: 'L0',
   },
   {
     action: 'people.note',
     description: 'Write internal notes on users and tenants',
-    defaultRoles: ['super_admin', 'ceo', 'admin_staff'],
+    defaultRoles: ['super_admin', 'ceo'],
     approvalLevel: 'L0',
   },
   {

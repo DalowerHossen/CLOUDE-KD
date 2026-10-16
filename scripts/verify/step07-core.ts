@@ -31,6 +31,15 @@ import {
   toMinutes,
 } from '@/lib/company/ops-input';
 import { isOnDuty } from '@/services/team/admin-staff-duty';
+import {
+  SLA_HOURS,
+  agentTicketActionSchema,
+  createTicketSchema,
+  dueDates,
+  firstResponseState,
+  ownTicketActionSchema,
+  queueQuery,
+} from '@/lib/support/rules';
 import { peopleActionSchema, tenantListQuery, userListQuery } from '@/lib/company/admin-input';
 
 let failures = 0;
@@ -694,6 +703,88 @@ async function main(): Promise<void> {
       'setup.manage',
     ])
       assert.ok(ids.has(a), a);
+  });
+
+  await check('support rules: input, SLA clocks, permissions', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    assert.ok(
+      createTicketSchema.safeParse({
+        subject: 'Invoice will not send',
+        category: 'technical',
+        priority: 'high',
+        body: 'It fails.',
+      }).success,
+    );
+    assert.ok(
+      !createTicketSchema.safeParse({
+        subject: 'Invoice will not send',
+        category: 'technical',
+        priority: 'urgent',
+        body: 'x',
+      }).success,
+      'customers cannot pick urgent',
+    );
+    assert.ok(
+      !createTicketSchema.safeParse({
+        subject: 'ab',
+        category: 'other',
+        priority: 'low',
+        body: 'x',
+      }).success,
+    );
+    assert.ok(
+      !createTicketSchema.safeParse({
+        subject: 'Hello there',
+        category: 'other',
+        priority: 'low',
+        body: '<b>x</b>',
+      }).success,
+    );
+    assert.ok(ownTicketActionSchema.safeParse({ action: 'rate', rating: 5 }).success);
+    assert.ok(!ownTicketActionSchema.safeParse({ action: 'rate', rating: 6 }).success);
+    assert.ok(
+      !ownTicketActionSchema.safeParse({ action: 'assign', assigneeId: id }).success,
+      'customers cannot assign',
+    );
+    assert.ok(
+      agentTicketActionSchema.safeParse({ action: 'reply', body: 'Fixed', internal: true }).success,
+    );
+    assert.ok(agentTicketActionSchema.safeParse({ action: 'assign', assigneeId: null }).success);
+    assert.ok(!agentTicketActionSchema.safeParse({ action: 'status', status: 'deleted' }).success);
+    assert.equal(queueQuery.parse({}).view, 'unassigned');
+    assert.ok(!queueQuery.safeParse({ view: 'everything' }).success);
+    const from = new Date('2026-10-12T08:00:00Z');
+    assert.equal(dueDates('urgent', from).first.toISOString(), '2026-10-12T09:00:00.000Z');
+    assert.equal(dueDates('normal', from).resolve.toISOString(), '2026-10-14T08:00:00.000Z');
+    assert.ok(
+      SLA_HOURS.urgent.first < SLA_HOURS.high.first && SLA_HOURS.high.first < SLA_HOURS.low.first,
+    );
+    const due = new Date('2026-10-12T16:00:00Z');
+    assert.equal(firstResponseState(from, due, null, new Date('2026-10-12T09:00:00Z')), 'ok');
+    assert.equal(firstResponseState(from, due, null, new Date('2026-10-12T15:00:00Z')), 'at_risk');
+    assert.equal(firstResponseState(from, due, null, new Date('2026-10-12T17:00:00Z')), 'breached');
+    assert.equal(
+      firstResponseState(
+        from,
+        due,
+        new Date('2026-10-12T10:00:00Z'),
+        new Date('2026-10-13T00:00:00Z'),
+      ),
+      'met',
+    );
+    assert.equal(
+      firstResponseState(
+        from,
+        due,
+        new Date('2026-10-12T18:00:00Z'),
+        new Date('2026-10-13T00:00:00Z'),
+      ),
+      'breached',
+    );
+    const byAction = new Map(registered.map((d: PermissionDefinition) => [d.action, d]));
+    assert.ok(byAction.get('support.agent')?.defaultRoles.includes('admin_staff'));
+    assert.ok(!byAction.get('support.agent')?.defaultRoles.includes('owner'));
+    assert.ok(byAction.get('support.create')?.defaultRoles.includes('owner'));
   });
 }
 
