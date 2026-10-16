@@ -10,9 +10,9 @@ export const permissions: PermissionDefinition[] = [
   },
   {
     action: 'storage.migrate',
-    description: 'Move files between storage providers',
-    defaultRoles: ['ceo', 'super_admin'],
-    approvalLevel: 'L2',
+    description: 'Move the files of a company between storage providers',
+    defaultRoles: ['owner', 'ceo', 'super_admin'],
+    approvalLevel: 'L0',
   },
   {
     action: 'storage.admin',

@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
+import { MigrationPanel } from '@/components/storage/migration-panel';
 import { driveStatus, type DriveStatus } from '@/services/storage/drive-link';
+import { listMigrations, type MigrationView } from '@/services/storage/migrate';
 import { StepUpForm } from '@/app/(admin)/admin/account-locks/_components/step-up-form';
 import { DrivePanel } from './_components/drive-panel';
 
@@ -37,8 +39,10 @@ export default async function StorageSettingsPage({
   const params = await searchParams;
   const flag = typeof params.drive === 'string' ? params.drive : '';
   let data: DriveStatus | null;
+  let migrations: MigrationView[] = [];
   try {
     data = actor.companyId ? await driveStatus(actor.companyId) : null;
+    migrations = actor.companyId ? await listMigrations(actor.companyId) : [];
   } catch {
     data = null;
   }
@@ -155,6 +159,23 @@ export default async function StorageSettingsPage({
                 state={data.state}
                 available={data.available}
                 filesOnDrive={data.filesOnDrive}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t('s05Storage.migration.title')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-sp-12">
+              <p className="text-sm text-muted-foreground">{t('s05Storage.migration.help')}</p>
+              <MigrationPanel
+                mode="tenant"
+                migrations={migrations}
+                canStart={{
+                  driveReady: data.state === 'connected',
+                  filesOnDrive: data.filesOnDrive,
+                  filesOnSupabase: data.filesOnSupabase,
+                }}
               />
             </CardContent>
           </Card>

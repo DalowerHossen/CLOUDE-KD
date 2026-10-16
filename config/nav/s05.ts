@@ -11,4 +11,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 410,
   },
+  {
+    id: 'admin-storage',
+    labelKey: 's05Storage.nav.adminStorage',
+    href: '/admin/storage',
+    icon: 'server',
+    group: 'admin',
+    roles: ['super_admin', 'ceo'],
+    order: 400,
+  },
 ];

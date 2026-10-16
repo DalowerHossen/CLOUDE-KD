@@ -6,7 +6,7 @@
 - [x] 05.3 storage adapters, put/get/remove/restore, signed links, retention, upload APIs (2026-10-16)
 - [x] 05.4 provider chain, fallback with audit and notice, health job (2026-10-16)
 - [x] 05.5 Drive link flow and storage settings page (2026-10-16)
-- [ ] 05.6
+- [x] 05.6 migration tool, admin storage page, storage service registered (2026-10-16)
 - [ ] 05.7a
 - [ ] 05.7b
 - [ ] 05.8

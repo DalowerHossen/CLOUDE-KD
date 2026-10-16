@@ -10,6 +10,7 @@ import register_encryption from '@/services/encryption/register';
 import register_events from '@/services/events/register';
 import register_jobs from '@/services/jobs/register';
 import register_security from '@/services/security/register';
+import register_storage from '@/services/storage/register';
 
 /** Registers every service implementation in the container. Runs after the boot hooks. */
 export async function bootstrapServices(): Promise<void> {
@@ -22,4 +23,5 @@ export async function bootstrapServices(): Promise<void> {
   await register_events();
   await register_jobs();
   await register_security();
+  await register_storage();
 }
