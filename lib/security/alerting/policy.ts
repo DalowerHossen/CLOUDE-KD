@@ -1,4 +1,4 @@
-// path: lib/alerting/policy.ts
+// path: lib/security/alerting/policy.ts
 // Pure alert policy: severities, incident mapping, channel selection and message payloads.
 export const DEDUPE_SECONDS = 300;
 export const ESCALATE_SECONDS = 900;

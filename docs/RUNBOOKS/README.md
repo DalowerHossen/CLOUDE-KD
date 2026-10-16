@@ -5,7 +5,7 @@ Operational procedures. Each runbook states the trigger, the steps, who is on ca
 | Runbook | Owner STEP | Status |
 |---|---|---|
 | Backup and restore: `scripts/backup.sh`, `scripts/restore.sh` (encrypted, checksum verified) | 01 | Available below |
-| Security incident response (`security-*`) | 04 | Available: `security-incident-response.md` and four companion runbooks |
+| Security incident response (`security-*`) | 04 | Written by STEP 04 |
 | Payment processor outage | 10 | Written by STEP 10 |
 | Disaster recovery (RTO under 4 hours, RPO under 1 hour) | Release Gate | Written at the Release Gate |
 

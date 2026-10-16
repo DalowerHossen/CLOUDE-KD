@@ -1,4 +1,4 @@
-// path: lib/alerting/auth.ts
+// path: lib/security/alerting/auth.ts
 import { stripHeaderInjection } from '@/lib/security/http-safety';
 
 /** Bearer header for webhook and SMS gateway channels. */

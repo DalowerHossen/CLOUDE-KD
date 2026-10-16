@@ -4,7 +4,7 @@ import 'server-only';
 import { z } from 'zod';
 import { getService } from '@/lib/container';
 import { InternalError, NotFoundError, ValidationError } from '@/lib/errors';
-import { INCIDENT_SEVERITIES } from '@/lib/alerting/policy';
+import { INCIDENT_SEVERITIES } from '@/lib/security/alerting/policy';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 
@@ -201,14 +201,12 @@ export async function openIncident(
     .single();
   if (error) throw new InternalError(error);
   const id = String(data.id);
-  const ev = await admin
-    .from('incident_events')
-    .insert({
-      incident_id: id,
-      kind: 'opened',
-      actor_user_id: actorId,
-      body: `${input.severity}: ${input.title}`.slice(0, 4000),
-    });
+  const ev = await admin.from('incident_events').insert({
+    incident_id: id,
+    kind: 'opened',
+    actor_user_id: actorId,
+    body: `${input.severity}: ${input.title}`.slice(0, 4000),
+  });
   if (ev.error) throw new InternalError(ev.error);
   await getService('audit').record({
     action: 'incident.opened',
@@ -271,14 +269,12 @@ export async function runIncidentAction(actor: Actor, input: IncidentAction): Pr
         throw new ValidationError(
           'The incident was changed by someone else. Reload and try again.',
         );
-      await admin
-        .from('incident_events')
-        .insert({
-          incident_id: input.id,
-          kind: 'updated',
-          actor_user_id: actor.userId,
-          body: 'Details updated',
-        });
+      await admin.from('incident_events').insert({
+        incident_id: input.id,
+        kind: 'updated',
+        actor_user_id: actor.userId,
+        body: 'Details updated',
+      });
       await audit.record({
         action: 'incident.updated',
         resourceType: 'incident',
@@ -289,14 +285,12 @@ export async function runIncidentAction(actor: Actor, input: IncidentAction): Pr
       return;
     }
     case 'note': {
-      const { error } = await admin
-        .from('incident_events')
-        .insert({
-          incident_id: input.id,
-          kind: 'note',
-          actor_user_id: actor.userId,
-          body: input.body,
-        });
+      const { error } = await admin.from('incident_events').insert({
+        incident_id: input.id,
+        kind: 'note',
+        actor_user_id: actor.userId,
+        body: input.body,
+      });
       if (error) {
         if (error.code === '23503') throw new NotFoundError();
         throw new InternalError(error);

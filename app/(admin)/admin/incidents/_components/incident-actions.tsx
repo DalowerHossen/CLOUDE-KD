@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { t } from '@/lib/i18n';
-import { INCIDENT_SEVERITIES } from '@/lib/alerting/policy';
+import { INCIDENT_SEVERITIES } from '@/lib/security/alerting/policy';
 import { useAdminAction } from '@/lib/security/use-admin-action';
 
 const ENDPOINT = '/api/admin/incidents/actions';

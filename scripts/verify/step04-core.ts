@@ -31,7 +31,7 @@ import {
   rosterFor,
   slackPayload,
   type ChannelView,
-} from '@/lib/alerting/policy';
+} from '@/lib/security/alerting/policy';
 import { scrubSentryEvent } from '@/lib/security/sentry-scrub';
 import { isNonPublicIp } from '@/lib/security/ip';
 import { isAllowedExternalRedirect, safeRedirectPath } from '@/lib/security/redirect';

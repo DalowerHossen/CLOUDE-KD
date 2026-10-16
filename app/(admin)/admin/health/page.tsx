@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
-import { healthReport, type HealthReport } from '@/services/monitoring/health';
+import { healthReport, type HealthReport } from '@/services/alerting/health';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'System health' };

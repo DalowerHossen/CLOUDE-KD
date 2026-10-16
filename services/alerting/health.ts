@@ -1,4 +1,4 @@
-// path: services/monitoring/health.ts
+// path: services/alerting/health.ts
 // Health checks. The public endpoints say only ok or not ok; details are for platform staff.
 import 'server-only';
 import { tryGetService } from '@/lib/container';

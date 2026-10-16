@@ -15,7 +15,7 @@ export const strings = {
       'Network rules for VPN, proxy and Tor traffic, the whitelist of trusted networks, blocked addresses and recent security events.',
     providerTitle: 'Detection provider',
     providerNone:
-      'No provider is set. Only the Tor exit list is checked. Set NETWORK_INTEL_PROVIDER and NETWORK_INTEL_API_KEY to detect VPN and proxy traffic.',
+      'No provider is set. Only the Tor exit list is checked. Set the network provider and its key in the server environment settings to detect VPN and proxy traffic.',
     providerOk: 'Provider: {name}',
     policyTitle: 'Policy by context',
     policyCaption: 'Network policy by context',

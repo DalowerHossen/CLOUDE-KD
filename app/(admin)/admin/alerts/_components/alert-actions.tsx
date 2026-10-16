@@ -4,7 +4,7 @@ import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { t } from '@/lib/i18n';
-import { CHANNEL_KINDS } from '@/lib/alerting/policy';
+import { CHANNEL_KINDS } from '@/lib/security/alerting/policy';
 import { useAdminAction } from '@/lib/security/use-admin-action';
 
 const ENDPOINT = '/api/admin/alerts/actions';

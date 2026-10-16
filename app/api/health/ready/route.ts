@@ -1,6 +1,6 @@
 // path: app/api/health/ready/route.ts
 // Readiness: the database answers. The answer carries no detail.
-import { databaseReady } from '@/services/monitoring/health';
+import { databaseReady } from '@/services/alerting/health';
 
 export async function GET(): Promise<Response> {
   const db = await databaseReady();

@@ -18,8 +18,8 @@ import {
   rosterFor,
   type AlertSeverity,
   type AlertView,
-} from '@/lib/alerting/policy';
-import { authHeaderForSecret } from '@/lib/alerting/auth';
+} from '@/lib/security/alerting/policy';
+import { authHeaderForSecret } from '@/lib/security/alerting/auth';
 import { safeHttpsRequest, validateOutboundUrl } from '@/lib/security/ssrf';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { openIncident } from '@/services/incident/incident-service';

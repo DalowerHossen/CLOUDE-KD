@@ -11,4 +11,4 @@
 - [x] 04.9
 - [x] 04.10
 - [x] 04.11
-- [ ] 04.12
+- [x] 04.12 assertions, static scan, VERIFY, HANDOFF, DEPENDENCY_REQUESTS (2026-10-16)
