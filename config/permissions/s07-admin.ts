@@ -26,4 +26,40 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin', 'ceo'],
     approvalLevel: 'L2',
   },
+  {
+    action: 'staff.read',
+    description: 'See the admin staff, their sub-roles and shifts',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'staff.manage',
+    description: 'Create admin staff, change sub-roles and plan shifts',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'announcement.manage',
+    description: 'Publish and withdraw platform announcements',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'announcement.read',
+    description: 'See the platform announcements that are live',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'flags.read',
+    description: 'See the feature flags',
+    defaultRoles: ['super_admin', 'ceo'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'setup.manage',
+    description: 'Complete the first-login platform setup',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
 ];

@@ -22,6 +22,15 @@ import { permissions as registered } from '@/config/permissions';
 import type { PermissionDefinition } from '@/types/contracts';
 import { FORMS, EDITABLE_SECTIONS } from '@/lib/company/forms';
 import { stepSchema } from '@/lib/company/steps';
+import {
+  announcementActionSchema,
+  flagSchema,
+  setupSchema,
+  shiftsSchema,
+  staffActionSchema,
+  toMinutes,
+} from '@/lib/company/ops-input';
+import { isOnDuty } from '@/services/team/admin-staff-duty';
 import { peopleActionSchema, tenantListQuery, userListQuery } from '@/lib/company/admin-input';
 
 let failures = 0;
@@ -589,6 +598,101 @@ async function main(): Promise<void> {
     assert.ok(!tenantListQuery.safeParse({ unknown: 'x' }).success);
     const ids = new Set(registered.map((d: PermissionDefinition) => d.action));
     for (const a of ['admin.home', 'people.read', 'people.note', 'people.manage'])
+      assert.ok(ids.has(a), a);
+  });
+
+  await check('admin operations input: staff, shifts, announcements, flags, setup', () => {
+    const id = '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b';
+    assert.ok(
+      staffActionSchema.safeParse({
+        action: 'create',
+        email: 'Agent@Example.com',
+        fullName: 'Asha Rahman',
+        subRole: 'support_agent',
+      }).success,
+    );
+    assert.ok(
+      !staffActionSchema.safeParse({
+        action: 'create',
+        email: 'a@b.co',
+        fullName: 'A',
+        subRole: 'owner',
+      }).success,
+      'only admin sub-roles',
+    );
+    assert.ok(shiftsSchema.safeParse([{ weekday: 1, start: '09:00', end: '17:00' }]).success);
+    assert.ok(!shiftsSchema.safeParse([{ weekday: 1, start: '17:00', end: '09:00' }]).success);
+    assert.ok(!shiftsSchema.safeParse([{ weekday: 7, start: '09:00', end: '10:00' }]).success);
+    assert.ok(
+      !shiftsSchema.safeParse([
+        { weekday: 2, start: '09:00', end: '12:00' },
+        { weekday: 2, start: '11:00', end: '14:00' },
+      ]).success,
+      'overlap',
+    );
+    assert.ok(shiftsSchema.safeParse([{ weekday: 2, start: '20:00', end: '24:00' }]).success);
+    assert.equal(toMinutes('24:00'), 1440);
+    const shifts = [{ weekday: 1, start: '09:00', end: '17:00' }];
+    assert.ok(isOnDuty(shifts, new Date('2026-10-12T10:00:00Z')), 'Monday 10:00 UTC');
+    assert.ok(!isOnDuty(shifts, new Date('2026-10-12T17:00:00Z')), 'end is exclusive');
+    assert.ok(!isOnDuty(shifts, new Date('2026-10-13T10:00:00Z')), 'Tuesday');
+    const base = {
+      action: 'publish',
+      title: 'Planned work',
+      body: 'Short break tonight.',
+      kind: 'maintenance',
+      audience: 'all',
+      startsAt: '2026-10-20T10:00:00Z',
+      endsAt: '2026-10-20T12:00:00Z',
+    };
+    assert.ok(announcementActionSchema.safeParse(base).success);
+    assert.ok(
+      !announcementActionSchema.safeParse({ ...base, endsAt: '2026-10-20T09:00:00Z' }).success,
+    );
+    assert.ok(
+      !announcementActionSchema.safeParse({ ...base, endsAt: '2027-03-01T00:00:00Z' }).success,
+    );
+    assert.ok(!announcementActionSchema.safeParse({ ...base, body: '<script>x</script>' }).success);
+    assert.ok(announcementActionSchema.safeParse({ action: 'withdraw', id }).success);
+    assert.ok(
+      flagSchema.safeParse({
+        key: 'beta.reports',
+        companyId: null,
+        enabled: true,
+        rolloutPercent: 25,
+        version: null,
+      }).success,
+    );
+    assert.ok(
+      !flagSchema.safeParse({
+        key: 'Beta',
+        companyId: null,
+        enabled: true,
+        rolloutPercent: 25,
+        version: null,
+      }).success,
+    );
+    assert.ok(
+      !flagSchema.safeParse({
+        key: 'beta.x',
+        companyId: null,
+        enabled: true,
+        rolloutPercent: 101,
+        version: null,
+      }).success,
+    );
+    assert.ok(setupSchema.safeParse({ step: 'approval_mode', choice: 'solo' }).success);
+    assert.ok(!setupSchema.safeParse({ step: 'approval_mode', choice: 'confirmed' }).success);
+    assert.ok(!setupSchema.safeParse({ step: 'payments', choice: 'confirmed' }).success);
+    const ids = new Set(registered.map((d: PermissionDefinition) => d.action));
+    for (const a of [
+      'staff.read',
+      'staff.manage',
+      'announcement.manage',
+      'announcement.read',
+      'flags.read',
+      'setup.manage',
+    ])
       assert.ok(ids.has(a), a);
   });
 }

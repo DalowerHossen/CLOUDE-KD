@@ -8,7 +8,7 @@
 - [x] 07.6 domains (2026-10-16)
 - [x] 07.7 tenant policy and data tools (2026-10-16)
 - [x] 07.8 admin home, users and tenants (2026-10-16)
-- [ ] 07.9
+- [x] 07.9 admin staff and shifts, announcements, feature flags, setup wizard (2026-10-16)
 - [x] 07.1 onboarding wizard and settings core (2026-10-16)0
 - [x] 07.1 onboarding wizard and settings core (2026-10-16)1
 - [x] 07.1 onboarding wizard and settings core (2026-10-16)2
