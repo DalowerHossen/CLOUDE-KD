@@ -3,7 +3,8 @@
 
 import { strings as s01Core } from './en/s01-core';
 import { strings as s02Governance } from './en/s02-governance';
+import { strings as s03Auth } from './en/s03-auth';
 
-export const en = { s01Core, s02Governance } as const;
+export const en = { s01Core, s02Governance, s03Auth } as const;
 
 export type Strings = typeof en;

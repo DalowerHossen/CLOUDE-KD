@@ -29,7 +29,12 @@ export const GENERIC_LOGIN_MESSAGE =
   'Email or password is incorrect, or sign-in is not available right now.';
 
 export type LoginOutcome =
-  { status: 'ok' } | { status: 'two_factor_required' } | { status: 'two_factor_setup_required' };
+  { status: 'ok'; redirectTo: string } | { status: 'two_factor_required' } | { status: 'two_factor_setup_required' };
+
+/** Fixed targets only, so the response can never become an open redirect. */
+export function redirectFor(user: KnownUser): string {
+  return user.role === 'owner' || user.role === 'staff' ? '/dashboard' : '/admin';
+}
 
 const fail = (): never => {
   throw new UnauthorizedError(GENERIC_LOGIN_MESSAGE);
@@ -103,7 +108,7 @@ export async function startLogin(input: {
     rememberMe: input.rememberMe,
     aal: 'aal1',
   });
-  return { status: 'ok' };
+  return { status: 'ok', redirectTo: redirectFor(user) };
 }
 
 /** Called after the password and, when required, the second factor are accepted. */
