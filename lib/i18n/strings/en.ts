@@ -10,6 +10,7 @@ import { strings as s06Public } from './en/s06-public';
 import { strings as s07Company } from './en/s07-company';
 import { strings as s08Crm } from './en/s08-crm';
 import { strings as s09Credits } from './en/s09-credits';
+import { strings as s09Dunning } from './en/s09-dunning';
 import { strings as s09Estimates } from './en/s09-estimates';
 import { strings as s09Invoicing } from './en/s09-invoicing';
 import { strings as s09Recurring } from './en/s09-recurring';
@@ -24,6 +25,7 @@ export const en = {
   s07Company,
   s08Crm,
   s09Credits,
+  s09Dunning,
   s09Estimates,
   s09Invoicing,
   s09Recurring,

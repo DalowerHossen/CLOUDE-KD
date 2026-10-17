@@ -4,6 +4,7 @@
 import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
 import { EstimateSentEmail } from './estimate-sent';
+import { InvoiceReminderEmail } from './invoice-reminder';
 import { InvoiceSentEmail } from './invoice-sent';
 
 export interface InvoiceEmailTemplate {
@@ -27,5 +28,23 @@ export const invoiceEmailTemplates: readonly InvoiceEmailTemplate[] = [
       variables: ['clientName', 'companyName', 'number', 'total', 'validUntil', 'message', 'link'],
     },
     component: EstimateSentEmail as ComponentType<never>,
+  },
+  {
+    definition: {
+      id: 'invoice.reminder',
+      subject: 'Reminder: invoice {number} {stageText}',
+      variables: [
+        'clientName',
+        'companyName',
+        'number',
+        'amountDue',
+        'dueDate',
+        'stageText',
+        'daysLate',
+        'message',
+        'link',
+      ],
+    },
+    component: InvoiceReminderEmail as ComponentType<never>,
   },
 ];

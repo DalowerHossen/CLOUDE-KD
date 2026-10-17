@@ -27,6 +27,21 @@ import {
   previewDates,
   withinEnd,
 } from '@/lib/schedule/recurrence';
+import { lateFeeAmount, periodsDue, type LateRule } from '@/lib/schedule/late-fees';
+import {
+  dueSteps,
+  isBusinessDay,
+  isQuietHour,
+  normalizeSteps,
+  stageOf,
+} from '@/lib/schedule/reminders';
+import {
+  feeDecisionSchema,
+  holdSchema,
+  lateFeeSettingsSchema,
+  reminderSettingsSchema,
+  writeOffSchema,
+} from '@/lib/schedule/input';
 import { buildCredit } from '@/lib/credit/build';
 import type { InvoiceView } from '@/services/invoice/invoices';
 import {
@@ -790,6 +805,150 @@ async function main(): Promise<void> {
       }).success === false,
       'two parts at least',
     );
+  });
+
+  await check('reminder ladder, quiet hours and business days', () => {
+    const steps = [-3, 0, 7, 14, 30];
+    assert.deepEqual(dueSteps('2026-06-10', '2026-06-07', steps, new Set()), {
+      send: -3,
+      skip: [],
+    });
+    assert.deepEqual(
+      dueSteps('2026-06-10', '2026-06-06', steps, new Set()),
+      { send: null, skip: [] },
+      'too early',
+    );
+    assert.deepEqual(dueSteps('2026-06-10', '2026-06-10', steps, new Set(['-3'])), {
+      send: 0,
+      skip: [],
+    });
+    assert.deepEqual(dueSteps('2026-06-10', '2026-06-17', steps, new Set(['-3', '0'])), {
+      send: 7,
+      skip: [],
+    });
+    assert.deepEqual(
+      dueSteps('2026-06-10', '2026-06-18', steps, new Set(['-3', '0'])),
+      { send: 7, skip: [] },
+      'one day late is still sent',
+    );
+    assert.deepEqual(
+      dueSteps('2026-06-10', '2026-06-22', steps, new Set()),
+      { send: null, skip: [-3, 0, 7] },
+      'old steps are skipped, not sent',
+    );
+    assert.deepEqual(
+      dueSteps('2026-06-10', '2026-06-24', steps, new Set()),
+      { send: 14, skip: [-3, 0, 7] },
+      'only the newest step goes out',
+    );
+    assert.deepEqual(
+      dueSteps('2026-06-10', '2026-06-17', steps, new Set(['-3', '0', '7'])),
+      { send: null, skip: [] },
+      'each step once',
+    );
+    assert.equal(stageOf(-3), 'before');
+    assert.equal(stageOf(0), 'due');
+    assert.equal(stageOf(7), 'overdue');
+    assert.equal(stageOf(30), 'final');
+    assert.ok(
+      isQuietHour(22, 20, 8) &&
+        isQuietHour(3, 20, 8) &&
+        !isQuietHour(12, 20, 8) &&
+        !isQuietHour(8, 20, 8),
+    );
+    assert.ok(!isQuietHour(5, 9, 9), 'equal hours mean no quiet time');
+    assert.ok(isQuietHour(10, 9, 17) && !isQuietHour(17, 9, 17));
+    assert.ok(
+      isBusinessDay('2026-06-08') && !isBusinessDay('2026-06-13') && !isBusinessDay('2026-06-14'),
+    );
+    assert.deepEqual(normalizeSteps([30, 0, 0, -3, 9999, 1.5]), [-3, 0, 30]);
+    assert.ok(
+      !reminderSettingsSchema.safeParse({
+        enabled: true,
+        steps: [0],
+        quietStart: 24,
+        quietEnd: 8,
+        businessDaysOnly: true,
+        ccOwner: false,
+        message: '',
+      }).success,
+    );
+    const hold = { kind: 'promise', untilDate: null, note: '' };
+    assert.ok(!holdSchema.safeParse(hold).success, 'a promise needs a date');
+    assert.ok(holdSchema.safeParse({ kind: 'pause', untilDate: null, note: '' }).success);
+  });
+
+  await check('late fee periods, caps and settings', () => {
+    const rule: LateRule = {
+      kind: 'percent',
+      value: '2',
+      repeat: 'monthly',
+      graceDays: 5,
+      capPercent: '5',
+      capAmount: null,
+    };
+    assert.deepEqual(periodsDue('2026-01-01', '2026-01-06', rule), [], 'inside the grace days');
+    assert.deepEqual(periodsDue('2026-01-01', '2026-01-07', rule), ['m1']);
+    assert.deepEqual(periodsDue('2026-01-01', '2026-02-05', rule), ['m1']);
+    assert.deepEqual(periodsDue('2026-01-01', '2026-02-06', rule), ['m1', 'm2']);
+    assert.deepEqual(periodsDue('2026-01-01', '2026-06-01', { ...rule, repeat: 'once' }), ['m1']);
+    const total = Money.parse('1000');
+    const fee1 = lateFeeAmount(rule, Money.parse('1000'), total, Money.zero());
+    assert.equal(fee1.toDbString(), '20.0000', '2 percent of 1000');
+    const fee3 = lateFeeAmount(rule, Money.parse('1000'), total, Money.parse('40'));
+    assert.equal(fee3.toDbString(), '10.0000', 'the 5 percent cap (50) leaves 10');
+    assert.ok(
+      lateFeeAmount(rule, Money.parse('1000'), total, Money.parse('50')).isZero(),
+      'cap reached',
+    );
+    assert.equal(
+      lateFeeAmount(
+        { ...rule, kind: 'fixed', value: '35', capPercent: null, capAmount: '60' },
+        Money.parse('200'),
+        total,
+        Money.parse('35'),
+      ).toDbString(),
+      '25.0000',
+      'fixed fee limited by the amount cap',
+    );
+    assert.ok(
+      lateFeeAmount(rule, Money.zero(), total, Money.zero()).isZero(),
+      'nothing unpaid, no fee',
+    );
+    const ok = {
+      enabled: true,
+      kind: 'percent',
+      value: '1.5',
+      repeat: 'monthly',
+      graceDays: 5,
+      capPercent: '25',
+      capAmount: null,
+      autoApply: false,
+      label: 'Late fee',
+    };
+    assert.ok(lateFeeSettingsSchema.safeParse(ok).success);
+    assert.ok(
+      !lateFeeSettingsSchema.safeParse({ ...ok, value: '101' }).success,
+      'percent above 100',
+    );
+    assert.ok(lateFeeSettingsSchema.safeParse({ ...ok, kind: 'fixed', value: '101' }).success);
+    assert.ok(!lateFeeSettingsSchema.safeParse({ ...ok, capPercent: '0' }).success);
+    assert.ok(!lateFeeSettingsSchema.safeParse({ ...ok, value: '-1' }).success);
+    assert.ok(
+      !feeDecisionSchema.safeParse({ action: 'waive', reason: '' }).success,
+      'waiving needs a reason',
+    );
+    assert.ok(feeDecisionSchema.safeParse({ action: 'apply', reason: '' }).success);
+    assert.ok(writeOffSchema.safeParse({ amount: '10', reason: 'Client closed down' }).success);
+    assert.ok(
+      !writeOffSchema.safeParse({ amount: '10', reason: 'short' }).success,
+      'a real reason',
+    );
+    assert.ok(!writeOffSchema.safeParse({ amount: '0', reason: 'Client closed down' }).success);
+    const names = new Map(registered.map((p) => [p.action, p]));
+    assert.deepEqual(names.get('invoice.writeoff')?.defaultRoles, ['owner']);
+    assert.deepEqual(names.get('latefee.manage')?.defaultRoles, ['owner']);
+    assert.deepEqual(names.get('reminder.send')?.defaultRoles, ['owner', 'staff']);
   });
 
   if (failures > 0) process.exit(1);

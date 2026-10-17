@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { InvoiceActions } from '@/components/invoice/invoice-actions';
 import { InvoiceForm } from '@/components/invoice/invoice-form';
 import { InvoiceCredits } from '@/components/credit/invoice-credits';
+import { CollectionPanel } from '@/components/dunning/collection-panel';
 import { InstallmentsPanel } from '@/components/invoice/installments-panel';
 import { InvoiceHistory } from '@/components/invoice/invoice-history';
 import { PageHeader } from '@/components/shared/page-header';
@@ -23,6 +24,9 @@ import {
   listCreditNotes,
 } from '@/services/credit/credit-notes';
 import { listInstallments } from '@/services/invoice/installments';
+import { listLateFees } from '@/services/invoice/late-fees';
+import { listHolds, listReminderLog } from '@/services/invoice/reminders';
+import { listWriteOffs } from '@/services/invoice/write-off';
 import { getInvoice, inputOf, listRevisions, type InvoiceView } from '@/services/invoice/invoices';
 
 export const dynamic = 'force-dynamic';
@@ -60,6 +64,8 @@ export default async function InvoicePage({
     canApply,
     canPlan,
     canRepeat,
+    canRemind,
+    canWriteOff,
   ] = await Promise.all([
     perms.can(actor, 'invoice.create', { type: 'invoice' }),
     perms.can(actor, 'invoice.delete', { type: 'invoice' }),
@@ -72,6 +78,8 @@ export default async function InvoicePage({
     perms.can(actor, 'credit.apply', { type: 'invoice' }),
     perms.can(actor, 'installment.manage', { type: 'invoice' }),
     perms.can(actor, 'recurring.manage', { type: 'recurring_schedule' }),
+    perms.can(actor, 'reminder.send', { type: 'invoice' }),
+    perms.can(actor, 'invoice.writeoff', { type: 'invoice' }),
   ]);
   const isSentDoc =
     invoice.status !== 'draft' &&
@@ -84,6 +92,15 @@ export default async function InvoicePage({
         listCreditNotes(companyId, { invoiceId: id, limit: 200 }),
       ])
     : [[], [], []];
+  const open = ['sent', 'viewed', 'partially_paid', 'overdue', 'disputed'].includes(invoice.status);
+  const [reminderLog, holds, writeOffs, fees] = isSentDoc
+    ? await Promise.all([
+        listReminderLog(companyId, id),
+        listHolds(companyId, id),
+        listWriteOffs(companyId, id),
+        listLateFees(companyId, { invoiceId: id, limit: 50 }),
+      ])
+    : [[], [], [], []];
   const parts = isSentDoc ? await listInstallments(companyId, id) : [];
   const planOpen =
     (invoice.kind === 'invoice' || invoice.kind === 'debit_note') &&
@@ -164,6 +181,19 @@ export default async function InvoicePage({
           parts={parts}
           canManage={canPlan}
           open={planOpen}
+          today={new Date().toISOString().slice(0, 10)}
+        />
+      ) : null}
+      {isSentDoc && (open || writeOffs.length > 0 || reminderLog.length > 0 || fees.length > 0) ? (
+        <CollectionPanel
+          invoiceId={invoice.id}
+          balance={invoice.balance}
+          canRemind={canRemind && open}
+          canWriteOff={canWriteOff && open}
+          log={reminderLog}
+          holds={holds}
+          writeOffs={writeOffs}
+          fees={fees}
           today={new Date().toISOString().slice(0, 10)}
         />
       ) : null}

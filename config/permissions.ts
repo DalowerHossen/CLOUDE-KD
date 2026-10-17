@@ -20,6 +20,7 @@ import { permissions as s08Inventory } from './permissions/s08-inventory';
 import { permissions as s08Purchasing } from './permissions/s08-purchasing';
 import { permissions as s08Transfer } from './permissions/s08-transfer';
 import { permissions as s09Credits } from './permissions/s09-credits';
+import { permissions as s09Dunning } from './permissions/s09-dunning';
 import { permissions as s09Estimates } from './permissions/s09-estimates';
 import { permissions as s09Invoices } from './permissions/s09-invoices';
 import { permissions as s09Recurring } from './permissions/s09-recurring';
@@ -44,6 +45,7 @@ export const permissions: PermissionDefinition[] = [
   ...s08Purchasing,
   ...s08Transfer,
   ...s09Credits,
+  ...s09Dunning,
   ...s09Estimates,
   ...s09Invoices,
   ...s09Recurring,
