@@ -12,7 +12,21 @@ import { strings as s08Crm } from './en/s08-crm';
 import { strings as s09Credits } from './en/s09-credits';
 import { strings as s09Estimates } from './en/s09-estimates';
 import { strings as s09Invoicing } from './en/s09-invoicing';
+import { strings as s09Recurring } from './en/s09-recurring';
 
-export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Credits, s09Estimates, s09Invoicing } as const;
+export const en = {
+  s01Core,
+  s02Governance,
+  s03Auth,
+  s04Security,
+  s05Storage,
+  s06Public,
+  s07Company,
+  s08Crm,
+  s09Credits,
+  s09Estimates,
+  s09Invoicing,
+  s09Recurring,
+} as const;
 
 export type Strings = typeof en;

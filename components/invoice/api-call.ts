@@ -14,7 +14,7 @@ export interface CallResult {
 
 export async function callJson(
   url: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   body?: unknown,
   headers: Record<string, string> = {},
 ): Promise<CallResult> {

@@ -18,6 +18,15 @@ import {
   termsFromDays,
 } from '@/lib/invoice/form';
 import { invoiceListQuery } from '@/lib/invoice/search';
+import { installmentStatuses, planProblems, splitInstallments } from '@/lib/schedule/installments';
+import { installmentPlanSchema, recurringPreviewSchema } from '@/lib/schedule/input';
+import {
+  fillPlaceholders,
+  localDay,
+  occurrenceDate,
+  previewDates,
+  withinEnd,
+} from '@/lib/schedule/recurrence';
 import { buildCredit } from '@/lib/credit/build';
 import type { InvoiceView } from '@/services/invoice/invoices';
 import {
@@ -637,6 +646,150 @@ async function main(): Promise<void> {
       new Map([[1, Money.parse('1')]]),
     );
     assert.equal(rest.total, '133.0000', '30 + 3 tax + 100');
+  });
+
+  await check('recurring dates never drift and respect month ends', () => {
+    const monthly = { unit: 'month', every: 1, monthEnd: false, startDate: '2026-01-31' } as const;
+    assert.deepEqual(previewDates(monthly, 0, 5), [
+      '2026-01-31',
+      '2026-02-28',
+      '2026-03-31',
+      '2026-04-30',
+      '2026-05-31',
+    ]);
+    assert.equal(
+      occurrenceDate({ ...monthly, startDate: '2028-01-31' }, 1),
+      '2028-02-29',
+      'leap year',
+    );
+    assert.equal(
+      occurrenceDate({ unit: 'month', every: 1, monthEnd: true, startDate: '2026-02-10' }, 1),
+      '2026-03-31',
+      'month end rule',
+    );
+    assert.equal(
+      occurrenceDate({ unit: 'month', every: 3, monthEnd: false, startDate: '2026-11-15' }, 2),
+      '2027-05-15',
+      'quarterly across a year',
+    );
+    assert.equal(
+      occurrenceDate({ unit: 'year', every: 1, monthEnd: false, startDate: '2024-02-29' }, 1),
+      '2025-02-28',
+      'a leap day moves to the 28th in a normal year',
+    );
+    assert.equal(
+      occurrenceDate({ unit: 'week', every: 2, monthEnd: false, startDate: '2026-12-25' }, 2),
+      '2027-01-22',
+      'two-week steps cross the year',
+    );
+    assert.equal(
+      occurrenceDate({ unit: 'day', every: 10, monthEnd: false, startDate: '2026-03-01' }, 3),
+      '2026-03-31',
+    );
+    const end = { endDate: '2026-04-30', maxOccurrences: null };
+    assert.ok(withinEnd(monthly, end, 3) && !withinEnd(monthly, end, 4), 'end date');
+    assert.ok(!withinEnd(monthly, { endDate: null, maxOccurrences: 2 }, 2), 'maximum count');
+    assert.equal(
+      fillPlaceholders('Retainer {month} {year} ({number})', '2026-03-31', 3),
+      'Retainer March 2026 (3)',
+    );
+    assert.equal(
+      localDay(new Date('2026-06-30T20:00:00Z'), 'Asia/Dhaka'),
+      '2026-07-01',
+      'company time zone',
+    );
+    assert.equal(localDay(new Date('2026-06-30T20:00:00Z'), 'UTC'), '2026-06-30');
+    assert.ok(
+      !recurringPreviewSchema.safeParse({
+        unit: 'year',
+        every: 6,
+        monthEnd: false,
+        startDate: '2026-01-01',
+        from: 0,
+      }).success,
+      'a year interval above five is refused',
+    );
+  });
+
+  await check('installments add up exactly and follow payments', () => {
+    const rows = splitInstallments({
+      total: '100.0000',
+      count: 3,
+      firstDue: '2026-01-31',
+      unit: 'month',
+      every: 1,
+      downPaymentPercent: '0',
+    });
+    assert.deepEqual(
+      rows.map((r) => r.amount),
+      ['33.3333', '33.3333', '33.3334'],
+      'the last part takes the rest',
+    );
+    assert.deepEqual(
+      rows.map((r) => r.dueDate),
+      ['2026-01-31', '2026-02-28', '2026-03-31'],
+    );
+    const down = splitInstallments({
+      total: '1000.0000',
+      count: 4,
+      firstDue: '2026-05-01',
+      unit: 'month',
+      every: 1,
+      downPaymentPercent: '25',
+    });
+    assert.deepEqual(
+      down.map((r) => r.amount),
+      ['250.0000', '250.0000', '250.0000', '250.0000'],
+    );
+    const odd = splitInstallments({
+      total: '100.0000',
+      count: 6,
+      firstDue: '2026-05-01',
+      unit: 'week',
+      every: 1,
+      downPaymentPercent: '10',
+    });
+    assert.equal(odd[0]?.amount, '10.0000');
+    assert.ok(Money.sum(odd.map((r) => Money.parse(r.amount))).eq('100.0000'), 'sum is exact');
+    const st = installmentStatuses(down, '300.0000', '2026-06-15');
+    assert.deepEqual(
+      st.map((r) => r.state),
+      ['paid', 'overdue', 'pending', 'pending'],
+    );
+    assert.equal(st[1]?.outstanding, '200.0000', 'the second part is partly covered');
+    assert.equal(installmentStatuses(down, '0', '2026-04-01')[0]?.state, 'pending');
+    assert.equal(
+      installmentStatuses(down, '1000', '2030-01-01').every((r) => r.state === 'paid'),
+      true,
+    );
+    assert.deepEqual(planProblems(rows, '100.0000', '2026-01-01'), []);
+    assert.ok(planProblems(rows, '99.0000', '2026-01-01').length > 0, 'wrong total');
+    assert.ok(
+      planProblems(rows.slice(0, 1), '33.3333', '2026-01-01').length > 0,
+      'one part is not a plan',
+    );
+    assert.ok(
+      planProblems(rows, '100.0000', '2026-02-01').length > 0,
+      'due before the invoice date',
+    );
+    assert.ok(
+      installmentPlanSchema.safeParse({
+        mode: 'even',
+        count: 3,
+        firstDue: '2026-01-01',
+        unit: 'month',
+        every: 1,
+        downPaymentPercent: '100',
+      }).success === false,
+      'a 100 percent down payment is refused',
+    );
+    assert.ok(
+      installmentPlanSchema.safeParse({
+        mode: 'custom',
+        rows: [{ dueDate: '2026-01-01', amount: '5' }],
+      }).success === false,
+      'two parts at least',
+    );
   });
 
   if (failures > 0) process.exit(1);

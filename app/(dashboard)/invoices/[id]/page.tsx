@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { InvoiceActions } from '@/components/invoice/invoice-actions';
 import { InvoiceForm } from '@/components/invoice/invoice-form';
 import { InvoiceCredits } from '@/components/credit/invoice-credits';
+import { InstallmentsPanel } from '@/components/invoice/installments-panel';
 import { InvoiceHistory } from '@/components/invoice/invoice-history';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,7 @@ import {
   listApplications,
   listCreditNotes,
 } from '@/services/credit/credit-notes';
+import { listInstallments } from '@/services/invoice/installments';
 import { getInvoice, inputOf, listRevisions, type InvoiceView } from '@/services/invoice/invoices';
 
 export const dynamic = 'force-dynamic';
@@ -46,18 +48,31 @@ export default async function InvoicePage({
     throw error;
   }
   const perms = getService('permissions');
-  const [canCreate, canDelete, canUpdate, canSend, data, events, revisions, canCredit, canApply] =
-    await Promise.all([
-      perms.can(actor, 'invoice.create', { type: 'invoice' }),
-      perms.can(actor, 'invoice.delete', { type: 'invoice' }),
-      perms.can(actor, 'invoice.update', { type: 'invoice' }),
-      perms.can(actor, 'invoice.send', { type: 'invoice' }),
-      loadFormData(companyId, new Date().toISOString().slice(0, 10)),
-      listInvoiceEvents(companyId, id),
-      listRevisions(companyId, id),
-      perms.can(actor, 'credit.create', { type: 'credit_note' }),
-      perms.can(actor, 'credit.apply', { type: 'invoice' }),
-    ]);
+  const [
+    canCreate,
+    canDelete,
+    canUpdate,
+    canSend,
+    data,
+    events,
+    revisions,
+    canCredit,
+    canApply,
+    canPlan,
+    canRepeat,
+  ] = await Promise.all([
+    perms.can(actor, 'invoice.create', { type: 'invoice' }),
+    perms.can(actor, 'invoice.delete', { type: 'invoice' }),
+    perms.can(actor, 'invoice.update', { type: 'invoice' }),
+    perms.can(actor, 'invoice.send', { type: 'invoice' }),
+    loadFormData(companyId, new Date().toISOString().slice(0, 10)),
+    listInvoiceEvents(companyId, id),
+    listRevisions(companyId, id),
+    perms.can(actor, 'credit.create', { type: 'credit_note' }),
+    perms.can(actor, 'credit.apply', { type: 'invoice' }),
+    perms.can(actor, 'installment.manage', { type: 'invoice' }),
+    perms.can(actor, 'recurring.manage', { type: 'recurring_schedule' }),
+  ]);
   const isSentDoc =
     invoice.status !== 'draft' &&
     invoice.status !== 'pending_approval' &&
@@ -69,6 +84,10 @@ export default async function InvoicePage({
         listCreditNotes(companyId, { invoiceId: id, limit: 200 }),
       ])
     : [[], [], []];
+  const parts = isSentDoc ? await listInstallments(companyId, id) : [];
+  const planOpen =
+    (invoice.kind === 'invoice' || invoice.kind === 'debit_note') &&
+    ['sent', 'viewed', 'partially_paid', 'overdue'].includes(invoice.status);
   const credited = new Map<number, Money>();
   for (const cn of previous)
     if (cn.status !== 'void')
@@ -132,6 +151,22 @@ export default async function InvoicePage({
         defaultTaxCodes={data.defaultTaxCodes}
         clientName={invoice.billTo.name || invoice.walkInName}
       />
+      {canRepeat && invoice.kind === 'invoice' && invoice.status !== 'void' && invoice.clientId ? (
+        <p className="text-sm print:hidden">
+          <Link className="underline" href={`/invoices/recurring/new?from=${invoice.id}`}>
+            {t('s09Recurring.repeat')}
+          </Link>
+        </p>
+      ) : null}
+      {isSentDoc && (planOpen || parts.length > 0) ? (
+        <InstallmentsPanel
+          invoiceId={invoice.id}
+          parts={parts}
+          canManage={canPlan}
+          open={planOpen}
+          today={new Date().toISOString().slice(0, 10)}
+        />
+      ) : null}
       {isSentDoc ? (
         <InvoiceCredits
           invoiceId={invoice.id}

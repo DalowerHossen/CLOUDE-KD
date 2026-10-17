@@ -442,7 +442,11 @@ async function checkClient(input: InvoiceInput): Promise<void> {
   if (input.clientId) await getService('clients').getById(input.clientId);
 }
 
-export async function createInvoice(actor: Actor, input: InvoiceInput): Promise<InvoiceView> {
+export async function createInvoice(
+  actor: Actor,
+  input: InvoiceInput,
+  extra: { recurringRunId?: string } = {},
+): Promise<InvoiceView> {
   const companyId = need(actor);
   await checkClient(input);
   const prepared = await prepareInvoice(companyId, input);
@@ -453,6 +457,7 @@ export async function createInvoice(actor: Actor, input: InvoiceInput): Promise<
       company_id: companyId,
       created_by: actor.userId,
       ...headerColumns(input, prepared, hash),
+      ...(extra.recurringRunId ? { recurring_run_id: extra.recurringRunId } : {}),
     })
     .select('id')
     .single();

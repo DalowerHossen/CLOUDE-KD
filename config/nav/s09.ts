@@ -31,6 +31,15 @@ export const nav: NavItem[] = [
     order: 22,
   },
   {
+    id: 'invoice-recurring',
+    labelKey: 's09Recurring.nav.recurring',
+    href: '/invoices/recurring',
+    icon: 'repeat',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 23,
+  },
+  {
     id: 'invoice-tax',
     labelKey: 's09Invoicing.nav.tax',
     href: '/invoices/tax',
