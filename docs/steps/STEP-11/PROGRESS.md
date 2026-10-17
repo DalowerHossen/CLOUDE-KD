@@ -20,11 +20,11 @@
 - [x] 11.4.c square: webhook route
 - [x] 11.4.d square: secure form
 - [ ] 11.4.e square: verification - local checks done, sandbox scenarios pending (no sandbox credentials)
-- [ ] 11.5.a authorizenet: doc record
-- [ ] 11.5.b authorizenet: adapter
-- [ ] 11.5.c authorizenet: webhook route
-- [ ] 11.5.d authorizenet: secure form
-- [ ] 11.5.e authorizenet: verification
+- [x] 11.5.a authorizenet: doc record (41aad42)
+- [x] 11.5.b authorizenet: adapter
+- [x] 11.5.c authorizenet: webhook route
+- [x] 11.5.d authorizenet: secure form
+- [ ] 11.5.e authorizenet: verification - local checks done, sandbox scenarios pending (no credentials; API hosts not reachable from this environment)
 - [ ] 11.6.a bluesnap: doc record
 - [ ] 11.6.b bluesnap: adapter
 - [ ] 11.6.c bluesnap: webhook route

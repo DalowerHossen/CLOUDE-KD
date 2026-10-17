@@ -137,6 +137,11 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
     'https://square-fonts-production-f.squarecdn.com',
     'https://d1g145x70srn7h.cloudfront.net',
   ],
+  authorizenet: [
+    'https://js.authorize.net',
+    'https://jstest.authorize.net',
+    'https://*.authorize.net',
+  ],
   braintree: [
     'https://js.braintreegateway.com',
     'https://*.braintreegateway.com',
