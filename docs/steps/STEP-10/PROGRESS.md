@@ -1,6 +1,6 @@
 # STEP 10 - Progress
 
-- [ ] 10.1 Payment schema
+- [x] 10.1 Payment schema (migration S10_001, assertions s10_001)
 - [ ] 10.2 Registry and adapter framework
 - [ ] 10.3 Credential vault
 - [ ] 10.4 Super admin processors page and API
