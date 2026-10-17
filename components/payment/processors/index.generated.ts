@@ -8,5 +8,6 @@ import type { ProcessorId } from '@/types/contracts';
 export const secureFormLoaders: Partial<Record<ProcessorId, SecureFormLoader>> = {
   braintree: () => import('./braintree'),
   paypal: () => import('./paypal'),
+  square: () => import('./square'),
   stripe: () => import('./stripe'),
 };

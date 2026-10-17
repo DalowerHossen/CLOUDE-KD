@@ -7,5 +7,6 @@ import type { AdapterModule, ProcessorId } from '@/types/contracts';
 export const adapterLoaders: Partial<Record<ProcessorId, () => Promise<AdapterModule>>> = {
   braintree: () => import('./braintree'),
   paypal: () => import('./paypal'),
+  square: () => import('./square'),
   stripe: () => import('./stripe'),
 };

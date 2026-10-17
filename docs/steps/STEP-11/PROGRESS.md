@@ -15,11 +15,11 @@
 - [x] 11.3.c braintree: webhook route (POST; GET destination check waits for request R1)
 - [x] 11.3.d braintree: secure form
 - [ ] 11.3.e braintree: verification - local checks done, sandbox scenarios pending (no sandbox keys)
-- [ ] 11.4.a square: doc record
-- [ ] 11.4.b square: adapter
-- [ ] 11.4.c square: webhook route
-- [ ] 11.4.d square: secure form
-- [ ] 11.4.e square: verification
+- [x] 11.4.a square: doc record (3795743)
+- [x] 11.4.b square: adapter
+- [x] 11.4.c square: webhook route
+- [x] 11.4.d square: secure form
+- [ ] 11.4.e square: verification - local checks done, sandbox scenarios pending (no sandbox credentials)
 - [ ] 11.5.a authorizenet: doc record
 - [ ] 11.5.b authorizenet: adapter
 - [ ] 11.5.c authorizenet: webhook route
