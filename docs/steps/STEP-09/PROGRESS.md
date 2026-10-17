@@ -11,7 +11,7 @@
 - [x] 09.9 credit notes, debit notes and deposits
 - [x] 09.10 recurring invoices and installments
 - [x] 09.11 reminders, late fees and write-off
-- [ ] 09.12 projects and time
+- [x] 09.12 projects and time
 - [ ] 09.13 billable time to invoice
 - [ ] 09.14 dashboard home
 - [ ] 09.15 reports

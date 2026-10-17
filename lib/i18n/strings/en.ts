@@ -13,6 +13,7 @@ import { strings as s09Credits } from './en/s09-credits';
 import { strings as s09Dunning } from './en/s09-dunning';
 import { strings as s09Estimates } from './en/s09-estimates';
 import { strings as s09Invoicing } from './en/s09-invoicing';
+import { strings as s09Projects } from './en/s09-projects';
 import { strings as s09Recurring } from './en/s09-recurring';
 
 export const en = {
@@ -28,6 +29,7 @@ export const en = {
   s09Dunning,
   s09Estimates,
   s09Invoicing,
+  s09Projects,
   s09Recurring,
 } as const;
 

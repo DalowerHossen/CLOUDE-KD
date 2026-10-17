@@ -42,6 +42,23 @@ import {
   reminderSettingsSchema,
   writeOffSchema,
 } from '@/lib/schedule/input';
+import {
+  BILLING_TYPES,
+  hoursText,
+  memberInputSchema,
+  projectInputSchema,
+  timeDecisionSchema,
+  timeEntryInputSchema,
+  timeSettingsSchema,
+} from '@/lib/project/input';
+import {
+  budgetUse,
+  entryAmount,
+  entryRate,
+  timerHours,
+  weekDays,
+  weekStart,
+} from '@/lib/project/time';
 import { buildCredit } from '@/lib/credit/build';
 import type { InvoiceView } from '@/services/invoice/invoices';
 import {
@@ -949,6 +966,136 @@ async function main(): Promise<void> {
     assert.deepEqual(names.get('invoice.writeoff')?.defaultRoles, ['owner']);
     assert.deepEqual(names.get('latefee.manage')?.defaultRoles, ['owner']);
     assert.deepEqual(names.get('reminder.send')?.defaultRoles, ['owner', 'staff']);
+  });
+
+  await check('timer rounding, weeks, rates and budgets', () => {
+    const t0 = new Date('2026-03-02T09:00:00Z');
+    const after = (minutes: number, seconds = 0): Date =>
+      new Date(t0.getTime() + minutes * 60_000 + seconds * 1000);
+    assert.equal(timerHours(t0, after(90), 0), '1.50');
+    assert.equal(timerHours(t0, after(0, 10), 0), '0.02', 'ten seconds count as one minute');
+    assert.equal(timerHours(t0, after(37), 15), '0.75', 'rounded up to 15 minutes');
+    assert.equal(timerHours(t0, after(60), 15), '1.00');
+    assert.equal(timerHours(t0, after(61), 15), '1.25');
+    assert.equal(timerHours(t0, after(20), 6), '0.40');
+    assert.equal(timerHours(t0, after(30 * 60), 0), '24.00', 'a forgotten timer is cut at one day');
+    assert.equal(weekStart('2026-03-02'), '2026-03-02');
+    assert.equal(
+      weekStart('2026-03-08'),
+      '2026-03-02',
+      'Sunday belongs to the week that began on Monday',
+    );
+    assert.equal(weekStart('2026-03-01'), '2026-02-23');
+    assert.equal(weekDays('2026-02-23')[6], '2026-03-01');
+    assert.equal(entryRate('120', '90'), '120.0000');
+    assert.equal(entryRate(null, '90'), '90.0000');
+    assert.equal(entryRate(null, null), '0.0000');
+    assert.equal(entryAmount('1.25', '80').toDbString(), '100.0000');
+    assert.equal(entryAmount('0.33', '10').toDbString(), '3.3000');
+    assert.equal(budgetUse('100', null, '50', '0').level, 'ok');
+    assert.equal(budgetUse('100', null, '80', '0').level, 'warn');
+    assert.equal(budgetUse('100', '5000', '10', '5000').level, 'over', 'either budget can run out');
+    assert.equal(budgetUse('100', null, '12.5', '0').hoursPercent, '12.50');
+    assert.equal(budgetUse(null, null, '12.5', '0').hoursPercent, null);
+  });
+
+  await check('project and time input', () => {
+    assert.ok(
+      hoursText.safeParse('1.5').success &&
+        hoursText.safeParse('24').success &&
+        hoursText.safeParse('0.25').success,
+    );
+    assert.ok(
+      !hoursText.safeParse('0').success &&
+        !hoursText.safeParse('24.01').success &&
+        !hoursText.safeParse('1.255').success &&
+        !hoursText.safeParse('-1').success,
+    );
+    const id = '0190c1a0-0000-7000-8000-000000000001';
+    const project = {
+      name: 'Website',
+      code: 'WEB',
+      description: '',
+      clientId: id,
+      status: 'active',
+      billingType: 'hourly',
+      defaultRate: '90',
+      fixedFee: null,
+      retainerHours: null,
+      budgetHours: '200',
+      budgetAmount: null,
+      startDate: '2026-01-01',
+      endDate: null,
+    };
+    assert.ok(projectInputSchema.safeParse(project).success);
+    assert.ok(
+      !projectInputSchema.safeParse({ ...project, billingType: 'fixed' }).success,
+      'a fixed fee project needs the fee',
+    );
+    assert.ok(
+      projectInputSchema.safeParse({ ...project, billingType: 'fixed', fixedFee: '5000' }).success,
+    );
+    assert.ok(
+      !projectInputSchema.safeParse({ ...project, billingType: 'retainer' }).success,
+      'a retainer needs hours',
+    );
+    assert.ok(
+      !projectInputSchema.safeParse({ ...project, clientId: null }).success,
+      'a billed project needs a client',
+    );
+    assert.ok(
+      projectInputSchema.safeParse({ ...project, clientId: null, billingType: 'non_billable' })
+        .success,
+    );
+    assert.ok(!projectInputSchema.safeParse({ ...project, endDate: '2025-01-01' }).success);
+    assert.ok(!projectInputSchema.safeParse({ ...project, code: 'bad code' }).success);
+    assert.equal(BILLING_TYPES.length, 4);
+    assert.ok(memberInputSchema.safeParse({ userId: id, role: 'manager', rate: null }).success);
+    assert.ok(!memberInputSchema.safeParse({ userId: id, role: 'boss', rate: null }).success);
+    assert.ok(
+      timeEntryInputSchema.safeParse({
+        projectId: id,
+        workDate: '2026-03-02',
+        hours: '2',
+        description: '',
+        billable: true,
+        milestoneId: null,
+      }).success,
+    );
+    assert.ok(
+      !timeEntryInputSchema.safeParse({
+        projectId: id,
+        workDate: '2026-03-02',
+        hours: '25',
+        description: '',
+        billable: true,
+        milestoneId: null,
+      }).success,
+    );
+    assert.ok(
+      !timeDecisionSchema.safeParse({ ids: [id], action: 'reject', reason: '' }).success,
+      'a rejection needs a reason',
+    );
+    assert.ok(timeDecisionSchema.safeParse({ ids: [id], action: 'approve', reason: '' }).success);
+    assert.ok(
+      timeSettingsSchema.safeParse({
+        requireApproval: true,
+        roundMinutes: 15,
+        lockThrough: null,
+        expectedVersion: 0,
+      }).success,
+    );
+    assert.ok(
+      !timeSettingsSchema.safeParse({
+        requireApproval: true,
+        roundMinutes: 7,
+        lockThrough: null,
+        expectedVersion: 0,
+      }).success,
+    );
+    const names = new Map(registered.map((p) => [p.action, p]));
+    assert.deepEqual(names.get('time.settings')?.defaultRoles, ['owner']);
+    assert.deepEqual(names.get('time.log')?.defaultRoles, ['owner', 'staff']);
   });
 
   if (failures > 0) process.exit(1);
