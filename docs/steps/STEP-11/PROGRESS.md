@@ -10,11 +10,11 @@
 - [x] 11.2.c paypal: webhook route
 - [x] 11.2.d paypal: secure form
 - [ ] 11.2.e paypal: verification - local checks done, sandbox scenarios pending (no sandbox credentials)
-- [ ] 11.3.a braintree: doc record
-- [ ] 11.3.b braintree: adapter
-- [ ] 11.3.c braintree: webhook route
-- [ ] 11.3.d braintree: secure form
-- [ ] 11.3.e braintree: verification
+- [x] 11.3.a braintree: doc record (5937478)
+- [x] 11.3.b braintree: adapter
+- [x] 11.3.c braintree: webhook route (POST; GET destination check waits for request R1)
+- [x] 11.3.d braintree: secure form
+- [ ] 11.3.e braintree: verification - local checks done, sandbox scenarios pending (no sandbox keys)
 - [ ] 11.4.a square: doc record
 - [ ] 11.4.b square: adapter
 - [ ] 11.4.c square: webhook route

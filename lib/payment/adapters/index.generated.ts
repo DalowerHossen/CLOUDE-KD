@@ -5,6 +5,7 @@ import type { AdapterModule, ProcessorId } from '@/types/contracts';
 
 /** Adapters that exist in code. The dashboard can only enable processors listed here. */
 export const adapterLoaders: Partial<Record<ProcessorId, () => Promise<AdapterModule>>> = {
+  braintree: () => import('./braintree'),
   paypal: () => import('./paypal'),
   stripe: () => import('./stripe'),
 };

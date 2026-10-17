@@ -128,4 +128,9 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly string[]>>> = {
   stripe: ['https://js.stripe.com', 'https://hooks.stripe.com', 'https://api.stripe.com'],
   paypal: ['https://*.paypal.com', 'https://*.paypalobjects.com'],
+  braintree: [
+    'https://js.braintreegateway.com',
+    'https://*.braintreegateway.com',
+    'https://*.braintree-api.com',
+  ],
 };

@@ -37,6 +37,8 @@ export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, n
   stripe: 114,
   // PayPal: an authorization lasts 29 days; the documented honor period (best success rate) is 3 days.
   paypal: 72,
+  // Braintree: American Express and Mastercard final authorizations last 7 days, Visa merchant-initiated 3 days.
+  braintree: 72,
 };
 
 /** A passing test of a mode stays valid for this many hours (REQ-NMI-MODES). */
