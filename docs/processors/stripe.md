@@ -22,7 +22,7 @@ Fields (names only): `secretKey` (secret, `^(sk|rk)_(test|live)_...`), `publisha
 Base URL for both: `https://api.stripe.com`. Test mode (a "sandbox") is selected by the key (`sk_test_`/`pk_test_`); live by `live` keys. A sandbox is created in the Dashboard; the documentation also notes `stripe sandbox create` in the Stripe CLI for an anonymous sandbox with working keys. API version: the documentation names the current version `2026-09-30.endive`; the adapter sends the header `Stripe-Version` with that value (`STRIPE_API_VERSION` in the adapter) so behaviour does not depend on the account default.
 
 ## 4. Secure form
-Payment Element of Stripe.js with a deferred intent (`stripe.elements({ mode: 'payment', amount, currency, captureMethod: 'manual' })`). On submit: `elements.submit()` then `stripe.createConfirmationToken({ elements })` returns a ConfirmationToken (`ctoken_...`). That id is the payment token we receive. The server creates and confirms the PaymentIntent with `confirmation_token`. Stripe.js must be loaded from `js.stripe.com` ("don't include the script in a bundle or host a copy yourself"); the page in the documentation uses `https://js.stripe.com/endive/stripe.js`. The ConfirmationToken is single use (it is consumed when the PaymentIntent is confirmed); a lifetime is not stated on the pages read.
+Payment Element of Stripe.js with a deferred intent (`stripe.elements({ mode: 'payment', amount, currency, captureMethod: 'manual' })`). On submit: `elements.submit()` then `stripe.createConfirmationToken({ elements })` returns a ConfirmationToken (`ctoken_...`). That id is the payment token we receive. The server creates and confirms the PaymentIntent with `confirmation_token`. Stripe.js must be loaded from `js.stripe.com` ("don't include the script in a bundle or host a copy yourself"); the page in the documentation uses `https://js.stripe.com/endive/stripe.js`. A ConfirmationToken has `expires_at` and records the PaymentIntent it confirmed (`payment_intent`), so it is used once.
 
 ## 5. Operations
 Requests are `application/x-www-form-urlencoded` with bracket notation for nested fields.
@@ -47,12 +47,12 @@ Source: `last_payment_error` (`type`, `code`, `decline_code`) and the decline co
 - `expired_card`, `invalid_expiry_month`, `invalid_expiry_year` -> invalid_expiry
 - `incorrect_cvc`, `invalid_cvc` -> invalid_cvv
 - `authentication_required`, `authentication_not_handled` -> three_ds_failed
-- `payment_intent_authentication_failure` (error code, 3DS failure) -> three_ds_failed
+- `payment_intent_authentication_failure` (error code, on the error-codes page: the payment method failed authentication) -> three_ds_failed
 - `fraudulent`, `stolen_card`, `lost_card`, `pickup_card`, `merchant_blacklist` -> processor_fraud_signal
-- `do_not_honor`, `generic_decline`, `call_issuer`, `restricted_card`, `not_permitted`, `transaction_not_allowed` -> do_not_honor
-- `processing_error`, `issuer_not_available`, `try_again_later`, HTTP 5xx, 429, 424 -> processor_error
+- `do_not_honor`, `generic_decline`, `call_issuer`, `restricted_card`, `payment_method_restricted`, `payment_method_provider_decline`, `not_permitted`, `transaction_not_allowed` -> do_not_honor
+- `processing_error`, `issuer_not_available`, `payment_method_not_available`, `payment_method_provider_timeout`, `rate_limit`, HTTP 5xx, 429, 424 -> processor_error
 - everything else -> other
-Open point 13.1 covers `payment_intent_authentication_failure` and `try_again_later`, which are Stripe error codes named on the error-codes page; the adapter treats them as listed and the verification step must confirm them in the sandbox.
+The error-codes page (https://docs.stripe.com/error-codes, read in this session) lists `payment_intent_authentication_failure`, `payment_method_provider_decline`, `payment_method_provider_timeout`, `payment_method_not_available`, `payment_method_restricted`, `rate_limit` and the card codes above. `last_payment_error.decline_code` is used first, then `code`.
 
 ## 9. Webhooks
 Header `Stripe-Signature: t=<unix seconds>,v1=<hex>[,v1=...][,v0=...]`. Signed payload = `t` + `.` + raw body; expected = HMAC-SHA256 hex with the endpoint secret (`whsec_...`) as key; compare with every `v1` value in constant time; reject when the timestamp differs from now by more than the tolerance (documentation default for its libraries: 5 minutes; a tolerance of 0 disables the check and must not be used). The raw body must not be altered. Event JSON: `id` (`evt_...`, unique), `type`, `created`, `data.object`. Events used: `payment_intent.succeeded`, `payment_intent.amount_capturable_updated` (authorized), `payment_intent.payment_failed`, `payment_intent.requires_action`, `payment_intent.canceled`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`. Retries: up to three days with exponential back-off in live mode; endpoints should answer 2xx quickly. Duplicates can occur; the same object can produce two events, so the core uses the event `id`.
@@ -68,7 +68,8 @@ Cards (any future expiry, any 3-digit CVC): success 4242424242424242; generic de
 ## 12. Limits and capabilities
 `supportsAuthCapture` true; `supportsThreeDS` true; `supportsRefund` true; `supportsPartialRefund` true; `supportsRecurring` false (not used); `supportsPayout` false; `isMerchantOfRecord` false; modes: one (`default`); currencies: `USD` (the platform sells in USD only). Authorization validity for card-not-present payments: 7 days (customer-initiated), merchant-initiated Visa 4 days 18 hours; the adapter sets `AUTH_VALIDITY_HOURS_BY_PROCESSOR.stripe = 114` (the shorter value).
 
+## 12a. Content security policy (https://docs.stripe.com/security/guide)
+Stripe.js needs `script-src https://js.stripe.com`, `frame-src https://js.stripe.com https://hooks.stripe.com` (hooks.stripe.com for 3D Secure redirects) and `connect-src https://api.stripe.com`. The documentation also lists `https://*.js.stripe.com` (a performance option, a wildcard that our origin list does not use) and `maps.googleapis.com` (address autocomplete, not used). Recorded in `PROCESSOR_ORIGINS.stripe`.
+
 ## 13. Open questions
-13.1 The exact error-code names `payment_intent_authentication_failure` and `try_again_later` were not shown on the pages read in this session (the error-codes page was not fetched). The adapter handles them as described; the code table is re-checked when the sandbox verification is run.
-13.2 The lifetime of a ConfirmationToken is not stated on the pages read.
-13.3 `stripe.handleNextAction` is documented for the "finalize payments on the server" flow, which we use; the exact `next_action.type` for card 3DS in the sandbox is confirmed in the sandbox run (the code handles `redirect_to_url` and treats every other type as an SDK action).
+None. (The exact `next_action.type` that the sandbox returns for card 3DS is checked in the sandbox run; the adapter handles `redirect_to_url` and treats every other type as an SDK action, which matches `stripe.handleNextAction`.)

@@ -37,7 +37,7 @@ import type {
   ProcessorTransaction,
   ThreeDSResult,
 } from '@/types/contracts';
-import type { Money } from '@/lib/utils/currency';
+import { Money } from '@/lib/utils/currency';
 
 /** A 3DS result for a payment that never asked for 3DS. */
 export const NO_THREE_DS: ThreeDSResult = Object.freeze({
@@ -89,4 +89,28 @@ export function safeEqual(a: string, b: string): boolean {
 /** Narrow type helper for adapter files: `export const adapter = defineAdapter({ ... })`. */
 export function defineAdapter(adapter: ProcessorAdapter): ProcessorAdapter {
   return adapter;
+}
+
+const CENTS = 100n;
+
+/**
+ * Converts USD to the processor's smallest unit (cents) as an integer string. Money keeps four places; anything below
+ * half a cent is dropped and half a cent or more rounds up.
+ */
+export function toMinorUnits(amount: Money): string {
+  const [integer = '0', fraction = ''] = amount.toDbString().replace('-', '').split('.');
+  const digits = fraction.padEnd(4, '0');
+  let cents = BigInt(integer) * CENTS + BigInt(digits.slice(0, 2));
+  if (digits.charCodeAt(2) >= 53) cents += 1n; // character code of "5"
+  return `${amount.toDbString().startsWith('-') ? '-' : ''}${cents}`;
+}
+
+/** Cents (integer or integer text) back to Money. */
+export function fromMinorUnits(cents: number | string): Money {
+  const text = String(cents);
+  if (!/^-?\d{1,15}$/.test(text)) throw new RangeError('Minor units must be a whole number.');
+  const negative = text.startsWith('-');
+  const digits = (negative ? text.slice(1) : text).padStart(3, '0');
+  const value = `${digits.slice(0, -2)}.${digits.slice(-2)}`;
+  return Money.parse(negative ? `-${value}` : value);
 }

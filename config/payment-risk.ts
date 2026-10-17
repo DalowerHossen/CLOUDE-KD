@@ -32,7 +32,10 @@ export const REVIEW_HOLD_HOURS = 72;
  * shortest common value; an adapter sub-step may list the documented value of its processor here.
  */
 export const DEFAULT_AUTH_VALIDITY_HOURS = 168;
-export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, number>>> = {};
+export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, number>>> = {
+  // Stripe: 7 days for customer-initiated card-not-present payments, 4 days 18 hours for merchant-initiated Visa.
+  stripe: 114,
+};
 
 /** A passing test of a mode stays valid for this many hours (REQ-NMI-MODES). */
 export const MODE_TEST_VALID_HOURS = 24;

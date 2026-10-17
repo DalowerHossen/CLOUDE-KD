@@ -125,4 +125,6 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
  * the processor's documentation and recorded the hosts in docs/processors/<id>.md; then the host is added here.
  * The payment page content security policy allows exactly these origins and nothing else.
  */
-export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly string[]>>> = {};
+export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly string[]>>> = {
+  stripe: ['https://js.stripe.com', 'https://hooks.stripe.com', 'https://api.stripe.com'],
+};

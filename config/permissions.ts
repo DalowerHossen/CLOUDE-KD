@@ -30,4 +30,32 @@ import { permissions as s09Tax } from './permissions/s09-tax';
 import { permissions as s10Payments } from './permissions/s10-payments';
 import { permissions as s10Processors } from './permissions/s10-processors';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Credits, ...s09Dunning, ...s09Estimates, ...s09Invoices, ...s09Projects, ...s09Recurring, ...s09Reports, ...s09Tax, ...s10Payments, ...s10Processors];
+export const permissions: PermissionDefinition[] = [
+  ...s02Core,
+  ...s03Auth,
+  ...s04Security,
+  ...s05StorageEmail,
+  ...s06Site,
+  ...s07Admin,
+  ...s07Company,
+  ...s07Data,
+  ...s07Domain,
+  ...s07Kyc,
+  ...s07Support,
+  ...s07Team,
+  ...s08Catalog,
+  ...s08Clients,
+  ...s08Inventory,
+  ...s08Purchasing,
+  ...s08Transfer,
+  ...s09Credits,
+  ...s09Dunning,
+  ...s09Estimates,
+  ...s09Invoices,
+  ...s09Projects,
+  ...s09Recurring,
+  ...s09Reports,
+  ...s09Tax,
+  ...s10Payments,
+  ...s10Processors,
+];
