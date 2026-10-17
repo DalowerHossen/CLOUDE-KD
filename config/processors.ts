@@ -142,6 +142,7 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
     'https://jstest.authorize.net',
     'https://*.authorize.net',
   ],
+  bluesnap: ['https://sandpay.bluesnap.com', 'https://pay.bluesnap.com'],
   braintree: [
     'https://js.braintreegateway.com',
     'https://*.braintreegateway.com',

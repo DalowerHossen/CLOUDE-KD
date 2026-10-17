@@ -25,11 +25,11 @@
 - [x] 11.5.c authorizenet: webhook route
 - [x] 11.5.d authorizenet: secure form
 - [ ] 11.5.e authorizenet: verification - local checks done, sandbox scenarios pending (no credentials; API hosts not reachable from this environment)
-- [ ] 11.6.a bluesnap: doc record
-- [ ] 11.6.b bluesnap: adapter
-- [ ] 11.6.c bluesnap: webhook route
-- [ ] 11.6.d bluesnap: secure form
-- [ ] 11.6.e bluesnap: verification
+- [x] 11.6.a bluesnap: doc record (aaeae5a)
+- [x] 11.6.b bluesnap: adapter
+- [ ] 11.6.c bluesnap: webhook route - route exists, verification fails closed; BLOCKED by B1 (webhook authentication page unreachable, see BLOCKERS.md)
+- [x] 11.6.d bluesnap: secure form
+- [ ] 11.6.e bluesnap: verification - local checks done, sandbox scenarios pending (no credentials)
 - [ ] 11.7.a verifone: doc record
 - [ ] 11.7.b verifone: adapter
 - [ ] 11.7.c verifone: webhook route

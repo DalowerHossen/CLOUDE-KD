@@ -39,6 +39,8 @@ export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, n
   paypal: 72,
   // Braintree: American Express and Mastercard final authorizations last 7 days, Visa merchant-initiated 3 days.
   braintree: 72,
+  // BlueSnap: card schemes hold an authorization for 3 to 10 days; a reversal is possible within 8 days.
+  bluesnap: 72,
   // Square: card-not-present authorizations are cancelled by Square after 7 days; the adapter asks for 6 days.
   square: 144,
 };
