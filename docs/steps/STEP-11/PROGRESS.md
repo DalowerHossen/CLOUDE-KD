@@ -40,4 +40,4 @@
 - [ ] 11.8.c payarc: webhook route - route exists, verification fails closed; BLOCKED by B2 (no webhook authentication documented)
 - [x] 11.8.d payarc: secure form (sandbox script only; live address blocked by B3)
 - [ ] 11.8.e payarc: verification - local checks done (16), sandbox scenarios pending (no sandbox credentials)
-- [ ] 11.9 status table and handoff
+- [x] 11.9 handoff with status table (gen-processor-status.sh does not exist and is not a STEP 11 path: request R3)
