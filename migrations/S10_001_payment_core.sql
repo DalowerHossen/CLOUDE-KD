@@ -390,6 +390,7 @@ revoke all on function public.kd_processor_switch_mode(text, text, uuid, integer
 grant execute on function public.kd_processor_switch_mode(text, text, uuid, integer) to service_role;
 
 -- Counts used by the card rules (one round trip). The window arguments come from config/payment-risk.ts.
+-- ip_distinct_cards counts the other cards seen from this address, so a card that is already known is never refused for it.
 create or replace function public.kd_card_stats(p_identity uuid, p_ip text, p_invoice uuid, p_fail_hours integer, p_velocity_hours integer, p_same_invoice_hours integer)
 returns table (counted_failures integer, card_attempts integer, ip_attempts integer, ip_distinct_cards integer, paid_same_invoice integer)
 language sql
@@ -401,7 +402,7 @@ as $$
     (select count(*)::int from public.payment_attempts a where a.card_identity_id = p_identity and a.counted_failure and a.created_at > now() - make_interval(hours => p_fail_hours)),
     (select count(*)::int from public.payment_attempts a where a.card_identity_id = p_identity and a.action in ('authorize', 'charge') and a.created_at > now() - make_interval(hours => p_velocity_hours)),
     (select count(*)::int from public.payment_attempts a where a.payer_ip = p_ip and a.action in ('authorize', 'charge') and a.created_at > now() - make_interval(hours => p_velocity_hours)),
-    (select count(distinct a.card_identity_id)::int from public.payment_attempts a where a.payer_ip = p_ip and a.card_identity_id is not null and a.created_at > now() - make_interval(hours => p_velocity_hours)),
+    (select count(distinct a.card_identity_id)::int from public.payment_attempts a where a.payer_ip = p_ip and a.card_identity_id is not null and a.card_identity_id is distinct from p_identity and a.created_at > now() - make_interval(hours => p_velocity_hours)),
     (select count(*)::int from public.payments p where p.card_identity_id = p_identity and p.invoice_id = p_invoice and p.status in ('captured', 'authorized', 'partially_refunded', 'refunded') and p.created_at > now() - make_interval(hours => p_same_invoice_hours));
 $$;
 revoke all on function public.kd_card_stats(uuid, text, uuid, integer, integer, integer) from public, anon, authenticated;

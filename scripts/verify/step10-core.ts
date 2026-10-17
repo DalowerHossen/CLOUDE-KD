@@ -36,6 +36,14 @@ import {
   type RoutingRule,
 } from '@/lib/payment/routing';
 import { routingRuleCreateSchema } from '@/schemas/payment/routing';
+import {
+  describeRule,
+  evaluateAddressRules,
+  evaluateCardRules,
+  identityHmac,
+  CARD_RULE_CODES,
+  type CardStats,
+} from '@/lib/payment/card-rules';
 import { processorActionSchema, processorIdSchema } from '@/schemas/payment/processors';
 import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
 
@@ -396,6 +404,53 @@ async function main(): Promise<void> {
     assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, priority: 0 }).success);
     assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, extra: 1 }).success);
   });
+  await check('card rules: each rule, order, limits from config', () => {
+    const clean: CardStats = {
+      countedFailures: 0,
+      cardAttempts: 0,
+      ipAttempts: 0,
+      ipDistinctCards: 0,
+      paidSameInvoice: 0,
+    };
+    const run = (over: Partial<CardStats>, blacklisted = false) =>
+      evaluateCardRules({ blacklisted, stats: { ...clean, ...over } });
+    assert.deepEqual(run({}), { allowed: true, code: null });
+    assert.equal(run({}, true).code, 'card_blacklisted');
+    assert.equal(run({ paidSameInvoice: 1 }).code, 'same_card_same_invoice');
+    assert.equal(run({ countedFailures: 1 }).allowed, true, 'one failure still allowed');
+    assert.equal(
+      run({ countedFailures: 2 }).code,
+      'card_fail_limit',
+      'the third attempt is refused',
+    );
+    assert.equal(run({ cardAttempts: 5 }).code, 'card_velocity');
+    assert.equal(run({ cardAttempts: 4 }).allowed, true);
+    assert.equal(run({ ipAttempts: 10 }).code, 'ip_velocity');
+    assert.equal(run({ ipDistinctCards: 3 }).code, 'ip_distinct_cards');
+    assert.equal(run({ ipDistinctCards: 2 }).allowed, true);
+    assert.equal(evaluateAddressRules({ ipAttempts: 10 }).allowed, false);
+    assert.equal(
+      run({ paidSameInvoice: 1, countedFailures: 9 }).code,
+      'same_card_same_invoice',
+      'order is fixed',
+    );
+    assert.equal(run({ countedFailures: 9 }, true).code, 'card_blacklisted', 'blocked list first');
+    for (const code of CARD_RULE_CODES) assert.ok(describeRule(code).length > 5);
+  });
+  await check(
+    'card identity: HMAC is stable, keyed, bound to processor and type, hides the value',
+    () => {
+      const k1 = 'k'.repeat(48);
+      const id = { type: 'fingerprint' as const, value: 'fp_ABC123' };
+      const a = identityHmac(k1, 'stripe', id);
+      assert.match(a, /^[0-9a-f]{64}$/);
+      assert.equal(a, identityHmac(k1, 'stripe', id));
+      assert.notEqual(a, identityHmac('j'.repeat(48), 'stripe', id));
+      assert.notEqual(a, identityHmac(k1, 'nmi', id));
+      assert.notEqual(a, identityHmac(k1, 'stripe', { type: 'token', value: id.value }));
+      assert.ok(!a.includes('ABC123'));
+    },
+  );
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }
 

@@ -7,7 +7,7 @@
 - [x] 10.5 Mode framework
 - [x] 10.6 Routing
 - [ ] 10.7 Payment orchestration
-- [ ] 10.8 Card rules engine
+- [x] 10.8 Card rules engine (done before 10.7; 10.7 uses it)
 - [ ] 10.9 Verification engine and review queue
 - [ ] 10.10 Webhook core
 - [ ] 10.11 Checkout, links, dashboard, reports
