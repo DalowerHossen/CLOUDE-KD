@@ -6,7 +6,7 @@
 - [x] 09.4 numbering
 - [x] 09.5 invoice screens
 - [x] 09.6 send, approval, duplicates and the invoices contract
-- [ ] 09.7 PDF engine, layouts and snapshots
+- [x] 09.7 PDF engine, layouts and snapshots
 - [ ] 09.8 estimates and proforma
 - [ ] 09.9 credit notes, debit notes and deposits
 - [ ] 09.10 recurring invoices and installments

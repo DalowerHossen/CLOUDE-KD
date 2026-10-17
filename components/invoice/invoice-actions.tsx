@@ -96,6 +96,11 @@ export function InvoiceActions({
   return (
     <div className="space-y-sp-12 text-sm print:hidden">
       <div className="flex flex-wrap gap-sp-8">
+        <Button asChild variant="outline">
+          <a href={`/api/pdf/invoices/${id}`} target="_blank" rel="noopener noreferrer">
+            {t('s09Invoicing.invoices.pdf')}
+          </a>
+        </Button>
         {canCreate && !trashed ? (
           <Button
             type="button"

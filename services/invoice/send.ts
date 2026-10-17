@@ -23,7 +23,9 @@ import { getSection } from '@/services/company/settings';
 import type { Actor } from '@/types/contracts';
 import { logInvoiceEvent } from './events';
 import { getInvoice, type InvoiceView } from './invoices';
+import { logger } from '@/lib/logger';
 import { buildSeller } from './seller';
+import { snapshotInvoice } from './snapshots';
 
 export interface SimilarInvoice {
   id: string;
@@ -157,6 +159,10 @@ async function finalizeSend(
     companyId,
     metadata: { number: sent.number, by, approvedBy },
   });
+  // The PDF snapshot is best effort here; the "invoice-snapshots" job retries a failed one.
+  await snapshotInvoice(companyId, id, 'sent', by).catch((e: unknown) =>
+    logger.warn('invoice snapshot failed', { invoiceId: id, error: String(e) }),
+  );
   return sent;
 }
 

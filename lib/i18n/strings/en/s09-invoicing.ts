@@ -172,6 +172,7 @@ export const strings = {
       'This invoice was sent and cannot be changed. Correct it with a credit note, or void it and write a new one.',
     waitingLocked: 'This invoice is waiting for approval and cannot be changed.',
     rejected: 'Not approved: {reason}',
+    pdf: 'Open PDF',
     clone: 'Copy',
     cloned: 'The copy is ready as a draft.',
     trash: 'Move to trash',
