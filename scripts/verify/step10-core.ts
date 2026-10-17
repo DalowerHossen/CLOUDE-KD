@@ -27,6 +27,7 @@ import {
 } from '@/lib/payment/credentials';
 import { registerService, unregisterService } from '@/lib/container';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { processorActionSchema, processorIdSchema } from '@/schemas/payment/processors';
 import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
 
 const testKey = randomBytes(32);
@@ -267,6 +268,22 @@ async function main(): Promise<void> {
     assert.ok(view[0]?.display?.endsWith('5678'));
     assert.equal(view[1]?.saved, false);
     assert.equal(view[1]?.display, null);
+  });
+  await check('admin action schemas are strict', () => {
+    assert.ok(processorActionSchema.safeParse({ action: 'enable', expectedVersion: 3 }).success);
+    assert.ok(processorActionSchema.safeParse({ action: 'test' }).success);
+    assert.ok(
+      !processorActionSchema.safeParse({ action: 'enable', expectedVersion: 3, extra: 1 }).success,
+    );
+    assert.ok(
+      !processorActionSchema.safeParse({ action: 'set_environment', environment: 'prod' }).success,
+    );
+    assert.ok(
+      !processorActionSchema.safeParse({ action: 'save_credentials', values: { a: 5 } }).success,
+    );
+    assert.ok(!processorActionSchema.safeParse({ action: 'delete' }).success);
+    assert.ok(processorIdSchema.safeParse('stripe').success);
+    assert.ok(!processorIdSchema.safeParse('unknown').success);
   });
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }
