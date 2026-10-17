@@ -28,6 +28,14 @@ import {
 import { registerService, unregisterService } from '@/lib/container';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { defaultMode, hasChoice, requireMode, testStillValid } from '@/lib/payment/modes';
+import {
+  evaluateRouting,
+  ruleMatches,
+  ruleProblems,
+  sortRules,
+  type RoutingRule,
+} from '@/lib/payment/routing';
+import { routingRuleCreateSchema } from '@/schemas/payment/routing';
 import { processorActionSchema, processorIdSchema } from '@/schemas/payment/processors';
 import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
 
@@ -307,6 +315,86 @@ async function main(): Promise<void> {
     assert.equal(testStillValid(new Date('2026-01-01T01:00:00Z'), now), true);
     assert.equal(testStillValid(new Date('2025-12-31T23:59:00Z'), now), false);
     assert.equal(testStillValid(new Date('2026-01-03T00:00:00Z'), now), false);
+  });
+  await check('routing: first match by priority, no match, no failover to a later rule', () => {
+    const mk = (over: Partial<RoutingRule>): RoutingRule => ({
+      id: over.id ?? 'r',
+      name: 'rule',
+      priority: 100,
+      processorId: 'stripe',
+      minAmount: null,
+      maxAmount: null,
+      countries: [],
+      methods: [],
+      plans: [],
+      enabled: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      ...over,
+    });
+    const rules = [
+      mk({ id: 'c', priority: 300, processorId: 'adyen' }),
+      mk({
+        id: 'a',
+        priority: 10,
+        processorId: 'nmi',
+        minAmount: Money.parse('100'),
+        maxAmount: Money.parse('999.9999'),
+        countries: ['US', 'CA'],
+      }),
+      mk({ id: 'b', priority: 20, processorId: 'paypal', plans: ['pro'], methods: ['card'] }),
+      mk({ id: 'off', priority: 1, processorId: 'square', enabled: false }),
+    ];
+    const base = {
+      amount: Money.parse('150'),
+      country: 'US',
+      method: 'card' as const,
+      plan: 'free',
+    };
+    assert.equal(evaluateRouting(rules, base)?.processorId, 'nmi');
+    assert.equal(
+      evaluateRouting(rules, { ...base, amount: Money.parse('100') })?.processorId,
+      'nmi',
+    );
+    assert.equal(
+      evaluateRouting(rules, { ...base, amount: Money.parse('99.9999') })?.processorId,
+      'adyen',
+    );
+    assert.equal(
+      evaluateRouting(rules, { ...base, amount: Money.parse('1000') })?.processorId,
+      'adyen',
+    );
+    assert.equal(evaluateRouting(rules, { ...base, country: null })?.processorId, 'adyen');
+    assert.equal(
+      evaluateRouting(rules, { ...base, country: 'gb', plan: 'pro' })?.processorId,
+      'paypal',
+    );
+    assert.equal(
+      evaluateRouting(
+        rules.filter((r) => r.id !== 'c'),
+        { ...base, country: 'GB' },
+      ),
+      null,
+    );
+    assert.equal(evaluateRouting([], base), null);
+    assert.equal(ruleMatches(rules[3] as RoutingRule, base), false);
+    assert.deepEqual(
+      sortRules(rules).map((r) => r.id),
+      ['off', 'a', 'b', 'c'],
+    );
+    assert.equal(
+      ruleProblems({ minAmount: Money.parse('5'), maxAmount: Money.parse('4') }).length,
+      1,
+    );
+  });
+  await check('routing: rule schema is strict', () => {
+    const ok = { name: 'US cards', priority: 10, processorId: 'stripe', countries: ['US'] };
+    assert.ok(routingRuleCreateSchema.safeParse(ok).success);
+    assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, processorId: 'bkash' }).success);
+    assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, countries: ['usa'] }).success);
+    assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, minAmount: '12.34567' }).success);
+    assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, minAmount: '-1' }).success);
+    assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, priority: 0 }).success);
+    assert.ok(!routingRuleCreateSchema.safeParse({ ...ok, extra: 1 }).success);
   });
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }

@@ -115,3 +115,7 @@ export const PROCESSORS: readonly ProcessorMetadata[] = [
 export const PROCESSOR_BY_ID: Readonly<Record<ProcessorId, ProcessorMetadata>> = Object.fromEntries(
   PROCESSORS.map((p) => [p.id, p]),
 ) as Record<ProcessorId, ProcessorMetadata>;
+
+/** Payment methods a routing rule can name. `card` is the only one with a secure form in STEP 10 to 12. */
+export const PAYMENT_METHODS = ['card', 'wallet', 'local_methods'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
