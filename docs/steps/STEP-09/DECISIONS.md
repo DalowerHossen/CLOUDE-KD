@@ -27,3 +27,13 @@
 - A sent invoice returns the stored snapshot (exact document sent); drafts are drawn fresh with a DRAFT watermark. Snapshot at send is best effort; job `invoice-snapshots` (10 min) retries. One `sent` snapshot per invoice, append only.
 - `pdf` contract: kinds are registered with `registerPdfRenderer`; STEP 09 registers `invoice`. Other kinds belong to other STEPs.
 - `@react-pdf/renderer` loads only as ESM: the verify script bundles the layout with esbuild first (`scripts/verify/step09-pdf.mts`). Next.js may need `serverExternalPackages: ['@react-pdf/renderer','sharp']` (Integrator, next.config).
+
+## D21 - Estimates and proforma (09.8)
+- Estimates are their own table (`estimates`, `estimate_events`), not invoices: their statuses differ (accepted, declined, expired, converted) and they must never touch invoice numbers or payments. The form input of an invoice is stored as-is, so an accepted estimate converts without retyping. The estimate form is the invoice form; its "due date" is "valid until".
+- Numbering: series `EST` in `invoice_sequences`, prefix `EST-`, same padding and yearly rule as invoices, gap-free (assigned at send, one transaction).
+- A sent estimate is fixed by trigger. The owner or staff can take it back to a draft until the client decides. A decision (accept or decline) is final: signature record = typed name, time, network address, browser, SHA-256 of (estimate content + decision + name + time + address). The checksum is stored on the row.
+- Client page `/e/<token>` belongs to STEP 13. STEP 09 provides `getEstimateByToken` (first look marks it viewed) and `decideEstimate(token, decision, {ip, agent})` in `services/estimate/public.ts`. The caller (STEP 13) takes the address and browser from the request.
+- Events: `estimate.sent`, `estimate.approved`, `estimate.rejected` (names fixed by the platform event list).
+- Converting an accepted estimate creates a draft invoice through `createInvoice` (same checks as a hand-written one). If a tax rate changed since, the invoice total differs and the screen says so.
+- Proforma invoices stay in `invoices` (kind `proforma`, series `PI`). "Make an invoice" copies a sent proforma to a new draft that points back through `parent_invoice_id`; one conversion per proforma.
+- Estimate PDF uses the invoice layout with the title "ESTIMATE", "Valid until" and no payment details; it is not stored as a snapshot.

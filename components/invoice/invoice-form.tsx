@@ -19,7 +19,6 @@ import {
 } from '@/lib/invoice/form';
 import { INVOICE_KINDS, MAX_LINES, type InvoiceInput } from '@/lib/invoice/input';
 import { PAYMENT_TERMS, dueDateFor, type PaymentTerms } from '@/lib/invoice/terms';
-import type { InvoiceView } from '@/services/invoice/invoices';
 import { AddressFields } from './address-fields';
 import { callJson } from './api-call';
 import { LineEditor } from './line-editor';
@@ -79,8 +78,29 @@ export interface FormRate {
   isActive: boolean;
 }
 
+/** The part of a saved document the form needs: an invoice and an estimate both have these. */
+export interface FormDoc {
+  id: string;
+  version: number;
+  status: string;
+}
+
+/** Where the form saves. An estimate uses the same form; its "due date" is the date it is valid until. */
+export interface FormTarget {
+  apiBase: string;
+  pageBase: string;
+  estimate: boolean;
+}
+
+const INVOICE_TARGET: FormTarget = {
+  apiBase: '/api/invoices',
+  pageBase: '/invoices',
+  estimate: false,
+};
+
 export function InvoiceForm({
   invoice,
+  target = INVOICE_TARGET,
   initial,
   rates,
   fxRates,
@@ -89,7 +109,8 @@ export function InvoiceForm({
   readOnly = false,
 }: {
   readOnly?: boolean;
-  invoice: InvoiceView | null;
+  invoice: FormDoc | null;
+  target?: FormTarget;
   initial: InvoiceInput;
   rates: FormRate[];
   fxRates: { currency: string; rate: string }[];
@@ -151,12 +172,12 @@ export function InvoiceForm({
     }
     const payload = body();
     const result = invoice
-      ? await callJson(`/api/invoices/${invoice.id}`, 'PUT', {
+      ? await callJson(`${target.apiBase}/${invoice.id}`, 'PUT', {
           expectedVersion: latest.current.version,
           autosave,
           invoice: payload,
         })
-      : await callJson('/api/invoices', 'POST', payload, { 'idempotency-key': key.current });
+      : await callJson(target.apiBase, 'POST', payload, { 'idempotency-key': key.current });
     if (result.ok) {
       const saved = z.object({ id: z.string(), version: z.number() }).safeParse(result.data);
       if (saved.success) setVersion(saved.data.version);
@@ -168,7 +189,7 @@ export function InvoiceForm({
         });
       else {
         setNote({ ok: true, text: t('s09Invoicing.invoices.saved') });
-        if (!invoice && saved.success) router.replace(`/invoices/${saved.data.id}`);
+        if (!invoice && saved.success) router.replace(`${target.pageBase}/${saved.data.id}`);
         router.refresh();
       }
     } else if (result.status === 409) {
@@ -227,7 +248,7 @@ export function InvoiceForm({
       },
       shipTo: c.shipping.line1 ? { ...EMPTY_BLOCK, name: c.name, ...c.shipping } : null,
       paymentTerms: terms,
-      dueDate: dueDateFor(input.issueDate, terms, null),
+      dueDate: target.estimate ? input.dueDate : dueDateFor(input.issueDate, terms, null),
     });
     setShipSame(!c.shipping.line1);
   }
@@ -251,7 +272,9 @@ export function InvoiceForm({
   function setTerms(terms: PaymentTerms): void {
     update({
       paymentTerms: terms,
-      dueDate: dueDateFor(input.issueDate, terms, terms === 'custom' ? input.dueDate : null),
+      dueDate: target.estimate
+        ? input.dueDate
+        : dueDateFor(input.issueDate, terms, terms === 'custom' ? input.dueDate : null),
     });
   }
 
@@ -265,7 +288,7 @@ export function InvoiceForm({
     >
       <fieldset disabled={locked} className="space-y-sp-24">
         <section className="grid gap-sp-12 text-sm sm:grid-cols-3">
-          <label>
+          <label className={target.estimate ? 'hidden' : undefined}>
             {t('s09Invoicing.invoices.type')}
             <NativeSelect
               value={input.kind}
@@ -413,12 +436,14 @@ export function InvoiceForm({
               onChange={(e) =>
                 update({
                   issueDate: e.target.value,
-                  dueDate: dueDateFor(e.target.value, input.paymentTerms, input.dueDate),
+                  dueDate: target.estimate
+                    ? input.dueDate
+                    : dueDateFor(e.target.value, input.paymentTerms, input.dueDate),
                 })
               }
             />
           </label>
-          <label>
+          <label className={target.estimate ? 'hidden' : undefined}>
             {t('s09Invoicing.invoices.terms')}
             <NativeSelect
               value={input.paymentTerms}
@@ -434,11 +459,11 @@ export function InvoiceForm({
             </NativeSelect>
           </label>
           <label>
-            {t('s09Invoicing.invoices.dueDate')}
+            {target.estimate ? t('s09Estimates.validUntil') : t('s09Invoicing.invoices.dueDate')}
             <Input
               type="date"
               required
-              disabled={input.paymentTerms !== 'custom'}
+              disabled={!target.estimate && input.paymentTerms !== 'custom'}
               value={input.dueDate}
               onChange={(e) => update({ dueDate: e.target.value })}
             />

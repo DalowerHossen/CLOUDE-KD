@@ -13,6 +13,15 @@ export const nav: NavItem[] = [
     bottomNav: true,
   },
   {
+    id: 'estimates',
+    labelKey: 's09Estimates.nav.estimates',
+    href: '/estimates',
+    icon: 'file-text',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 21,
+  },
+  {
     id: 'invoice-tax',
     labelKey: 's09Invoicing.nav.tax',
     href: '/invoices/tax',

@@ -7,6 +7,7 @@ import { NotFoundError, ValidationError } from '@/lib/errors';
 import { registerPdfRenderer } from '@/lib/pdf/pdf-engine';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { InvoiceService, PdfService } from '@/types/contracts';
+import { renderEstimatePdf } from '@/services/estimate/pdf';
 import { applyPayment, getForPayment, markDisputed } from './payments';
 import { renderInvoicePdf, snapshotInvoice } from './snapshots';
 
@@ -44,6 +45,22 @@ registerPdfRenderer('invoice', async (data) => {
   const ctx = tenant ? await tenant.getTenantContext().catch(() => null) : null;
   if (ctx && ctx.companyId !== companyId) throw new NotFoundError();
   return (await renderInvoicePdf(companyId, parsed.data.invoiceId)).bytes;
+});
+
+registerPdfRenderer('estimate', async (data) => {
+  const parsed = z.object({ estimateId: z.string().uuid() }).strict().safeParse(data);
+  if (!parsed.success) throw new ValidationError('The estimate PDF needs an estimate id.');
+  const { data: row, error } = await getAdminSupabase()
+    .from('estimates')
+    .select('company_id')
+    .eq('id', parsed.data.estimateId)
+    .maybeSingle();
+  if (error || !row) throw new NotFoundError();
+  const companyId = String(row.company_id);
+  const tenant = tryGetService('tenant');
+  const ctx = tenant ? await tenant.getTenantContext().catch(() => null) : null;
+  if (ctx && ctx.companyId !== companyId) throw new NotFoundError();
+  return renderEstimatePdf(companyId, parsed.data.estimateId);
 });
 
 export default async function register(): Promise<void> {

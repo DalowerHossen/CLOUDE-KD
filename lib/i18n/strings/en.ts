@@ -9,8 +9,9 @@ import { strings as s05Storage } from './en/s05-storage';
 import { strings as s06Public } from './en/s06-public';
 import { strings as s07Company } from './en/s07-company';
 import { strings as s08Crm } from './en/s08-crm';
+import { strings as s09Estimates } from './en/s09-estimates';
 import { strings as s09Invoicing } from './en/s09-invoicing';
 
-export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Invoicing } as const;
+export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Estimates, s09Invoicing } as const;
 
 export type Strings = typeof en;

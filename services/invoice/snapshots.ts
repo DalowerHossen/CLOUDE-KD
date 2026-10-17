@@ -17,7 +17,7 @@ import { getSection } from '@/services/company/settings';
 import { getInvoice } from './invoices';
 import { buildSeller } from './seller';
 
-async function logoOf(
+export async function logoOf(
   companyId: string,
   fileId: string | null,
 ): Promise<{ bytes: Uint8Array; mimeType: string } | null> {

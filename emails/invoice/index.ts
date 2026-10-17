@@ -3,6 +3,7 @@
 // wording, and the messages carry no unsubscribe header (they are documents, not newsletters).
 import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
+import { EstimateSentEmail } from './estimate-sent';
 import { InvoiceSentEmail } from './invoice-sent';
 
 export interface InvoiceEmailTemplate {
@@ -18,5 +19,13 @@ export const invoiceEmailTemplates: readonly InvoiceEmailTemplate[] = [
       variables: ['clientName', 'companyName', 'number', 'amountDue', 'dueDate', 'message', 'link'],
     },
     component: InvoiceSentEmail as ComponentType<never>,
+  },
+  {
+    definition: {
+      id: 'estimate.sent',
+      subject: 'Estimate {number} from {companyName}',
+      variables: ['clientName', 'companyName', 'number', 'total', 'validUntil', 'message', 'link'],
+    },
+    component: EstimateSentEmail as ComponentType<never>,
   },
 ];

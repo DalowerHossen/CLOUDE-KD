@@ -160,8 +160,10 @@ export function InvoicePdf({ data, logo }: InvoicePdfProps): ReactElement {
               <Text style={s.title}>{data.title}</Text>
               <Text style={s.bold}>{T(data.number)}</Text>
               <Text>Issued: {data.issueDate}</Text>
-              <Text>Due: {data.dueDate}</Text>
-              <Text>{T(data.termsLabel)}</Text>
+              <Text>
+                {data.dueLabel}: {data.dueDate}
+              </Text>
+              {data.termsLabel !== '' ? <Text>{T(data.termsLabel)}</Text> : null}
               {data.poNumber !== '' ? <Text style={s.po}>PO: {T(data.poNumber)}</Text> : null}
             </View>
           </View>
@@ -267,7 +269,7 @@ export function InvoicePdf({ data, logo }: InvoicePdfProps): ReactElement {
             </View>
           ) : null}
           <View style={s.due}>
-            <Text>Amount due</Text>
+            <Text>{data.dueTotalLabel}</Text>
             <Text>{money(data.totals.amountDue)}</Text>
           </View>
           {data.display ? (

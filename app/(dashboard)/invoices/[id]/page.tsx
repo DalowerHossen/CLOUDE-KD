@@ -90,6 +90,7 @@ export default async function InvoicePage({
       <InvoiceActions
         id={invoice.id}
         status={invoice.status}
+        kind={invoice.kind}
         trashed={trashed}
         hasNumber={invoice.number !== null}
         canCreate={canCreate}

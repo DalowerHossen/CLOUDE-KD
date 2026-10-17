@@ -18,6 +18,8 @@ import {
   termsFromDays,
 } from '@/lib/invoice/form';
 import { invoiceListQuery } from '@/lib/invoice/search';
+import { estimateDecisionSchema } from '@/lib/estimate/input';
+import { canConvert, canRevise, canVoid, isDecidable } from '@/lib/estimate/status';
 import { EMPTY_REMIT_TO, hasRemitTo, remitToSchema } from '@/lib/invoice/remit';
 import { addDays, daysBetween, dueDateFor, termsLabel } from '@/lib/invoice/terms';
 import {
@@ -414,6 +416,50 @@ async function main(): Promise<void> {
     const names = new Map(registered.map((p) => [p.action, p]));
     assert.equal(names.get('invoice.send')?.approvalLevel, 'L1');
     assert.deepEqual(names.get('invoice.void')?.defaultRoles, ['owner']);
+  });
+
+  await check('estimate decision, statuses and permissions', () => {
+    assert.ok(
+      estimateDecisionSchema.safeParse({
+        decision: 'accepted',
+        signerName: 'Wendy W',
+        note: '',
+        agree: true,
+      }).success,
+    );
+    assert.ok(
+      !estimateDecisionSchema.safeParse({
+        decision: 'accepted',
+        signerName: 'Wendy W',
+        note: '',
+        agree: false,
+      }).success,
+      'accepting needs the agree box',
+    );
+    assert.ok(
+      estimateDecisionSchema.safeParse({
+        decision: 'declined',
+        signerName: 'Wendy W',
+        note: 'Too high',
+        agree: false,
+      }).success,
+    );
+    assert.ok(
+      !estimateDecisionSchema.safeParse({
+        decision: 'accepted',
+        signerName: 'W',
+        note: '',
+        agree: true,
+      }).success,
+      'a real name is needed',
+    );
+    assert.ok(isDecidable('sent') && isDecidable('viewed') && !isDecidable('accepted'));
+    assert.ok(canConvert('accepted') && !canConvert('sent') && !canConvert('converted'));
+    assert.ok(canRevise('sent') && canRevise('expired') && !canRevise('accepted'));
+    assert.ok(canVoid('accepted') && !canVoid('converted') && !canVoid('void'));
+    const names = new Map(registered.map((p) => [p.action, p]));
+    assert.deepEqual(names.get('estimate.void')?.defaultRoles, ['owner']);
+    assert.ok(names.has('estimate.convert') && names.has('estimate.send'));
   });
 
   if (failures > 0) process.exit(1);

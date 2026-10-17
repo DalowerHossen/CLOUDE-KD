@@ -55,6 +55,10 @@ export interface PdfLine {
 export interface PdfInvoiceData {
   kind: InvoiceKind;
   title: string;
+  /** "Due" on an invoice, "Valid until" on an estimate. */
+  dueLabel: string;
+  /** "Amount due" on an invoice, "Estimate total" on an estimate. */
+  dueTotalLabel: string;
   number: string;
   status: string;
   watermark: 'DRAFT' | 'VOID' | 'PAID' | 'PROFORMA' | null;
@@ -102,6 +106,13 @@ export interface PdfSource {
   issueDate: string;
   dueDate: string;
   paymentTerms: PaymentTerms;
+  /** Set for other documents drawn with this layout (an estimate). */
+  document?: {
+    title: string;
+    watermark: PdfInvoiceData['watermark'];
+    dueLabel: string;
+    dueTotalLabel: string;
+  };
   poNumber: string;
   seller: Record<string, unknown> | null;
   billTo: AddressBlock;
@@ -183,8 +194,9 @@ export function buildInvoicePdfData(
   const discounts = Money.parse(v.totals.lineDiscountTotal).add(v.totals.documentDiscount);
   const paid = Money.parse(v.amountPaid);
   const balance = Money.parse(v.totals.amountDue).sub(paid);
-  const watermark: PdfInvoiceData['watermark'] =
-    v.status === 'draft' || v.status === 'pending_approval'
+  const watermark: PdfInvoiceData['watermark'] = v.document
+    ? v.document.watermark
+    : v.status === 'draft' || v.status === 'pending_approval'
       ? 'DRAFT'
       : v.status === 'void'
         ? 'VOID'
@@ -195,13 +207,15 @@ export function buildInvoicePdfData(
             : null;
   return {
     kind: v.kind,
-    title: TITLES[v.kind],
+    title: v.document?.title ?? TITLES[v.kind],
+    dueLabel: v.document?.dueLabel ?? 'Due',
+    dueTotalLabel: v.document?.dueTotalLabel ?? 'Amount due',
     number: v.number ?? 'DRAFT',
     status: v.status,
     watermark,
     issueDate: v.issueDate,
     dueDate: v.dueDate,
-    termsLabel: termsLabel(v.paymentTerms, v.issueDate, v.dueDate),
+    termsLabel: v.document ? '' : termsLabel(v.paymentTerms, v.issueDate, v.dueDate),
     poNumber: v.poNumber,
     seller,
     billTo: { ...v.billTo, name: v.billTo.name || v.walkInName },

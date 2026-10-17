@@ -173,6 +173,7 @@ export const strings = {
     waitingLocked: 'This invoice is waiting for approval and cannot be changed.',
     rejected: 'Not approved: {reason}',
     pdf: 'Open PDF',
+    convertProforma: 'Make an invoice',
     clone: 'Copy',
     cloned: 'The copy is ready as a draft.',
     trash: 'Move to trash',

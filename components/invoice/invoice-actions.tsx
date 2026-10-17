@@ -12,10 +12,13 @@ import type { InvoiceStatus } from '@/types/contracts';
 import { callJson } from './api-call';
 
 const idBody = z.object({ id: z.string() });
+const isSentStatus = (s: InvoiceStatus): boolean =>
+  s !== 'draft' && s !== 'pending_approval' && s !== 'void';
 
 export function InvoiceActions({
   id,
   status,
+  kind,
   trashed,
   hasNumber,
   canCreate,
@@ -25,6 +28,7 @@ export function InvoiceActions({
 }: {
   id: string;
   status: InvoiceStatus;
+  kind: string;
   trashed: boolean;
   hasNumber: boolean;
   canCreate: boolean;
@@ -101,6 +105,26 @@ export function InvoiceActions({
             {t('s09Invoicing.invoices.pdf')}
           </a>
         </Button>
+        {canCreate && !trashed && kind === 'proforma' && isSentStatus(status) ? (
+          <Button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run(
+                `/api/invoices/${id}/convert`,
+                'POST',
+                undefined,
+                (d) => {
+                  const copy = idBody.safeParse(d);
+                  if (copy.success) router.push(`/invoices/${copy.data.id}`);
+                },
+                { 'idempotency-key': key },
+              )
+            }
+          >
+            {t('s09Invoicing.invoices.convertProforma')}
+          </Button>
+        ) : null}
         {canCreate && !trashed ? (
           <Button
             type="button"
