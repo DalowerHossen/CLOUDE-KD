@@ -12,3 +12,8 @@ export function toInt(value: unknown, fallback = 0): number {
 export function clampInt(value: unknown, min: number, max: number, fallback = min): number {
   return Math.min(max, Math.max(min, toInt(value, fallback)));
 }
+
+/** Whole part of a division of two whole numbers (rounds toward zero). */
+export function floorDiv(a: number, b: number): number {
+  return b === 0 ? 0 : Math.trunc(a / b);
+}

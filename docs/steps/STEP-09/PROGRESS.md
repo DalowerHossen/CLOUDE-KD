@@ -4,7 +4,7 @@
 - [x] 09.2 tax rates, tax settings and FX
 - [x] 09.3 invoice schema and CRUD
 - [x] 09.4 numbering
-- [ ] 09.5 invoice screens
+- [x] 09.5 invoice screens
 - [ ] 09.6 send, approval, duplicates and the invoices contract
 - [ ] 09.7 PDF engine, layouts and snapshots
 - [ ] 09.8 estimates and proforma

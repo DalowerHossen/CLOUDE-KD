@@ -2,7 +2,22 @@
 import { withApi } from '@/lib/api/with-api';
 import { ForbiddenError } from '@/lib/errors';
 import { invoiceInputSchema } from '@/lib/invoice/input';
+import { invoiceListQuery } from '@/lib/invoice/search';
 import { createInvoice } from '@/services/invoice/invoices';
+import { searchInvoices } from '@/services/invoice/search';
+
+export const GET = withApi(
+  {
+    id: 'invoices.list',
+    scope: 'tenant',
+    permission: { action: 'invoice.read', resourceType: 'invoice' },
+    query: invoiceListQuery,
+  },
+  async ({ actor, query }) => {
+    if (!actor?.companyId) throw new ForbiddenError();
+    return { data: await searchInvoices(actor.companyId, query) };
+  },
+);
 
 export const POST = withApi(
   {

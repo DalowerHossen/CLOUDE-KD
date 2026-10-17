@@ -9,6 +9,15 @@ import { permissions as registered } from '@/config/permissions';
 import { Money } from '@/lib/utils/currency';
 import { canTransition, isEditable, isSent, statusAfterPayment } from '@/lib/invoice/status';
 import { FIXED_PREFIX, SERIES, formatNumber, manualNumberSchema } from '@/lib/invoice/numbering';
+import { diffInputs } from '@/lib/invoice/diff';
+import {
+  blankLine,
+  defaultInput,
+  lineFromItem,
+  previewTotals,
+  termsFromDays,
+} from '@/lib/invoice/form';
+import { invoiceListQuery } from '@/lib/invoice/search';
 import { addDays, daysBetween, dueDateFor, termsLabel } from '@/lib/invoice/terms';
 import {
   invoiceInputSchema,
@@ -328,6 +337,59 @@ async function main(): Promise<void> {
     assert.ok(!manualNumberSchema.safeParse({ number: 'bad number' }).success);
     assert.ok(!manualNumberSchema.safeParse({ number: '' }).success);
     assert.ok(!manualNumberSchema.safeParse({ number: 'A'.repeat(41) }).success);
+  });
+
+  await check('invoice form helpers, diff and list query', () => {
+    const defaults = {
+      options: {
+        priceMode: 'exclusive',
+        discountOrder: 'before_tax',
+        roundingPolicy: 'per_line',
+        roundingMode: 'half_up',
+        precision: 2,
+        cashRounding: '0',
+        withholdingRate: '0',
+      },
+      defaultTaxCodes: ['VAT10'],
+      paymentTerms: 'net_30',
+      paperSize: 'letter',
+    } as const;
+    const blank = defaultInput(defaults, '2026-10-16');
+    assert.equal(blank.dueDate, '2026-11-15');
+    assert.deepEqual(blank.options.shippingTaxCodes, ['VAT10']);
+    assert.equal(termsFromDays(15), 'net_15');
+    assert.equal(termsFromDays(null), 'net_30');
+    assert.equal(termsFromDays(45), 'custom');
+    const line = lineFromItem(
+      { id: 'p1', variantId: null, label: 'Widget', sku: 'W-1', unit: 'unit', unitPrice: '2.5000' },
+      ['VAT10'],
+    );
+    assert.equal(line.unitPrice, '2.5');
+    assert.deepEqual(line.taxCodes, ['VAT10']);
+    const withLines = { ...blank, lines: [{ ...line, quantity: '4' }, blankLine([])] };
+    const rates = [{ code: 'VAT10', name: 'VAT', rate: '10', compound: false }];
+    const preview = previewTotals(withLines, rates);
+    assert.equal(preview.result?.total, '11.0000', '4 x 2.5 + 10% tax');
+    assert.equal(
+      previewTotals({ ...withLines, lines: [{ ...line, quantity: 'abc' }] }, rates).result,
+      null,
+      'bad input gives no totals',
+    );
+    const edited = { ...withLines, poNumber: 'PO-9', lines: [{ ...line, quantity: '5' }] };
+    const changes = diffInputs(withLines, edited);
+    assert.ok(changes.some((c) => c.field === 'Purchase order' && c.to === 'PO-9'));
+    assert.ok(changes.some((c) => c.field === 'Line 1'));
+    assert.ok(changes.some((c) => c.field === 'Line 2' && c.to === '(removed)'));
+    assert.deepEqual(diffInputs(withLines, withLines), []);
+    assert.equal(invoiceListQuery.parse({}).size, '25');
+    assert.ok(
+      invoiceListQuery.safeParse({ status: 'sent,overdue', sort: 'amount', desc: '0', size: '100' })
+        .success,
+    );
+    assert.ok(!invoiceListQuery.safeParse({ status: 'sent,bogus' }).success);
+    assert.ok(!invoiceListQuery.safeParse({ size: '1000' }).success);
+    assert.ok(!invoiceListQuery.safeParse({ sort: 'password' }).success);
+    assert.ok(!invoiceListQuery.safeParse({ min: '1e9' }).success);
   });
 
   if (failures > 0) process.exit(1);
