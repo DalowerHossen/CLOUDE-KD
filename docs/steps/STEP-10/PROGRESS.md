@@ -6,7 +6,7 @@
 - [x] 10.4 Super admin processors page and API
 - [x] 10.5 Mode framework
 - [x] 10.6 Routing
-- [ ] 10.7 Payment orchestration
+- [x] 10.7 Payment orchestration (includes lib/payment/verification.ts, the pure part of 10.9)
 - [x] 10.8 Card rules engine (done before 10.7; 10.7 uses it)
 - [ ] 10.9 Verification engine and review queue
 - [ ] 10.10 Webhook core

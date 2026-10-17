@@ -135,7 +135,7 @@ create table if not exists public.card_blacklist (
   deleted_at timestamptz,
   version integer not null default 1
 );
-create unique index if not exists uq_card_blacklist_hmac on public.card_blacklist (processor_id, identity_hmac) where deleted_at is null;
+create unique index if not exists uq_card_blacklist_hmac on public.card_blacklist (processor_id, identity_hmac);
 
 create table if not exists public.payments (
   id uuid primary key default public.uuid_generate_v7(),
@@ -156,7 +156,7 @@ create table if not exists public.payments (
   card_identity_id uuid references public.card_identities (id) on delete restrict,
   payer_ip text check (payer_ip is null or char_length(payer_ip) <= 64),
   payer_country text check (payer_country is null or payer_country ~ '^[A-Z]{2}$'),
-  billing_postal_code_given boolean,
+  billing_postal_code text check (billing_postal_code is null or char_length(billing_postal_code) <= 20),
   three_ds jsonb not null default '{}'::jsonb,
   failure_reason text check (failure_reason is null or char_length(failure_reason) <= 200),
   decline_category text,
@@ -216,7 +216,7 @@ create table if not exists public.payment_allocations (
   deleted_at timestamptz,
   version integer not null default 1
 );
-create unique index if not exists uq_payment_allocations on public.payment_allocations (payment_id, invoice_id) where deleted_at is null;
+create unique index if not exists uq_payment_allocations on public.payment_allocations (payment_id, invoice_id);
 
 create table if not exists public.refunds (
   id uuid primary key default public.uuid_generate_v7(),

@@ -27,6 +27,13 @@ export const IP_DISTINCT_CARDS_PER_HOUR = 3;
 /** An authorization waits this long for a reviewer, then is voided. Never longer than the processor allows. */
 export const REVIEW_HOLD_HOURS = 72;
 
+/**
+ * How long an authorization stays valid at the processor. A review hold never exceeds this. The default is the
+ * shortest common value; an adapter sub-step may list the documented value of its processor here.
+ */
+export const DEFAULT_AUTH_VALIDITY_HOURS = 168;
+export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, number>>> = {};
+
 /** A passing test of a mode stays valid for this many hours (REQ-NMI-MODES). */
 export const MODE_TEST_VALID_HOURS = 24;
 
@@ -38,8 +45,14 @@ export const PAYMENT_LINK_MAX_VALID_HOURS = 720;
 export const WEBHOOK_MAX_ATTEMPTS = 5;
 export const WEBHOOK_RETRY_BASE_SECONDS = 60;
 
-/** Refunds above this amount (USD) need the approval chain; smaller ones need the refund permission only. */
+/** Refunds above this amount (USD) need the CEO (approval action payment.refund.large). */
 export const REFUND_APPROVAL_THRESHOLD_USD = '500.0000';
+
+/** A payment can be refunded for this many days after capture (policy shown to the payer). */
+export const REFUND_WINDOW_DAYS = 180;
+
+/** Card surcharge in percent of the amount, shown to the payer before paying. Zero means no surcharge. */
+export const CARD_SURCHARGE_PERCENT = '0';
 
 /** Payments that stay in `created` or `requires_action` longer than this are failed by the cleanup job. */
 export const PAYMENT_OPEN_EXPIRY_MINUTES = 60;

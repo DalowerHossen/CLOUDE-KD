@@ -376,6 +376,9 @@
       "owns": [
         "lib/payment/{registry,routing,card-rules,verification,credentials,modes}.ts",
         "lib/payment/adapters/base.ts",
+        "lib/payment/*.ts",
+        "schemas/payment/**",
+        "components/payment/**",
         "config/processors.ts",
         "config/payment-risk.ts",
         "services/payment/**",

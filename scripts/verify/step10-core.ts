@@ -42,8 +42,28 @@ import {
   evaluateCardRules,
   identityHmac,
   CARD_RULE_CODES,
+  type CardRuleDecision,
   type CardStats,
 } from '@/lib/payment/card-rules';
+import {
+  PAYMENT_TRANSITIONS,
+  canTransition,
+  holdsMoney,
+  isOpen,
+  isTerminal,
+  refundable,
+  statusAfterRefund,
+  surchargeFor,
+} from '@/lib/payment/state-machine';
+import {
+  assessVerification,
+  normalizePostal,
+  postalMatches,
+  reviewHoldHours,
+  reviewHoldUntil,
+  threeDSPolicyFor,
+} from '@/lib/payment/verification';
+import { createPaymentSchema, refundBodySchema } from '@/schemas/payment/payments';
 import { processorActionSchema, processorIdSchema } from '@/schemas/payment/processors';
 import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
 
@@ -412,7 +432,7 @@ async function main(): Promise<void> {
       ipDistinctCards: 0,
       paidSameInvoice: 0,
     };
-    const run = (over: Partial<CardStats>, blacklisted = false) =>
+    const run = (over: Partial<CardStats>, blacklisted = false): CardRuleDecision =>
       evaluateCardRules({ blacklisted, stats: { ...clean, ...over } });
     assert.deepEqual(run({}), { allowed: true, code: null });
     assert.equal(run({}, true).code, 'card_blacklisted');
@@ -451,6 +471,129 @@ async function main(): Promise<void> {
       assert.ok(!a.includes('ABC123'));
     },
   );
+  await check('state machine: legal moves only, terminal states, refunds', () => {
+    assert.ok(canTransition('created', 'authorized'));
+    assert.ok(canTransition('authorized', 'captured'));
+    assert.ok(canTransition('pending_review', 'voided'));
+    assert.ok(canTransition('captured', 'partially_refunded'));
+    assert.ok(canTransition('partially_refunded', 'refunded'));
+    assert.ok(!canTransition('created', 'refunded'));
+    assert.ok(!canTransition('failed', 'captured'));
+    assert.ok(!canTransition('voided', 'authorized'));
+    assert.ok(!canTransition('captured', 'voided'));
+    assert.ok(!canTransition('refunded', 'captured'));
+    for (const s of ['failed', 'voided', 'refunded'] as const) assert.ok(isTerminal(s));
+    assert.ok(isOpen('pending_review') && !isOpen('captured'));
+    assert.ok(
+      holdsMoney('captured') && holdsMoney('partially_refunded') && !holdsMoney('refunded'),
+    );
+    assert.equal(Object.keys(PAYMENT_TRANSITIONS).length, 9);
+    assert.equal(refundable(Money.parse('100'), Money.parse('40')).toDbString(), '60.0000');
+    assert.equal(refundable(Money.parse('100'), Money.parse('100')).toDbString(), '0.0000');
+    assert.equal(statusAfterRefund(Money.parse('100'), Money.parse('40')), 'partially_refunded');
+    assert.equal(statusAfterRefund(Money.parse('100'), Money.parse('100')), 'refunded');
+    assert.equal(
+      surchargeFor(Money.parse('200')).toDbString(),
+      '0.0000',
+      'no surcharge by default',
+    );
+    assert.equal(surchargeFor(Money.parse('200'), '2.5').toDbString(), '5.0000');
+    assert.equal(surchargeFor(Money.parse('0.03'), '2.5').toDbString(), '0.0008');
+  });
+  await check('verification: 3DS, postal and IP country rules', () => {
+    const base = {
+      threeDS: null,
+      givenPostalCode: 'sw1a 1aa',
+      invoicePostalCode: 'SW1A-1AA',
+      avsPostalCodeMatch: null,
+      ipCountry: 'GB',
+      invoiceCountry: 'GB',
+    };
+    assert.equal(assessVerification(base).outcome, 'capture');
+    const threeDsDone = {
+      requested: true,
+      completed: true,
+      authenticated: true,
+      liabilityShift: true,
+    };
+    assert.equal(
+      assessVerification({ ...base, threeDS: threeDsDone, ipCountry: 'US', givenPostalCode: '1' })
+        .outcome,
+      'capture',
+    );
+    const notDone = {
+      requested: true,
+      completed: false,
+      authenticated: false,
+      liabilityShift: null,
+    };
+    assert.equal(assessVerification({ ...base, threeDS: notDone }).outcome, 'capture');
+    assert.equal(
+      assessVerification({ ...base, threeDS: notDone, ipCountry: 'US' }).reasons.join(),
+      'ip_country_mismatch',
+    );
+    assert.equal(
+      assessVerification({ ...base, givenPostalCode: '90210' }).reasons.join(),
+      'postal_code_mismatch',
+    );
+    assert.equal(
+      assessVerification({ ...base, avsPostalCodeMatch: false }).reasons.join(),
+      'postal_code_mismatch',
+    );
+    assert.equal(
+      assessVerification({ ...base, givenPostalCode: null }).reasons.join(),
+      'postal_code_missing',
+    );
+    assert.equal(
+      assessVerification({ ...base, givenPostalCode: null, avsPostalCodeMatch: true }).outcome,
+      'capture',
+    );
+    assert.equal(
+      assessVerification({ ...base, ipCountry: null }).reasons.join(),
+      'ip_country_unknown',
+    );
+    const noInvoiceData = assessVerification({
+      ...base,
+      invoicePostalCode: null,
+      invoiceCountry: null,
+    });
+    assert.equal(noInvoiceData.outcome, 'review');
+    assert.ok(noInvoiceData.reasons.includes('invoice_data_missing'));
+    assert.equal(
+      assessVerification({ ...base, givenPostalCode: '90210', ipCountry: 'US' }).reasons.length,
+      2,
+    );
+    assert.equal(normalizePostal(' sw1a-1aa '), 'SW1A1AA');
+    assert.equal(postalMatches('', 'x'), null);
+    assert.equal(threeDSPolicyFor(fake), 'preferred');
+    assert.equal(
+      threeDSPolicyFor({ ...fake, capabilities: { ...fake.capabilities, supportsThreeDS: false } }),
+      'disabled',
+    );
+    assert.equal(reviewHoldHours('stripe'), 72);
+    const now = new Date('2026-01-01T00:00:00Z');
+    assert.equal(reviewHoldUntil('stripe', now).toISOString(), '2026-01-04T00:00:00.000Z');
+  });
+  await check('payment input schemas are strict and carry no amount', () => {
+    const ok = {
+      invoiceId: '0190b2f1-7c3a-7d2e-8f00-123456789abc',
+      idempotencyKey: 'pay-key-00001',
+      paymentToken: 'tok_12345',
+      billingPostalCode: null,
+      payerIp: '203.0.113.9',
+      returnUrl: 'https://app.example.com/pay/done',
+    };
+    assert.ok(createPaymentSchema.safeParse(ok).success);
+    assert.ok(
+      !createPaymentSchema.safeParse({ ...ok, amount: '1.00' }).success,
+      'the browser cannot send an amount',
+    );
+    assert.ok(!createPaymentSchema.safeParse({ ...ok, idempotencyKey: 'short' }).success);
+    assert.ok(!createPaymentSchema.safeParse({ ...ok, returnUrl: 'javascript:alert(1)' }).success);
+    assert.ok(refundBodySchema.safeParse({ paymentId: ok.invoiceId, amount: '10.50' }).success);
+    assert.ok(!refundBodySchema.safeParse({ paymentId: ok.invoiceId, amount: '-1' }).success);
+    assert.ok(!refundBodySchema.safeParse({ paymentId: ok.invoiceId, amount: '1.00001' }).success);
+  });
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }
 
