@@ -1,0 +1,90 @@
+# Verifone - documentation record
+
+## 1. Sources read
+Read in this session on 2026-10-17 (UTC) from Verifone's documentation site https://docs.verifone.com (every page was fetched as Markdown by appending `.md`; the index is https://docs.verifone.com/llms.txt). `developer.verifone.com` and the `verifone.cloud` API catalog are not reachable from this environment; the OpenAPI specifications embedded in the `docs.verifone.com` API reference pages were used instead.
+- Online payments: getting started; integration methods and environment endpoints; API authentication, get your API keys, BasicAuth; secure card capture key; blocking failed 3DS transactions; reversals via API.
+- Checkout: overview, accepting payments, card payments, 3D Secure payments, theming; API reference `checkout`, `checkout/specification/checkout` (OpenAPI 3.0.1 "Checkout API" 1.42.4), `checkout/checkout-sessions`, `checkout/checkout-notifications`, `checkout/error-codes`.
+- eCommerce API (OpenAPI 3.0.0 "Verifone eCommerce API" 2.38.1): `ecommerce/specification/transaction` (read transaction), `ecommerce/specification/payment-modifications` (capture, void, void_capture, refund), `ecommerce/specification/ecom-payments`, `ecommerce/specification/health`.
+- Payment actions: payment flow, capturing an authorization, void, refunds; reason codes for API transactions; address verification service; service provider simulator.
+- Notifications: https://docs.verifone.com/verifone-central-getting-started/verifone-central/administration-tools/notifications-and-webhooks.md (events, payload, `x-vfi-jws` signature).
+
+## 2. Authentication and credential fields
+Server calls: `Authorization: Basic base64("<user id>:<API key>")`, `Content-Type: application/json`. A bearer token from an OIDC endpoint is also offered; this adapter uses Basic. Credential fields (names only): `region` (not secret: `global` or `us` for a sandbox account, `emea`, `us` or `nz` for a live account), `userId` (not secret; Verifone Central, User Settings, My account), `apiKey` (secret; User Settings, API Keys; the user needs the Merchant Supervisor or Merchant Cashier role to create checkouts), `entityId` (not secret; the Organization ID of the organization), `paymentContractId` (not secret; the card Payment Provider Contract). No 3DS contract id is stored (section 6). Money: the Checkout API and the payment actions take the smallest unit as an **integer** (`$1.5 = 150`, OpenAPI `amount: integer`); the stored transaction returns `amount` as a decimal **string** ("Amount including decimal place"). The "Accepting payments" page shows `74.55` in an example body; the OpenAPI schema and every other page use integers, so integers are sent.
+
+## 3. Environments
+Eight hosts, one per region and environment (page "Integration methods and environment endpoints" and the `servers` of the OpenAPI files):
+- Sandbox: Global `https://cst.test-gsc.vfims.com`, US `https://uscst-gb.gsc.vficloud.net`.
+- Production: EMEA `https://emea.gsc.verifone.cloud`, US `https://us.gsc.verifone.cloud`, NZ `https://nz.gsc.verifone.cloud`.
+- Checkout service = host + `/oidc/checkout-service` (`POST /v2/checkout`, `GET /v2/checkout/{id}`). eCommerce API = host + `/oidc` (`/api/v2/transaction/{id}`, `/api/v2/transactions/{id}/capture`, ...), as in the reversals page (`https://cst.test-gsc.vfims.com/oidc/api/v2/transactions/card`).
+- The health path in the specification is `/ecomm-service/api/v2/health`, which does not match the other paths; the connection test therefore uses a read-only report call (section 5).
+- Webhook signing keys (public JWKS files): test `https://vf11gtostorage1.blob.core.windows.net/test-webhook-sign-keys/test-webhook-sign-keys.jwks`, production `https://vf11gtostorage1.blob.core.windows.net/prod-webhook-sign-keys/prod-webhook-sign-keys.jwks`.
+- Sandbox access: Verifone Central sandbox https://test.verifone.cloud (US https://uscst.test.vficloud.net) with a demo account from a Verifone contact; the Service Provider Simulator is a processor type on a sandbox Payment Provider Contract and needs no acquirer credentials (section 11).
+
+## 4. Secure form
+Integration chosen: **Checkout with `interaction_type: "IFRAME"`** (PCI SAQ A). The alternative "server to server with Verifone.js" is SAQ A-EP and keeps the card inside our page's scripts, which this platform does not allow. Flow:
+1. Server: `POST {checkout service}/v2/checkout` with `entity_id`, `currency_code` `USD`, `amount` (integer cents), `merchant_reference` (the invoice id; at most 50 characters, must not start with `= + - @`), `interaction_type: "IFRAME"`, `show_confirmation_page: false`, `configurations.card = { mode: "PAYMENT", payment_contract_id, capture_now: false }`. Answer `{ id, url }` with `url = <checkout host>/v2/loader.js?checkoutId=<id>`. The page lives 15 minutes by default (up to 30 days), at most 3 failed attempts (error 165), and a completed checkout cannot be reused (error 168) - which also protects against replaying one checkout for another invoice.
+2. Browser: a `<script src="<url>&containerId=<element id>">` renders Verifone's own payment frame (number, expiry, security code) inside the element. The page never touches the fields.
+3. Completion: with `show_confirmation_page: false` the frame reports the end of the checkout to the page with `postMessage` events `CHECKOUT_COMPLETED` / `CHECKOUT_FAILED` (`CARD_CAPTURE_SUCCESS` for card capture only; `CHECKOUT_RENDERED` / `CHECKOUT_RENDERED_FAILED` / `CARD_DETAILS_ENTERED` when `handle_order_confirmation` is true). **The documents name these events but do not state the message format or sender origin** (asked the documentation index, which confirmed this). The form therefore only looks for the event names in a message from one of the five region hosts, and the server never trusts it: our payment token is the **checkout id**, and `authorize` reads the checkout back and verifies it (section 5). A second button lets the payer trigger the same server check when no message was seen. No `return_url` is set, because for an iFrame Verifone would load that page inside the frame.
+Our payment token = the checkout id.
+
+## 5. Operations (REST, JSON)
+- Create checkout session: section 4 step 1.
+- Authorize: `GET {checkout service}/v2/checkout/{id}` -> `entity_id`, `merchant_reference`, `currency_code`, `amount`, `transaction_id`, `events[]`. The newest event of type `TRANSACTION_SUCCESS`, `TRANSACTION_FAILED` or `TRANSACTION_DECLINED` has `details` = the payment result (`id`, `amount` (integer), `status` AUTHORIZED / FAILED / DECLINED, `reason_code`, `merchant_reference`, `details.auto_capture`). The adapter checks entity, invoice reference, `USD`, the amount, and that `transaction_id` equals `details.id`; no outcome event means the payer has not finished. If the held amount differs from the invoice it is voided and refused. Then `GET /api/v2/transaction/{id}` (best effort) adds the masked card number and brand for the card identity. The platform's processor transaction id = the Verifone **transaction id**.
+- Capture: `POST /api/v2/transactions/{id}/capture` `{ amount }` (integer; the specification marks `amount` required; documents say a capture works only on status AUTHORIZED, and a smaller amount leaves a rest that must be cancelled, so the adapter captures only the **full** authorized amount). Result status `SETTLEMENT_REQUESTED`; the adapter re-reads the stored transaction when the answer does not say captured.
+- Void authorization: `POST /api/v2/transactions/{id}/void` (no body); result `AUTHORIZATION_VOIDED`.
+- Void capture: `POST /api/v2/transactions/{id}/void_capture`, only for the **full** amount and only while the capture is `SETTLEMENT_REQUESTED` (queued, not yet sent to the acquirer).
+- Refund: `POST /api/v2/transactions/{id}/refund` `{ amount (integer), reason }` with header `x-vfi-api-idempotencykey` (UUID); several partial refunds until the whole amount is refunded; depending on the acquirer the payment must be settled first. The result is its own transaction (`id` = refund id, `status` REFUNDED). A refund of a capture that is still queued is done as the void-capture above (full amount only), reported as `refunded` under the payment id.
+- Look up: `GET /api/v2/transaction/{id}` -> `transaction_type`, `transaction_status`, `amount` (string), `masked_card_number`, `card_brand`, `reason_code`, `parent_id`, `merchant_reference`.
+- Connection test: `GET /api/v2/transactions?_limit=1` (read-only list) -> 200 means the user id and key are valid for the region; 401/403 means refused. The entity and the payment contract are first used by the first checkout.
+- Errors: Checkout error body `{ code, message, timestamp, details }`; 401/116 authentication, 403/113 permission, 403/111 blocked by ruleset, 403/121 declined by processor, 403/165 attempts exceeded, 403/168 already completed, 403/169 expired, 400/123 rejected by processor, 404/109 not found, 500/100 and 504/170 retryable.
+- Authorization lifetime: issuers release an uncaptured authorization after 7 to 30 days; the platform holds at most 144 hours (`AUTH_VALIDITY_HOURS_BY_PROCESSOR`).
+
+## 6. 3D Secure
+Checkout supports 3DS 1 and 2 (`configurations.card.mode: "3DS_PAYMENT"` or `threed_secure.enabled` with `threeds_contract_id`), but **it requires a customer record or `customer_details` with the payer's billing first and last name, address, city, country and email** (page "3D Secure payments"; a request without them fails with error 126). The platform's checkout input has no billing name or address, and the stored transaction's `threed_authentication` is filled only when 3DS ran. So the adapter requests no 3DS, declares `supportsThreeDS: false`, the platform asks for `disabled` policy, and every result is `{ requested: false, completed: false, authenticated: false, liabilityShift: null }`. An issuer demand for authentication is declined (reason codes 1815, 1836 and similar) and maps to `three_ds_failed`. Known limit for the handoff: 3DS needs the billing contact fields in the checkout input (a STEP 10 request).
+
+## 7. Card identity (REQ-CARD)
+Verifone returns no card fingerprint. The payment result carries `card` ("the token representing the payment card") only for tokenized payments, which this adapter does not request. The adapter uses it when present (`{ type: 'token' }`); otherwise it builds `first 6 | last 4 | brand` from `masked_card_number` ("first 6 and last 4 digits") and `card_brand` of the stored transaction (`{ type: 'fingerprint' }`). Without the expiry date this is weaker than other processors' identities (two cards of the same issuer range with the same last four collide). Null when the stored transaction cannot be read.
+
+## 8. Decline mapping
+Source: `reason_code` of the payment result (the "Reason codes for API transactions" table, FAILED outcomes) and, for refused requests, the Checkout `code`.
+- insufficient_funds: 1016
+- invalid_number: 1011, 1018, 1820
+- invalid_expiry: 1001, 2001, 1025
+- invalid_cvv: 1045, 1834, 9124
+- three_ds_failed: 0800, 1813, 1815, 1816, 1824, 1836, 1838
+- processor_fraud_signal: 1002, 1022, 1024, 1029, 1032, 1819, 2002, 2008, 2009, 2010, 9998, and Checkout 111 (blocked by the organization's ruleset)
+- do_not_honor: 0085, 1000, 1003, 1004, 1005, 1007, 1008, 1019, 1021, 1023, 1035, 1061, 1821, 1826, 1830, 1832, 2000, 2003, 2004, 2005, 2007, 2011, 2012, and Checkout 121, 123
+- processor_error: 5003, 8001, 8002, 9106, 9107, 9109, 9110, 9111, 9112, 9123, 9125, 9200, 9201, and Checkout 100, 170
+- otp_failed: none
+- other: every other code
+Reason code `0000` is success; `0802` (approved, but AVS or CVV mismatch) is a success.
+
+## 9. Webhooks
+Notifications are created in Verifone Central (Administration, Notifications): organizations, events, delivery method **URL endpoint** with "Full event payload" (transaction events only) or "Event metadata only". A new notification is active within 60 seconds, changes can take 10 to 60 minutes; failed deliveries are listed in Verifone Central. Platform URL: `/api/webhooks/verifone`.
+- Events used: `TxnAuthorisationApproved/Declined`, `TxnSaleApproved/Declined`, `TxnSaleConfirmed`, `TxnCaptureApproved/Declined`, `TxnDelayedChargeApproved/Declined`, `TxnVoidApproved/Declined`, `TxnRefundApproved/Declined`. Checkout events (`objectType` `StandardEvents`) are mapped to `unknown`; their exact `eventType` strings are not published (only display names such as "Checkout - Transaction succeeded").
+- Payload fields: `eventType`, `objectType`, `eventId` (transaction id for transaction events, checkout id for checkout events), `recordId`, `entityUid`, `eventDateTime`, `source`, and `content` (full payload only: `id`, `amount`, `currency_code`, `transaction_type`, `transaction_status`, `merchant_reference`, `card_brand`, `masked_card_number`, `threed_authentication`, ...). The metadata payload has no `content`; the transaction id is then `recordId`.
+- **Signature**: header `x-vfi-jws` = a JSON Web Signature in detached form (`<protected>..<signature>`) over the request body, with the unencoded-payload option (RFC 7797, `b64: false`, `crit: ["b64"]`). The signed payload is the body in canonical JSON form (RFC 8785). The protected header names `alg` and `kid`; the matching public key is in the JWKS file of section 3 (cached; fetched again when the key id is unknown). The documents do not list the algorithms; the adapter accepts RS256/384/512, PS256/384/512 and ES256/384/512 with a key of the matching type and curve, and refuses `none`, HMAC and anything else. A body that is not JSON, a missing or malformed header, an unknown key id or an unreachable key file all mean "not verified". There is no timestamp window: Verifone retries over a long time.
+- Event id: the transaction id repeats for each step of one payment, so `eventId` = `vf_` + SHA-256 of `eventType | recordId | eventDateTime` (a resent notification keeps all three).
+- The core then asks Verifone for the transaction (`getTransaction`), so an actions' event (refund, void, capture) is reported under the original payment (`parent_id`).
+- Disputes: no dispute notification event is listed in the events tables; none is mapped.
+
+## 10. Idempotency
+Header `x-vfi-api-idempotencykey` (UUID format) is documented for card and wallet payments, refunds, release, extend and reversal. Capture, void and void-capture have no idempotency header; a repeat is made safe by the adapter, which reads the stored transaction first and returns an already captured or voided payment as the result. The refund header is a UUID derived deterministically from the core's key (SHA-256, version-5 layout). The checkout creation has no idempotency header; the checkout is created once per payment session and a completed checkout cannot be paid twice.
+
+## 11. Test data
+Service Provider Simulator (sandbox Payment Provider Contract of type simulator): every transaction is approved with `0000` unless the **last three digits of the amount** or the `merchant_reference` trigger an outcome: 121 (FAILED, TECHNICAL), 122 (FAILED, UNKNOWN), 123 (FAILED), 131 (FAILED, MISSING), 132 (AUTHORISED, PARTIAL); `merchant_reference` values `please 121` and so on do the same. Security-code results by value: 111 matched, 222 not matched, 333 not checked, anything else unavailable. Captured transactions settle after 23:45 UTC, or at once when an order of **76.51** is placed (settles all earlier captured transactions). Test card numbers are not listed on the pages read; the simulator accepts the card numbers that Verifone Central's sandbox documentation gives for the PPC (open question 3). The platform uses amounts in cents, so the trigger "ends with 121" means an amount such as 1.21 or 10.21.
+
+## 12. Limits and capabilities
+`supportsAuthCapture` true; `supportsThreeDS` false (section 6); `supportsRefund` true; `supportsPartialRefund` true (after settlement); `supportsRecurring` false (tokens exist, not used); `supportsPayout` false; not a merchant of record. Currencies: `USD` (the contract must support it). Mode: one, `iframe_checkout`. A capture is only for the full authorized amount. A refund of a capture still queued for the acquirer is full only (void-capture). No AVS result (AVS needs a customer record with the billing address; the adapter reports `avsPostalCodeMatch: null`). A partial capture, instalments, wallets, local methods and card tokens are out of scope.
+
+## 12a. Content security policy
+Script and frame origins are the region hosts only: `https://cst.test-gsc.vfims.com`, `https://uscst-gb.gsc.vficloud.net`, `https://emea.gsc.verifone.cloud`, `https://us.gsc.verifone.cloud`, `https://nz.gsc.verifone.cloud` (`PROCESSOR_ORIGINS.verifone`). The documents do not list the hosts the frame itself loads (fonts, images, 3DS pages, wallet scripts); they must be confirmed on a sandbox page load (open question 2).
+
+## 13. Open questions
+1. The `postMessage` payload and sender origin are not documented (section 4); the form matches by event name and the server verifies, and a second button covers a missed message. Confirm on the sandbox and then tighten the matching.
+2. Hosts loaded inside the iFrame (CSP, section 12a) and whether the frame is served from the loader's host.
+3. Sandbox card numbers for the simulator contract; where the sandbox demo account and PPC come from for a new merchant.
+4. The vocabulary of `transaction_status` and `transaction_type` in `GET /api/v2/transaction/{id}` (enumerations read from the OpenAPI file; no worked example) - the adapter maps unknown states to `error`, never to success.
+5. The JWS `alg` values and whether the JWKS keys are RSA or EC (not documented); both families are accepted.
+6. Whether a capture answer says `SETTLEMENT_REQUESTED`: the worked example on the capture page shows an old v1 shape (`status: AUTHORIZED`). The adapter re-reads the stored transaction and otherwise reports `pending`.
+7. The JWKS host `vf11gtostorage1.blob.core.windows.net` is not reachable from this environment, so the key files were not inspected.

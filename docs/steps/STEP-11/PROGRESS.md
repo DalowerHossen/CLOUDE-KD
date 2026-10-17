@@ -30,7 +30,7 @@
 - [ ] 11.6.c bluesnap: webhook route - route exists, verification fails closed; BLOCKED by B1 (webhook authentication page unreachable, see BLOCKERS.md)
 - [x] 11.6.d bluesnap: secure form
 - [ ] 11.6.e bluesnap: verification - local checks done, sandbox scenarios pending (no credentials)
-- [ ] 11.7.a verifone: doc record
+- [x] 11.7.a verifone: doc record
 - [ ] 11.7.b verifone: adapter
 - [ ] 11.7.c verifone: webhook route
 - [ ] 11.7.d verifone: secure form
