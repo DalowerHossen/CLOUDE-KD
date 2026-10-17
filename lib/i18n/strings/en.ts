@@ -18,8 +18,9 @@ import { strings as s09Invoicing } from './en/s09-invoicing';
 import { strings as s09Projects } from './en/s09-projects';
 import { strings as s09Recurring } from './en/s09-recurring';
 import { strings as s09Reports } from './en/s09-reports';
+import { strings as s10Payments } from './en/s10-payments';
 import { strings as s10Processors } from './en/s10-processors';
 
-export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Batches, s09Credits, s09Dashboard, s09Dunning, s09Estimates, s09Invoicing, s09Projects, s09Recurring, s09Reports, s10Processors } as const;
+export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Batches, s09Credits, s09Dashboard, s09Dunning, s09Estimates, s09Invoicing, s09Projects, s09Recurring, s09Reports, s10Payments, s10Processors } as const;
 
 export type Strings = typeof en;

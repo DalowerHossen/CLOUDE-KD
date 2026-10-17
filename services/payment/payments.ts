@@ -68,7 +68,7 @@ import {
   upsertAllocation,
   type PaymentRow,
 } from './payment-store';
-import { createReview } from './reviews';
+import { createReview } from './review-store';
 import { resolveRoute } from './routing';
 
 const PAYABLE: readonly InvoiceStatus[] = ['sent', 'viewed', 'partially_paid', 'overdue'];

@@ -11,4 +11,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin'],
     order: 500,
   },
+  {
+    id: 'admin-payment-review',
+    labelKey: 's10Payments.nav.review',
+    href: '/admin/payments/review',
+    icon: 'shield',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 510,
+  },
 ];

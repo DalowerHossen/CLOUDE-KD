@@ -64,6 +64,7 @@ import {
   threeDSPolicyFor,
 } from '@/lib/payment/verification';
 import { createPaymentSchema, refundBodySchema } from '@/schemas/payment/payments';
+import { reviewDecisionSchema } from '@/schemas/payment/review';
 import { processorActionSchema, processorIdSchema } from '@/schemas/payment/processors';
 import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
 
@@ -593,6 +594,17 @@ async function main(): Promise<void> {
     assert.ok(refundBodySchema.safeParse({ paymentId: ok.invoiceId, amount: '10.50' }).success);
     assert.ok(!refundBodySchema.safeParse({ paymentId: ok.invoiceId, amount: '-1' }).success);
     assert.ok(!refundBodySchema.safeParse({ paymentId: ok.invoiceId, amount: '1.00001' }).success);
+  });
+  await check('review decision: a void needs a note, unknown fields refused', () => {
+    assert.ok(reviewDecisionSchema.safeParse({ decision: 'capture' }).success);
+    assert.ok(!reviewDecisionSchema.safeParse({ decision: 'void' }).success);
+    assert.ok(
+      reviewDecisionSchema.safeParse({ decision: 'void', note: 'Looks stolen', blockCard: true })
+        .success,
+    );
+    assert.ok(!reviewDecisionSchema.safeParse({ decision: 'void', note: 'no' }).success);
+    assert.ok(!reviewDecisionSchema.safeParse({ decision: 'refund', note: 'abc' }).success);
+    assert.ok(!reviewDecisionSchema.safeParse({ decision: 'capture', extra: 1 }).success);
   });
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }
