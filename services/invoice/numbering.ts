@@ -12,7 +12,10 @@ import { getSection } from '@/services/company/settings';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 
-async function rules(companyId: string, kind: InvoiceKind) {
+async function rules(
+  companyId: string,
+  kind: InvoiceKind,
+): Promise<{ prefix: string; yearly: boolean; padding: number; start: number }> {
   const s = (await getSection(companyId, 'invoice')).value;
   return {
     prefix: kind === 'invoice' ? s.invoicePrefix : FIXED_PREFIX[kind],
