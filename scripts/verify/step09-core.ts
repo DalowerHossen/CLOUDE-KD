@@ -112,6 +112,7 @@ import { canConvert, canRevise, canVoid, isDecidable } from '@/lib/estimate/stat
 import { EMPTY_REMIT_TO, hasRemitTo, remitToSchema } from '@/lib/invoice/remit';
 import { addDays, daysBetween, dueDateFor, termsLabel } from '@/lib/invoice/terms';
 import {
+  type InvoiceInput,
   invoiceInputSchema,
   invoiceLineSchema,
   invoiceUpdateSchema,
@@ -161,6 +162,25 @@ const settings = {
   defaultTaxCodes: ['VAT15'],
   defaultWithholding: '0',
 };
+
+const loadBlank = (): InvoiceInput =>
+  defaultInput(
+    {
+      options: {
+        priceMode: 'exclusive',
+        discountOrder: 'before_tax',
+        roundingPolicy: 'per_line',
+        roundingMode: 'half_up',
+        precision: 2,
+        cashRounding: '0',
+        withholdingRate: '0',
+      },
+      defaultTaxCodes: ['VAT10'],
+      paymentTerms: 'net_30',
+      paperSize: 'letter',
+    },
+    '2026-05-01',
+  );
 
 async function main(): Promise<void> {
   await check('tax rate input', () => {
@@ -1794,6 +1814,45 @@ async function main(): Promise<void> {
     );
     assert.equal(outcomeOfError(new Error('network'), 2).status, 'pending');
     assert.equal(outcomeOfError(new Error('network'), 3).status, 'failed', 'three tries at most');
+  });
+
+  await check('an estimate converts to an invoice with the same totals', () => {
+    const rates = [{ code: 'VAT10', name: 'VAT 10%', rate: '10', compound: false }];
+    const data = loadBlank();
+    const estimate = {
+      ...data,
+      lines: [
+        { ...blankLine(['VAT10']), description: 'Design', quantity: '3', unitPrice: '99.99' },
+        {
+          ...blankLine(['VAT10']),
+          description: 'Hosting',
+          quantity: '1.5',
+          unitPrice: '10.10',
+          discountKind: 'percent' as const,
+          discountValue: '10',
+        },
+      ],
+    };
+    // Converting changes the kind and the dates (the estimate's "due date" is its valid-until date) and nothing else.
+    const invoice = {
+      ...estimate,
+      kind: 'invoice' as const,
+      issueDate: '2026-06-01',
+      dueDate: '2026-07-01',
+    };
+    const a = previewTotals(estimate, rates);
+    const b = previewTotals(invoice, rates);
+    assert.equal(a.error, null);
+    assert.equal(a.result?.total, b.result?.total, 'same total');
+    assert.equal(a.result?.taxTotal, b.result?.taxTotal, 'same tax');
+    // By hand, rounding each part of a line half up to cents: 3 x 99.99 = 299.97, tax 29.997 -> 30.00.
+    // 1.5 x 10.10 = 15.15, discount 10% = 1.515 -> 1.52, net 13.63, tax 1.363 -> 1.36.
+    // Net 313.60 + tax 31.36 = 344.96.
+    assert.equal(a.result?.lines[0]?.net, '299.9700');
+    assert.equal(a.result?.lines[1]?.net, '13.6300');
+    assert.equal(a.result?.subtotal, '315.1200');
+    assert.equal(a.result?.taxTotal, '31.3600');
+    assert.equal(a.result?.total, '344.9600');
   });
 
   if (failures > 0) process.exit(1);

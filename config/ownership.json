@@ -364,7 +364,12 @@
         "lib/env/s09-public.ts",
         "lib/{invoice,billing,tax,reports}/**",
         "workers/{invoice,billing}/**",
-        "lib/pdf/{invoice,shared}/**"
+        "lib/pdf/{invoice,shared}/**",
+        "lib/{schedule,credit,estimate,project,export}/**",
+        "components/{estimate,credit,dunning,project,reports}/**",
+        "services/{credit,estimate,project,report}/**",
+        "app/api/{credit-notes,time}/**",
+        "app/(dashboard)/{credit-notes,timesheets}/**"
       ]
     },
     "10": {

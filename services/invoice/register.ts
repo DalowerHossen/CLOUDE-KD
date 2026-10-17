@@ -8,6 +8,8 @@ import { registerPdfRenderer } from '@/lib/pdf/pdf-engine';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { InvoiceService, PdfService } from '@/types/contracts';
 import { renderEstimatePdf } from '@/services/estimate/pdf';
+import { registerClientHooks } from './client-hooks';
+import './tenant-export';
 import { applyPayment, getForPayment, markDisputed } from './payments';
 import { renderInvoicePdf, snapshotInvoice } from './snapshots';
 
@@ -64,6 +66,7 @@ registerPdfRenderer('estimate', async (data) => {
 });
 
 export default async function register(): Promise<void> {
+  registerClientHooks();
   registerService('invoices', createInvoiceContract());
   const existing = tryGetService('pdf');
   if (!existing) {
