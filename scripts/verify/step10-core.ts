@@ -19,7 +19,46 @@ import {
   credentialSchema,
   parseCredentials,
 } from '@/schemas/payment/credentials';
-import { PROCESSOR_IDS, type ProcessorAdapter } from '@/types/contracts';
+import {
+  describeCredentials,
+  openCredentials,
+  sealCredentials,
+  tailOf,
+} from '@/lib/payment/credentials';
+import { registerService, unregisterService } from '@/lib/container';
+import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
+
+const testKey = randomBytes(32);
+function installFakeEncryption(): void {
+  unregisterService('encryption');
+  registerService('encryption', {
+    async encrypt(_purpose, plaintext, scope) {
+      const iv = randomBytes(12);
+      const cipher = createCipheriv('aes-256-gcm', testKey, iv);
+      cipher.setAAD(Buffer.from(scope ?? ''));
+      const data = typeof plaintext === 'string' ? Buffer.from(plaintext) : Buffer.from(plaintext);
+      const ct = Buffer.concat([cipher.update(data), cipher.final()]);
+      return {
+        ciphertext: ct.toString('base64'),
+        iv: iv.toString('base64'),
+        tag: cipher.getAuthTag().toString('base64'),
+        keyVersion: 1,
+      };
+    },
+    async decrypt(_purpose, payload: EncryptedPayload, scope) {
+      const decipher = createDecipheriv('aes-256-gcm', testKey, Buffer.from(payload.iv, 'base64'));
+      decipher.setAAD(Buffer.from(scope ?? ''));
+      decipher.setAuthTag(Buffer.from(payload.tag, 'base64'));
+      return new Uint8Array(
+        Buffer.concat([
+          decipher.update(Buffer.from(payload.ciphertext, 'base64')),
+          decipher.final(),
+        ]),
+      );
+    },
+  });
+}
 
 let checks = 0;
 function check(name: string, fn: () => void | Promise<void>): Promise<void> {
@@ -179,6 +218,55 @@ async function main(): Promise<void> {
     assert.equal(safeEqual('abc', 'abc'), true);
     assert.equal(safeEqual('abc', 'abd'), false);
     assert.equal(safeEqual('abc', 'abcd'), false);
+  });
+  await check(
+    'vault: seal and open round trip, nothing readable in the stored fields',
+    async () => {
+      installFakeEncryption();
+      const secret = 'sk_test_ABCDEFGH12345678';
+      const sealed = await sealCredentials(fake, {
+        secretKey: secret,
+        accountLabel: 'Main account',
+      });
+      const stored = JSON.stringify(sealed);
+      assert.ok(!stored.includes(secret), 'the secret must not appear in what is stored');
+      assert.ok(!stored.includes('ABCDEFGH'), 'only the last characters may appear');
+      assert.equal(sealed.lastChars.secretKey, '5678');
+      assert.equal(sealed.lastChars.accountLabel, 'Main account');
+      assert.deepEqual(sealed.fieldKeys, ['accountLabel', 'secretKey']);
+      const opened = await openCredentials('stripe', {
+        ciphertext: sealed.payload.ciphertext,
+        iv: sealed.payload.iv,
+        tag: sealed.payload.tag,
+        key_version: sealed.payload.keyVersion,
+      });
+      assert.equal(opened.secretKey, secret);
+      // the scope (processor id) is bound to the ciphertext
+      await assert.rejects(() =>
+        openCredentials('nmi', {
+          ciphertext: sealed.payload.ciphertext,
+          iv: sealed.payload.iv,
+          tag: sealed.payload.tag,
+          key_version: 1,
+        }),
+      );
+    },
+  );
+  await check('vault: invalid input is refused before encryption', async () => {
+    installFakeEncryption();
+    await assert.rejects(() => sealCredentials(fake, { secretKey: 'short' }));
+    await assert.rejects(() =>
+      sealCredentials(fake, { secretKey: 'sk_test_ABCDEFGH12345678', extra: '1' }),
+    );
+  });
+  await check('vault: short secrets show no tail, display never holds the secret', async () => {
+    assert.equal(tailOf('abcdefghijk'), null);
+    assert.equal(tailOf('abcdefghijkl'), 'ijkl');
+    const view = describeCredentials(fake, ['secretKey'], { secretKey: '5678' });
+    assert.equal(view[0]?.saved, true);
+    assert.ok(view[0]?.display?.endsWith('5678'));
+    assert.equal(view[1]?.saved, false);
+    assert.equal(view[1]?.display, null);
   });
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }
