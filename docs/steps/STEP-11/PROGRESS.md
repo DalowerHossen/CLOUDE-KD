@@ -1,10 +1,10 @@
 # STEP 11 - Progress
 
-- [ ] 11.1.a stripe: doc record
-- [ ] 11.1.b stripe: adapter
-- [ ] 11.1.c stripe: webhook route
-- [ ] 11.1.d stripe: secure form
-- [ ] 11.1.e stripe: verification
+- [x] 11.1.a stripe: doc record (6436128)
+- [x] 11.1.b stripe: adapter (d03af9b)
+- [x] 11.1.c stripe: webhook route (d03af9b)
+- [x] 11.1.d stripe: secure form (d03af9b)
+- [ ] 11.1.e stripe: verification - local checks done (d03af9b), sandbox scenarios pending (no sandbox keys)
 - [ ] 11.2.a paypal: doc record
 - [ ] 11.2.b paypal: adapter
 - [ ] 11.2.c paypal: webhook route
