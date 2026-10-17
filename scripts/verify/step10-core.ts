@@ -27,6 +27,7 @@ import {
 } from '@/lib/payment/credentials';
 import { registerService, unregisterService } from '@/lib/container';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { defaultMode, hasChoice, requireMode, testStillValid } from '@/lib/payment/modes';
 import { processorActionSchema, processorIdSchema } from '@/schemas/payment/processors';
 import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
 
@@ -284,6 +285,28 @@ async function main(): Promise<void> {
     assert.ok(!processorActionSchema.safeParse({ action: 'delete' }).success);
     assert.ok(processorIdSchema.safeParse('stripe').success);
     assert.ok(!processorIdSchema.safeParse('unknown').success);
+  });
+  await check('modes: default, unknown refused, test window', () => {
+    assert.equal(defaultMode(fake).id, 'default');
+    assert.equal(hasChoice(fake), false);
+    const two: ProcessorAdapter = {
+      ...fake,
+      capabilities: {
+        ...fake.capabilities,
+        modes: [
+          { id: 'collectjs', label: 'Collect.js', isDefault: true },
+          { id: 'payment_component', label: 'Payment Component', isDefault: false },
+        ],
+      },
+    };
+    assert.equal(hasChoice(two), true);
+    assert.equal(requireMode(two, 'payment_component').label, 'Payment Component');
+    assert.throws(() => requireMode(two, 'other'));
+    assert.throws(() => requireMode(two, 'Bad Mode!'));
+    const now = new Date('2026-01-02T00:00:00Z');
+    assert.equal(testStillValid(new Date('2026-01-01T01:00:00Z'), now), true);
+    assert.equal(testStillValid(new Date('2025-12-31T23:59:00Z'), now), false);
+    assert.equal(testStillValid(new Date('2026-01-03T00:00:00Z'), now), false);
   });
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }

@@ -25,6 +25,13 @@ export const processorActionSchema = z.discriminatedUnion('action', [
         .optional(),
     })
     .strict(),
+  z
+    .object({
+      action: z.literal('switch_mode'),
+      modeId: z.string().regex(/^[a-z0-9_]{1,40}$/),
+      expectedVersion,
+    })
+    .strict(),
   z.object({ action: z.literal('enable'), expectedVersion }).strict(),
   z.object({ action: z.literal('disable'), expectedVersion }).strict(),
   z

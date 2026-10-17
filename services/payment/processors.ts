@@ -6,6 +6,7 @@ import { ForbiddenError, ValidationError } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { getContext } from '@/lib/logger/correlation';
 import { describeCredentials, type CredentialFieldStatus } from '@/lib/payment/credentials';
+import { describeSwitch, hasChoice, requireMode } from '@/lib/payment/modes';
 import { hasAdapter, isKnownProcessor, listRegistry, loadAdapter } from '@/lib/payment/registry';
 import { credentialFormFields } from '@/schemas/payment/credentials';
 import type { ProcessorAction } from '@/schemas/payment/processors';
@@ -21,6 +22,7 @@ import {
   saveCredentials,
   setEnabled,
   setEnvironment,
+  switchMode,
   type ProcessorRow,
 } from './credential-store';
 import { mapPaymentDbError } from './rpc';
@@ -269,6 +271,27 @@ export async function runProcessorAction(
         fieldKeys: meta?.field_keys ?? [],
       });
       return { credentialsVersion: version };
+    }
+    case 'switch_mode': {
+      const adapter = await loadAdapter(id);
+      if (!hasChoice(adapter)) throw new ValidationError('This processor has a single mode.');
+      requireMode(adapter, input.modeId);
+      const before = await getProcessorRow(id);
+      if (before.active_mode === input.modeId) return { activeMode: input.modeId };
+      const testId = await switchMode({
+        processorId: id,
+        modeId: input.modeId,
+        actorId: actor.userId,
+        expectedVersion: input.expectedVersion,
+      });
+      const row = await getProcessorRow(id);
+      await audit(
+        actor,
+        'processor.mode.switch',
+        row,
+        describeSwitch(before.active_mode, input.modeId, testId),
+      );
+      return { activeMode: row.active_mode };
     }
     case 'test':
       return testProcessor(actor, id, input.modeId);

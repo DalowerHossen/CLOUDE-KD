@@ -1,8 +1,9 @@
 // path: services/payment/credential-store.ts
 // Persistence of processors, credentials, tests and enable state. The tables are platform level (no company_id), only
 // the server service role can reach them, and every state change goes through the S10_002 database functions.
+import { MODE_TEST_VALID_HOURS } from '@/config/payment-risk';
 import { getAdminSupabase } from '@/lib/supabase/admin';
-import { NotFoundError } from '@/lib/errors';
+import { ConflictError, NotFoundError } from '@/lib/errors';
 import {
   openCredentials,
   sealCredentials,
@@ -180,4 +181,27 @@ export async function setEnvironment(input: {
     p_expected_version: input.expectedVersion,
   });
   if (error) throw mapPaymentDbError(error);
+}
+
+/** Switches the active mode. The database function demands a passing test of the target mode; returns the test id. */
+export async function switchMode(input: {
+  processorId: ProcessorId;
+  modeId: string;
+  actorId: string;
+  expectedVersion: number | null;
+}): Promise<string> {
+  if (input.expectedVersion !== null) {
+    const current = await getProcessorRow(input.processorId);
+    if (current.version !== input.expectedVersion) {
+      throw new ConflictError('This record was changed by someone else. Reload and try again.');
+    }
+  }
+  const { data, error } = await getAdminSupabase().rpc('kd_processor_switch_mode', {
+    p_processor: input.processorId,
+    p_mode: input.modeId,
+    p_by: input.actorId,
+    p_valid_hours: MODE_TEST_VALID_HOURS,
+  });
+  if (error) throw mapPaymentDbError(error);
+  return String(data);
 }

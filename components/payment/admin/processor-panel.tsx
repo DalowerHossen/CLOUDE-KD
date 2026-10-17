@@ -115,6 +115,11 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
     }
   }
 
+  async function switchTo(modeId: string, version: number): Promise<void> {
+    const result = await act({ action: 'switch_mode', modeId, expectedVersion: version });
+    if (result !== null) setFeedback({ ok: true, text: t('s10Processors.modes.switched') });
+  }
+
   const state = detail ?? null;
   const connected = state ? state.credentialsVersion > 0 : summary.hasCredentials;
   const enabled = state ? state.enabled : summary.enabled;
@@ -296,6 +301,58 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
                   <li>{t('s10Processors.capabilities.merchantOfRecord')}</li>
                 ) : null}
               </ul>
+              {state.modes.length > 1 ? (
+                <div className="space-y-sp-8 border-t pt-sp-12">
+                  <h3 className="font-medium">{t('s10Processors.modes.title')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('s10Processors.modes.help')}</p>
+                  <ul className="space-y-sp-8">
+                    {state.modes.map((mode) => (
+                      <li
+                        key={mode.id}
+                        className="flex flex-col gap-2 rounded-md border p-sp-12 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="space-y-1">
+                          <p className="font-medium">
+                            {mode.label}{' '}
+                            {mode.isActive ? (
+                              <Badge variant="success">{t('s10Processors.modes.active')}</Badge>
+                            ) : null}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {mode.lastTest
+                              ? t('s10Processors.modes.lastTest', {
+                                  result: mode.lastTest.ok
+                                    ? t('s10Processors.modes.passed')
+                                    : t('s10Processors.modes.failed'),
+                                  time: mode.lastTest.at.replace('T', ' ').slice(0, 19),
+                                })
+                              : t('s10Processors.modes.noTest')}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={busy || !connected}
+                            onClick={() => void runTest(mode.id)}
+                          >
+                            {t('s10Processors.modes.testMode')}
+                          </Button>
+                          {!mode.isActive ? (
+                            <Button
+                              size="sm"
+                              disabled={busy || mode.lastTest?.ok !== true}
+                              onClick={() => void switchTo(mode.id, state.version)}
+                            >
+                              {t('s10Processors.modes.switchTo')}
+                            </Button>
+                          ) : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </>
           ) : null}
           {feedback ? (
