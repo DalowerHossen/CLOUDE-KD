@@ -43,6 +43,8 @@ export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, n
   bluesnap: 72,
   // Square: card-not-present authorizations are cancelled by Square after 7 days; the adapter asks for 6 days.
   square: 144,
+  // Verifone: issuers release an unused authorization after 7 to 30 days; the platform keeps it inside 6 days.
+  verifone: 144,
 };
 
 /** A passing test of a mode stays valid for this many hours (REQ-NMI-MODES). */

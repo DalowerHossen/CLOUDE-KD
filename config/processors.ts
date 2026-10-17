@@ -143,6 +143,15 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
     'https://*.authorize.net',
   ],
   bluesnap: ['https://sandpay.bluesnap.com', 'https://pay.bluesnap.com'],
+  // Verifone: the iFrame checkout loader and the frame it opens come from the region host of the account
+  // (docs/processors/verifone.md section 3).
+  verifone: [
+    'https://cst.test-gsc.vfims.com',
+    'https://uscst-gb.gsc.vficloud.net',
+    'https://emea.gsc.verifone.cloud',
+    'https://us.gsc.verifone.cloud',
+    'https://nz.gsc.verifone.cloud',
+  ],
   braintree: [
     'https://js.braintreegateway.com',
     'https://*.braintreegateway.com',

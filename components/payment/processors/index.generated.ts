@@ -12,4 +12,5 @@ export const secureFormLoaders: Partial<Record<ProcessorId, SecureFormLoader>> =
   paypal: () => import('./paypal'),
   square: () => import('./square'),
   stripe: () => import('./stripe'),
+  verifone: () => import('./verifone'),
 };
