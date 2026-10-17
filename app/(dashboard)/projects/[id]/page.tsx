@@ -117,6 +117,13 @@ export default async function ProjectPage({
           }}
         />
       ) : null}
+      {manager && project.billingType !== 'non_billable' ? (
+        <p className="text-sm">
+          <Link className="underline" href={`/projects/${id}/bill`}>
+            {t('s09Projects.bill.link')}
+          </Link>
+        </p>
+      ) : null}
       <ProjectTeam projectId={id} members={members} people={people} canManage={manager} />
       <ProjectMilestones projectId={id} milestones={milestones} canManage={manager} />
       <section className="space-y-sp-8">

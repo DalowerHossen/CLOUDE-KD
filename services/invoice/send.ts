@@ -20,6 +20,7 @@ import { Money } from '@/lib/utils/currency';
 import { formatMoney } from '@/lib/utils/formatting';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { getSection } from '@/services/company/settings';
+import { releaseBilledWork } from '@/services/project/release';
 import type { Actor } from '@/types/contracts';
 import { logInvoiceEvent } from './events';
 import { getInvoice, type InvoiceView } from './invoices';
@@ -362,6 +363,7 @@ export async function voidInvoice(actor: Actor, id: string, reason: string): Pro
     .select('id');
   if (r.error) throw new InternalError(r.error);
   if (!r.data || r.data.length === 0) throw new ConflictError();
+  await releaseBilledWork(companyId, id).catch(() => undefined);
   await logInvoiceEvent(companyId, id, 'voided', `Voided: ${reason}`, actor.userId);
   const voided = await getInvoice(companyId, id);
   if (current.number)

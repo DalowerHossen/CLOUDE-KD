@@ -20,6 +20,7 @@ import { sha256Hex } from '@/lib/utils/hash';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor, InvoiceStatus } from '@/types/contracts';
 import { logInvoiceEvent } from './events';
+import { releaseBilledWork } from '@/services/project/release';
 import { prepareInvoice, type Prepared } from './prepare';
 
 type Row = Record<string, unknown>;
@@ -541,6 +542,7 @@ export async function trashInvoice(actor: Actor, id: string): Promise<void> {
     .select('id');
   if (r.error) throw new InternalError(r.error);
   if (!r.data || r.data.length === 0) throw new NotFoundError();
+  await releaseBilledWork(companyId, id).catch(() => undefined);
   await logInvoiceEvent(companyId, id, 'trashed', 'Moved to the trash', actor.userId);
   await getService('audit').record({
     action: 'invoice.trashed',

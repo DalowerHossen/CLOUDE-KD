@@ -155,3 +155,37 @@ export const timeSettingsSchema = z
     expectedVersion: z.number().int().min(0),
   })
   .strict();
+
+export const BILL_GROUPINGS = ['entry', 'day', 'person', 'single'] as const;
+export type BillGrouping = (typeof BILL_GROUPINGS)[number];
+
+/** Which approved time, milestones and expenses go on the invoice, and how the hours are shown. */
+export const billInputSchema = z
+  .object({
+    entryIds: z.array(uuid).max(5000),
+    milestoneIds: z.array(uuid).max(100),
+    expenseIds: z.array(uuid).max(500),
+    grouping: z.enum(BILL_GROUPINGS),
+    /** Bills every hour at this rate instead of the rate each entry carries. */
+    rateOverride: moneyNonNegative.nullable(),
+    /** For a retainer project: the period the hours belong to. */
+    retainerFrom: day.nullable(),
+    retainerTo: day.nullable(),
+  })
+  .strict()
+  .refine((v) => v.entryIds.length + v.milestoneIds.length + v.expenseIds.length > 0, {
+    message: 'Choose what to bill.',
+    path: ['entryIds'],
+  })
+  .refine((v) => (v.retainerFrom === null) === (v.retainerTo === null), {
+    message: 'Enter both dates of the retainer period.',
+    path: ['retainerTo'],
+  })
+  .refine(
+    (v) => v.retainerFrom === null || v.retainerTo === null || v.retainerTo >= v.retainerFrom,
+    {
+      message: 'The period cannot end before it starts.',
+      path: ['retainerTo'],
+    },
+  );
+export type BillInput = z.infer<typeof billInputSchema>;

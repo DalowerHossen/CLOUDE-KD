@@ -213,7 +213,9 @@ export function withApi<
             : undefined
         ) as z.output<Q>;
         const params = (
-          options.params ? options.params.parse(clean((await routeContext.params) ?? {})) : undefined
+          options.params
+            ? options.params.parse(clean((await routeContext.params) ?? {}))
+            : undefined
         ) as z.output<P>;
 
         if (options.idempotent) {

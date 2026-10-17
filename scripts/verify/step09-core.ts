@@ -59,6 +59,8 @@ import {
   weekDays,
   weekStart,
 } from '@/lib/project/time';
+import { hourLines, retainerSplit, type Claimed } from '@/lib/project/bill-lines';
+import { billInputSchema } from '@/lib/project/input';
 import { buildCredit } from '@/lib/credit/build';
 import type { InvoiceView } from '@/services/invoice/invoices';
 import {
@@ -1096,6 +1098,88 @@ async function main(): Promise<void> {
     const names = new Map(registered.map((p) => [p.action, p]));
     assert.deepEqual(names.get('time.settings')?.defaultRoles, ['owner']);
     assert.deepEqual(names.get('time.log')?.defaultRoles, ['owner', 'staff']);
+  });
+
+  await check('project invoice lines', () => {
+    const base = blankLine(['VAT10']);
+    const names = new Map([
+      ['u1', 'Ann'],
+      ['u2', 'Bob'],
+    ]);
+    const claimed: Claimed[] = [
+      {
+        id: 'a',
+        workDate: '2026-03-02',
+        userId: 'u1',
+        hours: '2.00',
+        rate: '100.0000',
+        description: 'Design',
+      },
+      {
+        id: 'b',
+        workDate: '2026-03-02',
+        userId: 'u2',
+        hours: '1.50',
+        rate: '80.0000',
+        description: 'Code',
+      },
+      {
+        id: 'c',
+        workDate: '2026-03-03',
+        userId: 'u1',
+        hours: '0.50',
+        rate: '100.0000',
+        description: '',
+      },
+    ];
+    const per = hourLines(base, claimed, 'entry', null, 'Web', names);
+    assert.equal(per.length, 3);
+    assert.equal(per[0]?.quantity, '2.00');
+    assert.equal(per[0]?.unitPrice, '100.0000');
+    assert.ok(per[0]?.description.includes('Ann') && per[0]?.description.includes('Design'));
+    assert.deepEqual(per[0]?.taxCodes, ['VAT10'], 'default tax codes are kept');
+    const day = hourLines(base, claimed, 'day', null, 'Web', names);
+    assert.equal(day.length, 3, 'same day with different rates stays on two lines');
+    const dayOverride = hourLines(base, claimed, 'day', '90', 'Web', names);
+    assert.equal(dayOverride.length, 2, 'one rate for the whole invoice merges the day');
+    assert.equal(dayOverride[0]?.quantity, '3.50');
+    assert.equal(dayOverride[0]?.unitPrice, '90.0000');
+    const person = hourLines(base, claimed, 'person', null, 'Web', names);
+    assert.deepEqual(person.map((l) => l.quantity).sort(), ['1.50', '2.50']);
+    const single = hourLines(base, claimed, 'single', '100', 'Web', names);
+    assert.equal(single.length, 1);
+    assert.equal(single[0]?.quantity, '4.00');
+    const split = retainerSplit(Money.parse('13.5'), '10');
+    assert.equal(split.over.toDbString(), '3.5000');
+    assert.equal(
+      retainerSplit(Money.parse('7'), '10').over.toDbString(),
+      '0.0000',
+      'under the retainer nothing extra',
+    );
+    const id = '0190c1a0-0000-7000-8000-000000000001';
+    const bill = {
+      entryIds: [id],
+      milestoneIds: [],
+      expenseIds: [],
+      grouping: 'day',
+      rateOverride: null,
+      retainerFrom: null,
+      retainerTo: null,
+    };
+    assert.ok(billInputSchema.safeParse(bill).success);
+    assert.ok(
+      !billInputSchema.safeParse({ ...bill, entryIds: [] }).success,
+      'choose something to bill',
+    );
+    assert.ok(
+      !billInputSchema.safeParse({ ...bill, retainerFrom: '2026-03-01' }).success,
+      'both dates',
+    );
+    assert.ok(
+      !billInputSchema.safeParse({ ...bill, retainerFrom: '2026-03-05', retainerTo: '2026-03-01' })
+        .success,
+    );
+    assert.ok(!billInputSchema.safeParse({ ...bill, grouping: 'week' }).success);
   });
 
   if (failures > 0) process.exit(1);

@@ -210,7 +210,7 @@ export function ProjectForm({
             />
           </label>
         ) : null}
-        {v.billingType === 'fixed' ? (
+        {v.billingType === 'fixed' || v.billingType === 'retainer' ? (
           <label>
             {t('s09Projects.form.fixedFee')}
             <Input

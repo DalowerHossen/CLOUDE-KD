@@ -77,6 +77,9 @@ export default async function ProjectsPage({
         description={t('s09Projects.description')}
         actions={
           <>
+            <Link className="underline" href="/projects/unbilled">
+              {t('s09Projects.bill.unbilledTitle')}
+            </Link>
             <Link className="underline" href="/timesheets">
               {t('s09Projects.nav.timesheets')}
             </Link>

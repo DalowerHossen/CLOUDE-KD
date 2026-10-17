@@ -12,7 +12,7 @@
 - [x] 09.10 recurring invoices and installments
 - [x] 09.11 reminders, late fees and write-off
 - [x] 09.12 projects and time
-- [ ] 09.13 billable time to invoice
+- [x] 09.13 billable time to invoice
 - [ ] 09.14 dashboard home
 - [ ] 09.15 reports
 - [ ] 09.16 batch invoicing, bulk actions and edge cases

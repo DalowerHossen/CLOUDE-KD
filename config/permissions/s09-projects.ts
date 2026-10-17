@@ -27,4 +27,11 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'project.bill',
+    description:
+      'Make invoice drafts from approved time, milestones and expenses of projects you manage',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
 ];
