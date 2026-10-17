@@ -160,9 +160,11 @@ export function InvoicePdf({ data, logo }: InvoicePdfProps): ReactElement {
               <Text style={s.title}>{data.title}</Text>
               <Text style={s.bold}>{T(data.number)}</Text>
               <Text>Issued: {data.issueDate}</Text>
-              <Text>
-                {data.dueLabel}: {data.dueDate}
-              </Text>
+              {data.dueLabel !== '' ? (
+                <Text>
+                  {data.dueLabel}: {data.dueDate}
+                </Text>
+              ) : null}
               {data.termsLabel !== '' ? <Text>{T(data.termsLabel)}</Text> : null}
               {data.poNumber !== '' ? <Text style={s.po}>PO: {T(data.poNumber)}</Text> : null}
             </View>

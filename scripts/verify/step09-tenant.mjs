@@ -9,6 +9,7 @@ import { join } from 'node:path';
 const ROOTS = [
   'services/invoice',
   'services/estimate',
+  'services/credit',
   'services/project',
   'services/tax',
   'services/fx',

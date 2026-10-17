@@ -8,7 +8,7 @@
 - [x] 09.6 send, approval, duplicates and the invoices contract
 - [x] 09.7 PDF engine, layouts and snapshots
 - [x] 09.8 estimates and proforma
-- [ ] 09.9 credit notes, debit notes and deposits
+- [x] 09.9 credit notes, debit notes and deposits
 - [ ] 09.10 recurring invoices and installments
 - [ ] 09.11 reminders, late fees and write-off
 - [ ] 09.12 projects and time

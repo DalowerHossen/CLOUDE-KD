@@ -18,6 +18,14 @@ import {
   termsFromDays,
 } from '@/lib/invoice/form';
 import { invoiceListQuery } from '@/lib/invoice/search';
+import { buildCredit } from '@/lib/credit/build';
+import type { InvoiceView } from '@/services/invoice/invoices';
+import {
+  creditApplySchema,
+  creditCreateSchema,
+  debitNoteSchema,
+  depositCreateSchema,
+} from '@/lib/credit/input';
 import { estimateDecisionSchema } from '@/lib/estimate/input';
 import { canConvert, canRevise, canVoid, isDecidable } from '@/lib/estimate/status';
 import { EMPTY_REMIT_TO, hasRemitTo, remitToSchema } from '@/lib/invoice/remit';
@@ -460,6 +468,175 @@ async function main(): Promise<void> {
     const names = new Map(registered.map((p) => [p.action, p]));
     assert.deepEqual(names.get('estimate.void')?.defaultRoles, ['owner']);
     assert.ok(names.has('estimate.convert') && names.has('estimate.send'));
+  });
+
+  await check('credit note, deposit and debit note input', () => {
+    const ok = { reason: 'return', reasonNote: '', returnToStock: true, mode: 'full', lines: [] };
+    assert.ok(creditCreateSchema.safeParse(ok).success);
+    assert.ok(!creditCreateSchema.safeParse({ ...ok, mode: 'lines', lines: [] }).success);
+    assert.ok(
+      !creditCreateSchema.safeParse({
+        ...ok,
+        mode: 'lines',
+        lines: [{ position: 1, quantity: '0' }],
+      }).success,
+      'a credit of nothing is refused',
+    );
+    assert.ok(
+      creditCreateSchema.safeParse({
+        ...ok,
+        mode: 'lines',
+        lines: [{ position: 2, quantity: '1.5' }],
+      }).success,
+    );
+    assert.ok(!creditCreateSchema.safeParse({ ...ok, reason: 'because' }).success);
+    assert.ok(!creditCreateSchema.safeParse({ ...ok, extra: 1 }).success, 'strict');
+    const id = '0190c1a0-0000-7000-8000-000000000001';
+    assert.ok(
+      creditApplySchema.safeParse({
+        sourceType: 'deposit',
+        sourceId: id,
+        invoiceId: id,
+        amount: '10.5',
+      }).success,
+    );
+    assert.ok(
+      !creditApplySchema.safeParse({
+        sourceType: 'deposit',
+        sourceId: id,
+        invoiceId: id,
+        amount: '0',
+      }).success,
+    );
+    assert.ok(
+      !creditApplySchema.safeParse({
+        sourceType: 'wallet',
+        sourceId: id,
+        invoiceId: id,
+        amount: '1',
+      }).success,
+    );
+    assert.ok(
+      depositCreateSchema.safeParse({ mode: 'percent', value: '30', description: '' }).success,
+    );
+    assert.ok(
+      !depositCreateSchema.safeParse({ mode: 'percent', value: '120', description: '' }).success,
+    );
+    assert.ok(
+      depositCreateSchema.safeParse({ mode: 'amount', value: '500.25', description: '' }).success,
+    );
+    assert.ok(!debitNoteSchema.safeParse({ reason: 'Extra work', lines: [] }).success);
+    const names = new Map(registered.map((p) => [p.action, p]));
+    assert.deepEqual(names.get('credit.issue')?.defaultRoles, ['owner']);
+    assert.ok(names.has('credit.apply') && names.has('credit.void') && names.has('credit.create'));
+  });
+
+  await check('credit note amounts from an invoice', () => {
+    const vat = { code: 'VAT10', name: 'VAT 10%', rate: '10', compound: false };
+    const line = (
+      position: number,
+      qty: string,
+      price: string,
+      taxes: (typeof vat)[],
+    ): Record<string, unknown> => {
+      const net = Money.parse(qty).mul(price);
+      const tax = taxes.length > 0 ? net.percent('10') : Money.zero();
+      return {
+        position,
+        productId: null,
+        variantId: null,
+        sku: '',
+        description: `Line ${position}`,
+        hsCode: '',
+        quantity: qty,
+        unit: 'each',
+        unitPrice: price,
+        discountKind: 'none',
+        discountValue: '0',
+        taxExempt: false,
+        taxes,
+        gross: net.toDbString(),
+        lineDiscount: '0.0000',
+        documentDiscountShare: '0.0000',
+        net: net.toDbString(),
+        tax: tax.toDbString(),
+        lineTotal: net.add(tax).toDbString(),
+      };
+    };
+    const invoice = {
+      options: {
+        priceMode: 'exclusive',
+        discountOrder: 'before_tax',
+        roundingPolicy: 'per_line',
+        roundingMode: 'half_up',
+        precision: 2,
+        cashRounding: '0',
+        documentDiscountKind: 'none',
+        documentDiscountValue: '0',
+        shippingAmount: '0',
+        shippingTaxable: false,
+        shippingTaxCodes: [],
+        withholdingRate: '0',
+      },
+      lines: [line(1, '4', '10.00', [vat]), line(2, '1', '100.00', [])],
+      taxBreakdown: [],
+      totals: { subtotal: '140.0000', taxTotal: '4.0000', amountDue: '144.0000' },
+    } as unknown as InvoiceView;
+    const full = buildCredit(
+      invoice,
+      { reason: 'cancellation', reasonNote: '', returnToStock: false, mode: 'full', lines: [] },
+      new Map(),
+    );
+    assert.equal(full.total, '144.0000', 'a full credit equals the invoice');
+    const part = buildCredit(
+      invoice,
+      {
+        reason: 'return',
+        reasonNote: '',
+        returnToStock: true,
+        mode: 'lines',
+        lines: [{ position: 1, quantity: '1' }],
+      },
+      new Map(),
+    );
+    assert.equal(part.subtotal, '10.0000');
+    assert.equal(part.taxTotal, '1.0000');
+    assert.equal(part.total, '11.0000', 'one unit with its tax');
+    assert.throws(() =>
+      buildCredit(
+        invoice,
+        {
+          reason: 'return',
+          reasonNote: '',
+          returnToStock: false,
+          mode: 'lines',
+          lines: [{ position: 1, quantity: '4' }],
+        },
+        new Map([[1, Money.parse('1')]]),
+      ),
+    );
+    assert.throws(() =>
+      buildCredit(
+        invoice,
+        { reason: 'other', reasonNote: '', returnToStock: false, mode: 'full', lines: [] },
+        new Map([[1, Money.parse('1')]]),
+      ),
+    );
+    const rest = buildCredit(
+      invoice,
+      {
+        reason: 'return',
+        reasonNote: '',
+        returnToStock: false,
+        mode: 'lines',
+        lines: [
+          { position: 1, quantity: '3' },
+          { position: 2, quantity: '1' },
+        ],
+      },
+      new Map([[1, Money.parse('1')]]),
+    );
+    assert.equal(rest.total, '133.0000', '30 + 3 tax + 100');
   });
 
   if (failures > 0) process.exit(1);

@@ -19,8 +19,9 @@ import { permissions as s08Clients } from './permissions/s08-clients';
 import { permissions as s08Inventory } from './permissions/s08-inventory';
 import { permissions as s08Purchasing } from './permissions/s08-purchasing';
 import { permissions as s08Transfer } from './permissions/s08-transfer';
+import { permissions as s09Credits } from './permissions/s09-credits';
 import { permissions as s09Estimates } from './permissions/s09-estimates';
 import { permissions as s09Invoices } from './permissions/s09-invoices';
 import { permissions as s09Tax } from './permissions/s09-tax';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Estimates, ...s09Invoices, ...s09Tax];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Credits, ...s09Estimates, ...s09Invoices, ...s09Tax];

@@ -22,6 +22,15 @@ export const nav: NavItem[] = [
     order: 21,
   },
   {
+    id: 'credit-notes',
+    labelKey: 's09Credits.nav.creditNotes',
+    href: '/credit-notes',
+    icon: 'file-text',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 22,
+  },
+  {
     id: 'invoice-tax',
     labelKey: 's09Invoicing.nav.tax',
     href: '/invoices/tax',
