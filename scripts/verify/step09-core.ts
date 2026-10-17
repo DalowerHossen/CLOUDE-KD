@@ -8,6 +8,7 @@ import { TAX_TEMPLATES, US_STATES } from '@/lib/tax/templates';
 import { permissions as registered } from '@/config/permissions';
 import { Money } from '@/lib/utils/currency';
 import { canTransition, isEditable, isSent, statusAfterPayment } from '@/lib/invoice/status';
+import { FIXED_PREFIX, SERIES, formatNumber, manualNumberSchema } from '@/lib/invoice/numbering';
 import { addDays, daysBetween, dueDateFor, termsLabel } from '@/lib/invoice/terms';
 import {
   invoiceInputSchema,
@@ -316,6 +317,17 @@ async function main(): Promise<void> {
     assert.deepEqual(registered.find((p) => p.action === 'invoice.override_status')?.defaultRoles, [
       'owner',
     ]);
+  });
+
+  await check('numbering rules', () => {
+    assert.equal(formatNumber('INV-', false, 2026, 7, 4), 'INV-0007');
+    assert.equal(formatNumber('INV-', true, 2026, 12345, 4), 'INV-2026-12345');
+    assert.equal(SERIES.debit_note, 'DN');
+    assert.equal(FIXED_PREFIX.proforma, 'PI-');
+    assert.ok(manualNumberSchema.safeParse({ number: 'ACME/2026-17' }).success);
+    assert.ok(!manualNumberSchema.safeParse({ number: 'bad number' }).success);
+    assert.ok(!manualNumberSchema.safeParse({ number: '' }).success);
+    assert.ok(!manualNumberSchema.safeParse({ number: 'A'.repeat(41) }).success);
   });
 
   if (failures > 0) process.exit(1);
