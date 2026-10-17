@@ -1,0 +1,43 @@
+# STEP 11 - Progress
+
+- [ ] 11.1.a stripe: doc record
+- [ ] 11.1.b stripe: adapter
+- [ ] 11.1.c stripe: webhook route
+- [ ] 11.1.d stripe: secure form
+- [ ] 11.1.e stripe: verification
+- [ ] 11.2.a paypal: doc record
+- [ ] 11.2.b paypal: adapter
+- [ ] 11.2.c paypal: webhook route
+- [ ] 11.2.d paypal: secure form
+- [ ] 11.2.e paypal: verification
+- [ ] 11.3.a braintree: doc record
+- [ ] 11.3.b braintree: adapter
+- [ ] 11.3.c braintree: webhook route
+- [ ] 11.3.d braintree: secure form
+- [ ] 11.3.e braintree: verification
+- [ ] 11.4.a square: doc record
+- [ ] 11.4.b square: adapter
+- [ ] 11.4.c square: webhook route
+- [ ] 11.4.d square: secure form
+- [ ] 11.4.e square: verification
+- [ ] 11.5.a authorizenet: doc record
+- [ ] 11.5.b authorizenet: adapter
+- [ ] 11.5.c authorizenet: webhook route
+- [ ] 11.5.d authorizenet: secure form
+- [ ] 11.5.e authorizenet: verification
+- [ ] 11.6.a bluesnap: doc record
+- [ ] 11.6.b bluesnap: adapter
+- [ ] 11.6.c bluesnap: webhook route
+- [ ] 11.6.d bluesnap: secure form
+- [ ] 11.6.e bluesnap: verification
+- [ ] 11.7.a verifone: doc record
+- [ ] 11.7.b verifone: adapter
+- [ ] 11.7.c verifone: webhook route
+- [ ] 11.7.d verifone: secure form
+- [ ] 11.7.e verifone: verification
+- [ ] 11.8.a payarc: doc record
+- [ ] 11.8.b payarc: adapter
+- [ ] 11.8.c payarc: webhook route
+- [ ] 11.8.d payarc: secure form
+- [ ] 11.8.e payarc: verification
+- [ ] 11.9 status table and handoff
