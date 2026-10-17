@@ -6,5 +6,6 @@ import type { ProcessorId } from '@/types/contracts';
 
 /** Secure forms that exist in code. The checkout shows "unavailable" for a processor that has none. */
 export const secureFormLoaders: Partial<Record<ProcessorId, SecureFormLoader>> = {
+  paypal: () => import('./paypal'),
   stripe: () => import('./stripe'),
 };

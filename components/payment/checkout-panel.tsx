@@ -220,6 +220,7 @@ export function CheckoutPanel({ token }: { token: string }): JSX.Element {
         environment={checkout.environment}
         submitLabel={t('s10Payments.checkout.pay', { total: checkout.total })}
         disabled={busy}
+        billingPostalCode={postal.trim() === '' ? null : postal.trim()}
         onToken={(paymentToken) => void onToken(checkout, paymentToken)}
         onError={(message) => setError(message)}
         challenge={phase.kind === 'challenge' ? { clientSecret: phase.clientSecret } : null}

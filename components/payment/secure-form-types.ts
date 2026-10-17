@@ -17,6 +17,8 @@ export interface SecureFormProps {
   /** Text for the pay button, for example "Pay USD 120.00". */
   submitLabel: string;
   disabled: boolean;
+  /** Billing postal code the payer typed on the checkout page, for processors whose form takes it with the submit call. */
+  billingPostalCode?: string | null;
   /** Called with the processor's payment token when the payer submitted the secure form. */
   onToken: (paymentToken: string) => void;
   /** Called with a message that is safe to show when the form cannot continue. */

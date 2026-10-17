@@ -35,6 +35,8 @@ export const DEFAULT_AUTH_VALIDITY_HOURS = 168;
 export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, number>>> = {
   // Stripe: 7 days for customer-initiated card-not-present payments, 4 days 18 hours for merchant-initiated Visa.
   stripe: 114,
+  // PayPal: an authorization lasts 29 days; the documented honor period (best success rate) is 3 days.
+  paypal: 72,
 };
 
 /** A passing test of a mode stays valid for this many hours (REQ-NMI-MODES). */

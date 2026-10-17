@@ -5,11 +5,11 @@
 - [x] 11.1.c stripe: webhook route (d03af9b)
 - [x] 11.1.d stripe: secure form (d03af9b)
 - [ ] 11.1.e stripe: verification - local checks done (d03af9b), sandbox scenarios pending (no sandbox keys)
-- [ ] 11.2.a paypal: doc record
-- [ ] 11.2.b paypal: adapter
-- [ ] 11.2.c paypal: webhook route
-- [ ] 11.2.d paypal: secure form
-- [ ] 11.2.e paypal: verification
+- [x] 11.2.a paypal: doc record (fae7525)
+- [x] 11.2.b paypal: adapter
+- [x] 11.2.c paypal: webhook route
+- [x] 11.2.d paypal: secure form
+- [ ] 11.2.e paypal: verification - local checks done, sandbox scenarios pending (no sandbox credentials)
 - [ ] 11.3.a braintree: doc record
 - [ ] 11.3.b braintree: adapter
 - [ ] 11.3.c braintree: webhook route

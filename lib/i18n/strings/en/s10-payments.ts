@@ -85,6 +85,10 @@ export const strings = {
     unavailable: 'This payment link is not available. It may have expired or already been used.',
     noForm: 'Online card payment is not available for this invoice right now.',
     loadingForm: 'Loading the secure payment form',
+    fieldNumber: 'Card number',
+    fieldExpiry: 'MM/YY',
+    fieldSecurity: 'Security code',
+    canceled: 'The card step was canceled. You can try again.',
     sandbox: 'Test mode: no real money is moved.',
     refundPolicy:
       'Refunds are possible for {days} days after the payment. Contact the seller to ask for one.',
