@@ -4,12 +4,14 @@ import { ClientSearch } from '@/components/invoice/client-search';
 import { FxRatesPanel } from '@/components/invoice/fx-rates-panel';
 import { TaxRatesManager } from '@/components/invoice/tax-rates-manager';
 import { TaxSettingsForm } from '@/components/invoice/tax-settings-form';
+import { RemitToForm } from '@/components/invoice/remit-to-form';
 import { PageHeader } from '@/components/shared/page-header';
 import { ErrorState } from '@/components/shared/state-views';
 import { getService } from '@/lib/container';
 import { t } from '@/lib/i18n';
 import { TAX_TEMPLATES } from '@/lib/tax/templates';
 import { requirePagePermission } from '@/services/base/page-guard';
+import { getRemitTo } from '@/services/invoice/seller';
 import { latestRates } from '@/services/fx/rates';
 import { listRates } from '@/services/tax/rates';
 import { getTaxSettings } from '@/services/tax/settings';
@@ -28,6 +30,7 @@ export default async function TaxPage(): Promise<JSX.Element> {
   ]).catch(() => null);
   if (!data) return <ErrorState description={t('s09Invoicing.tax.error')} />;
   const [rates, settings, fx] = data;
+  const remit = actor.role === 'owner' ? await getRemitTo(companyId).catch(() => null) : null;
   return (
     <div className="mx-auto max-w-4xl space-y-sp-24">
       <PageHeader
@@ -41,6 +44,7 @@ export default async function TaxPage(): Promise<JSX.Element> {
         today={new Date().toISOString().slice(0, 10)}
         canManage={canManage}
       />
+      {remit ? <RemitToForm initial={remit} /> : null}
       <section className="space-y-sp-8">
         <h2 className="text-lg font-semibold">{t('s09Invoicing.tax.exemptionsTitle')}</h2>
         <p className="text-sm text-muted-foreground">{t('s09Invoicing.tax.exemptionsHelp')}</p>

@@ -1,6 +1,6 @@
 // path: components/invoice/invoice-actions.tsx
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export function InvoiceActions({
   hasNumber,
   canCreate,
   canDelete,
+  canSend,
   isOwner,
 }: {
   id: string;
@@ -28,6 +29,7 @@ export function InvoiceActions({
   hasNumber: boolean;
   canCreate: boolean;
   canDelete: boolean;
+  canSend: boolean;
   isOwner: boolean;
 }): JSX.Element {
   const router = useRouter();
@@ -36,7 +38,13 @@ export function InvoiceActions({
   const [target, setTarget] = useState<InvoiceStatus | ''>('');
   const [reason, setReason] = useState('');
   const [number, setNumber] = useState('');
+  const [message, setMessage] = useState('');
+  const [similar, setSimilar] = useState<
+    { id: string; number: string | null; total: string; issueDate: string }[] | null
+  >(null);
+  const [voidReason, setVoidReason] = useState('');
   const key = crypto.randomUUID();
+  const sendKey = useRef(crypto.randomUUID());
 
   async function run(
     url: string,
@@ -50,6 +58,37 @@ export function InvoiceActions({
     const r = await callJson(url, method, body, headers);
     if (r.ok) after(r.data);
     else setNote({ ok: false, text: r.message ?? t('s09Invoicing.invoices.error') });
+    setBusy(false);
+  }
+
+  async function send(confirmDuplicate: boolean): Promise<void> {
+    setBusy(true);
+    setNote(null);
+    const r = await callJson(
+      `/api/invoices/${id}/send`,
+      'POST',
+      { confirmDuplicate, message },
+      { 'idempotency-key': sendKey.current },
+    );
+    if (r.ok) {
+      const d = r.data as { outcome?: string; emailed?: boolean } | null;
+      setSimilar(null);
+      sendKey.current = crypto.randomUUID();
+      setNote({
+        ok: true,
+        text:
+          d?.outcome === 'waiting'
+            ? t('s09Invoicing.invoices.waitingDone')
+            : d?.emailed
+              ? t('s09Invoicing.invoices.sentDone')
+              : t('s09Invoicing.invoices.sentNoEmail'),
+      });
+      router.refresh();
+    } else if (r.status === 409 && r.message && r.message.includes('similar')) {
+      const list = await callJson(`/api/invoices/${id}/similar`, 'GET');
+      setSimilar(Array.isArray(list.data) ? (list.data as NonNullable<typeof similar>) : []);
+      sendKey.current = crypto.randomUUID();
+    } else setNote({ ok: false, text: r.message ?? t('s09Invoicing.invoices.error') });
     setBusy(false);
   }
 
@@ -106,6 +145,81 @@ export function InvoiceActions({
           </Button>
         ) : null}
       </div>
+      {canSend && status === 'draft' && !trashed ? (
+        <div className="space-y-sp-8 rounded-lg border bg-card p-sp-12">
+          <label className="block">
+            {t('s09Invoicing.invoices.sendMessage')}
+            <Input value={message} maxLength={1000} onChange={(e) => setMessage(e.target.value)} />
+          </label>
+          <Button type="button" disabled={busy} onClick={() => void send(false)}>
+            {isOwner
+              ? t('s09Invoicing.invoices.send')
+              : t('s09Invoicing.invoices.submitForApproval')}
+          </Button>
+          {similar && similar.length > 0 ? (
+            <div role="alert" className="space-y-sp-4">
+              <p className="font-medium">{t('s09Invoicing.invoices.duplicateTitle')}</p>
+              <p>{t('s09Invoicing.invoices.duplicateHelp')}</p>
+              <ul className="list-disc pl-sp-16">
+                {similar.map((s) => (
+                  <li key={s.id}>
+                    <a className="underline" href={`/invoices/${s.id}`}>
+                      {s.number ?? t('s09Invoicing.invoices.draftNumber')}
+                    </a>{' '}
+                    - {s.issueDate} - {s.total}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void send(true)}
+              >
+                {t('s09Invoicing.invoices.sendAnyway')}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {canSend && status === 'pending_approval' && !trashed ? (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={busy}
+          onClick={() =>
+            void run(`/api/invoices/${id}/withdraw`, 'POST', undefined, () => router.refresh())
+          }
+        >
+          {t('s09Invoicing.invoices.withdraw')}
+        </Button>
+      ) : null}
+      {isOwner && status !== 'void' && status !== 'paid' && !trashed ? (
+        <form
+          className="flex flex-wrap items-end gap-sp-8"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!window.confirm(t('s09Invoicing.invoices.voidConfirm'))) return;
+            void run(`/api/invoices/${id}/void`, 'POST', { reason: voidReason }, () => {
+              setVoidReason('');
+              setNote({ ok: true, text: t('s09Invoicing.invoices.voidDone') });
+              router.refresh();
+            });
+          }}
+        >
+          <label>
+            {t('s09Invoicing.invoices.voidReason')}
+            <Input
+              value={voidReason}
+              maxLength={300}
+              onChange={(e) => setVoidReason(e.target.value)}
+            />
+          </label>
+          <Button type="submit" variant="outline" disabled={busy || voidReason.trim().length < 3}>
+            {t('s09Invoicing.invoices.voidApply')}
+          </Button>
+        </form>
+      ) : null}
       {isOwner && status === 'draft' && !hasNumber && !trashed ? (
         <form
           className="flex flex-wrap items-end gap-sp-8"

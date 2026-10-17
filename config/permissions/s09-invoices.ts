@@ -32,4 +32,16 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'invoice.send',
+    description: "Send invoices to clients (a staff member's invoice waits for the owner)",
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L1',
+  },
+  {
+    action: 'invoice.void',
+    description: 'Void a sent invoice, with a reason',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

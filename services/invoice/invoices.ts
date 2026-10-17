@@ -462,6 +462,11 @@ export async function createInvoice(actor: Actor, input: InvoiceInput): Promise<
   const view = await getInvoice(companyId, id);
   await addRevision(companyId, view, 'Created', actor.userId);
   await logInvoiceEvent(companyId, id, 'created', 'Draft created', actor.userId);
+  await getService('events').publish({
+    name: 'invoice.created',
+    companyId,
+    payload: { invoiceId: id, kind: input.kind, clientId: input.clientId },
+  });
   await getService('audit').record({
     action: 'invoice.created',
     resourceType: 'invoice',

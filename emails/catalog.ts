@@ -8,6 +8,7 @@ import { securityEmailTemplates } from './security';
 import { marketingEmailTemplates } from './marketing';
 import { onboardingEmailTemplates } from './onboarding';
 import { crmEmailTemplates } from './crm';
+import { invoiceEmailTemplates } from './invoice';
 import { sharedEmailTemplates } from './shared';
 
 export interface CatalogTemplate {
@@ -22,4 +23,5 @@ export const emailCatalog: readonly CatalogTemplate[] = [
   ...marketingEmailTemplates,
   ...onboardingEmailTemplates,
   ...crmEmailTemplates,
+  ...invoiceEmailTemplates,
 ];

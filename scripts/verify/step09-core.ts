@@ -18,6 +18,7 @@ import {
   termsFromDays,
 } from '@/lib/invoice/form';
 import { invoiceListQuery } from '@/lib/invoice/search';
+import { EMPTY_REMIT_TO, hasRemitTo, remitToSchema } from '@/lib/invoice/remit';
 import { addDays, daysBetween, dueDateFor, termsLabel } from '@/lib/invoice/terms';
 import {
   invoiceInputSchema,
@@ -390,6 +391,29 @@ async function main(): Promise<void> {
     assert.ok(!invoiceListQuery.safeParse({ size: '1000' }).success);
     assert.ok(!invoiceListQuery.safeParse({ sort: 'password' }).success);
     assert.ok(!invoiceListQuery.safeParse({ min: '1e9' }).success);
+  });
+
+  await check('remit-to details, send permissions and approval rule', () => {
+    const ok = {
+      bankName: 'First Bank',
+      accountName: 'Acme LLC',
+      accountNumber: '1234 5678-90',
+      routingNumber: '021000021',
+      swift: 'chasus33',
+      iban: 'gb29nwbk60161331926819',
+      instructions: 'Quote the invoice number',
+    };
+    const parsed = remitToSchema.parse(ok);
+    assert.equal(parsed.swift, 'CHASUS33', 'upper-cased');
+    assert.equal(parsed.iban, 'GB29NWBK60161331926819');
+    assert.ok(!remitToSchema.safeParse({ ...ok, swift: 'ABC' }).success);
+    assert.ok(!remitToSchema.safeParse({ ...ok, accountNumber: '12<34>' }).success);
+    assert.ok(!remitToSchema.safeParse({ ...ok, iban: 'not an iban' }).success);
+    assert.ok(remitToSchema.safeParse(EMPTY_REMIT_TO).success);
+    assert.ok(!hasRemitTo(EMPTY_REMIT_TO) && hasRemitTo(parsed) && !hasRemitTo(null));
+    const names = new Map(registered.map((p) => [p.action, p]));
+    assert.equal(names.get('invoice.send')?.approvalLevel, 'L1');
+    assert.deepEqual(names.get('invoice.void')?.defaultRoles, ['owner']);
   });
 
   if (failures > 0) process.exit(1);

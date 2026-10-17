@@ -40,10 +40,11 @@ export default async function InvoicePage({
     throw error;
   }
   const perms = getService('permissions');
-  const [canCreate, canDelete, canUpdate, data, events, revisions] = await Promise.all([
+  const [canCreate, canDelete, canUpdate, canSend, data, events, revisions] = await Promise.all([
     perms.can(actor, 'invoice.create', { type: 'invoice' }),
     perms.can(actor, 'invoice.delete', { type: 'invoice' }),
     perms.can(actor, 'invoice.update', { type: 'invoice' }),
+    perms.can(actor, 'invoice.send', { type: 'invoice' }),
     loadFormData(companyId, new Date().toISOString().slice(0, 10)),
     listInvoiceEvents(companyId, id),
     listRevisions(companyId, id),
@@ -93,6 +94,7 @@ export default async function InvoicePage({
         hasNumber={invoice.number !== null}
         canCreate={canCreate}
         canDelete={canDelete}
+        canSend={canSend}
         isOwner={actor.role === 'owner'}
       />
       <InvoiceForm
