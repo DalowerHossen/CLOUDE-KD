@@ -152,6 +152,7 @@ export default async function InvoicePage({
         id={invoice.id}
         status={invoice.status}
         kind={invoice.kind}
+        amountPaid={invoice.amountPaid}
         trashed={trashed}
         hasNumber={invoice.number !== null}
         canCreate={canCreate}
@@ -172,6 +173,9 @@ export default async function InvoicePage({
         <p className="text-sm print:hidden">
           <Link className="underline" href={`/invoices/recurring/new?from=${invoice.id}`}>
             {t('s09Recurring.repeat')}
+          </Link>{' '}
+          <Link className="underline" href={`/invoices/batches/new?from=${invoice.id}`}>
+            {t('s09Batches.create.link')}
           </Link>
         </p>
       ) : null}

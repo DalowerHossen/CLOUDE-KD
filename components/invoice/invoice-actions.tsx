@@ -9,6 +9,8 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { t, type StringKey } from '@/lib/i18n';
 import { nextStatuses } from '@/lib/invoice/status';
 import type { InvoiceStatus } from '@/types/contracts';
+import { Money } from '@/lib/utils/currency';
+import { formatMoney } from '@/lib/utils/formatting';
 import { callJson } from './api-call';
 
 const idBody = z.object({ id: z.string() });
@@ -19,6 +21,7 @@ export function InvoiceActions({
   id,
   status,
   kind,
+  amountPaid,
   trashed,
   hasNumber,
   canCreate,
@@ -29,6 +32,7 @@ export function InvoiceActions({
   id: string;
   status: InvoiceStatus;
   kind: string;
+  amountPaid: string;
   trashed: boolean;
   hasNumber: boolean;
   canCreate: boolean;
@@ -47,6 +51,7 @@ export function InvoiceActions({
     { id: string; number: string | null; total: string; issueDate: string }[] | null
   >(null);
   const [voidReason, setVoidReason] = useState('');
+  const [ackPaid, setAckPaid] = useState(false);
   const key = crypto.randomUUID();
   const sendKey = useRef(crypto.randomUUID());
 
@@ -229,11 +234,16 @@ export function InvoiceActions({
           onSubmit={(e) => {
             e.preventDefault();
             if (!window.confirm(t('s09Invoicing.invoices.voidConfirm'))) return;
-            void run(`/api/invoices/${id}/void`, 'POST', { reason: voidReason }, () => {
-              setVoidReason('');
-              setNote({ ok: true, text: t('s09Invoicing.invoices.voidDone') });
-              router.refresh();
-            });
+            void run(
+              `/api/invoices/${id}/void`,
+              'POST',
+              { reason: voidReason, acknowledgePayments: ackPaid },
+              () => {
+                setVoidReason('');
+                setNote({ ok: true, text: t('s09Invoicing.invoices.voidDone') });
+                router.refresh();
+              },
+            );
           }}
         >
           <label>
@@ -244,7 +254,27 @@ export function InvoiceActions({
               onChange={(e) => setVoidReason(e.target.value)}
             />
           </label>
-          <Button type="submit" variant="outline" disabled={busy || voidReason.trim().length < 3}>
+          {Money.parse(amountPaid).isPositive() ? (
+            <label className="flex items-center gap-sp-8">
+              <input
+                type="checkbox"
+                checked={ackPaid}
+                onChange={(e) => setAckPaid(e.target.checked)}
+              />
+              {t('s09Invoicing.invoices.voidPaidConfirm', {
+                amount: formatMoney(Money.parse(amountPaid)),
+              })}
+            </label>
+          ) : null}
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={
+              busy ||
+              voidReason.trim().length < 3 ||
+              (Money.parse(amountPaid).isPositive() && !ackPaid)
+            }
+          >
             {t('s09Invoicing.invoices.voidApply')}
           </Button>
         </form>

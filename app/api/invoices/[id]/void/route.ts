@@ -12,12 +12,16 @@ export const POST = withApi(
     roles: ['owner'],
     permission: { action: 'invoice.void', resourceType: 'invoice' },
     params: z.object({ id: z.string().uuid() }).strict(),
-    body: z.object({ reason: plain(3, 300) }).strict(),
+    body: z.object({ reason: plain(3, 300), acknowledgePayments: z.boolean() }).strict(),
     rateLimitPolicy: 'strict',
     auditExempt: 'The invoice service writes the audit entry.',
   },
   async ({ actor, params: p, body }) => {
     if (!actor) throw new ForbiddenError();
-    return { data: await voidInvoice(actor, p.id, body.reason) };
+    return {
+      data: await voidInvoice(actor, p.id, body.reason, {
+        acknowledgePayments: body.acknowledgePayments,
+      }),
+    };
   },
 );

@@ -95,6 +95,15 @@ export const nav: NavItem[] = [
     order: 40,
   },
   {
+    id: 'invoice-batches',
+    labelKey: 's09Batches.nav.batches',
+    href: '/invoices/batches',
+    icon: 'layers',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 26,
+  },
+  {
     id: 'invoice-tax',
     labelKey: 's09Invoicing.nav.tax',
     href: '/invoices/tax',

@@ -28,30 +28,4 @@ import { permissions as s09Recurring } from './permissions/s09-recurring';
 import { permissions as s09Reports } from './permissions/s09-reports';
 import { permissions as s09Tax } from './permissions/s09-tax';
 
-export const permissions: PermissionDefinition[] = [
-  ...s02Core,
-  ...s03Auth,
-  ...s04Security,
-  ...s05StorageEmail,
-  ...s06Site,
-  ...s07Admin,
-  ...s07Company,
-  ...s07Data,
-  ...s07Domain,
-  ...s07Kyc,
-  ...s07Support,
-  ...s07Team,
-  ...s08Catalog,
-  ...s08Clients,
-  ...s08Inventory,
-  ...s08Purchasing,
-  ...s08Transfer,
-  ...s09Credits,
-  ...s09Dunning,
-  ...s09Estimates,
-  ...s09Invoices,
-  ...s09Projects,
-  ...s09Recurring,
-  ...s09Reports,
-  ...s09Tax,
-];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Credits, ...s09Dunning, ...s09Estimates, ...s09Invoices, ...s09Projects, ...s09Recurring, ...s09Reports, ...s09Tax];

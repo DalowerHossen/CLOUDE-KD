@@ -1,6 +1,7 @@
 // path: app/(dashboard)/invoices/page.tsx
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { BulkBar, BulkCheckbox, BulkSelectPage } from '@/components/invoice/bulk-selection';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState, ErrorState } from '@/components/shared/state-views';
@@ -24,6 +25,14 @@ export const metadata: Metadata = { title: 'Invoices' };
 const money = (v: string): string => formatMoney(Money.parse(v));
 
 const columns: readonly DataColumn<InvoiceListItem>[] = [
+  {
+    key: 'select',
+    header: '',
+    hideOnMobile: true,
+    cell: (r) => (
+      <BulkCheckbox id={r.id} number={r.number ?? t('s09Invoicing.invoices.draftNumber')} />
+    ),
+  },
   {
     key: 'number',
     header: t('s09Invoicing.invoices.number'),
@@ -114,9 +123,15 @@ export default async function InvoicesPage({
   } catch {
     result = null;
   }
-  const canCreate = await getService('permissions').can(actor, 'invoice.create', {
-    type: 'invoice',
-  });
+  const perms = getService('permissions');
+  const [canCreate, canSend, canRemind, canTrash, canVoid, canTag] = await Promise.all([
+    perms.can(actor, 'invoice.create', { type: 'invoice' }),
+    perms.can(actor, 'invoice.send', { type: 'invoice' }),
+    perms.can(actor, 'reminder.send', { type: 'invoice' }),
+    perms.can(actor, 'invoice.delete', { type: 'invoice' }),
+    perms.can(actor, 'invoice.void', { type: 'invoice' }),
+    perms.can(actor, 'invoice.update', { type: 'invoice' }),
+  ]);
   const base = params(query, view);
   const nextHref = result?.next
     ? `/invoices?${new URLSearchParams({ ...base, after: result.next }).toString()}`
@@ -132,6 +147,9 @@ export default async function InvoicesPage({
         description={t('s09Invoicing.invoices.description')}
         actions={
           <>
+            <Link className="underline" href="/invoices/batches">
+              {t('s09Batches.title')}
+            </Link>
             <Link className="underline" href="/invoices/tax">
               {t('s09Invoicing.invoices.taxLink')}
             </Link>
@@ -265,6 +283,9 @@ export default async function InvoicesPage({
           {t('s09Invoicing.invoices.viewCards')}
         </Link>
       </nav>
+      {result !== null && result.rows.length > 0 && !trash ? (
+        <BulkSelectPage ids={result.rows.map((r) => r.id)} />
+      ) : null}
       {result === null ? (
         <ErrorState description={t('s09Invoicing.invoices.loadError')} />
       ) : result.rows.length === 0 ? (
@@ -282,6 +303,12 @@ export default async function InvoicesPage({
           {result.rows.map((r) => (
             <li key={r.id} className="space-y-sp-4 rounded-lg border bg-card p-sp-12 text-sm">
               <div className="flex items-center justify-between">
+                {!trash ? (
+                  <BulkCheckbox
+                    id={r.id}
+                    number={r.number ?? t('s09Invoicing.invoices.draftNumber')}
+                  />
+                ) : null}
                 <Link className="font-semibold underline" href={`/invoices/${r.id}`}>
                   {r.number ?? t('s09Invoicing.invoices.draftNumber')}
                 </Link>
@@ -307,6 +334,17 @@ export default async function InvoicesPage({
           empty={<EmptyState title={t('s09Invoicing.invoices.empty')} />}
         />
       )}
+      {!trash ? (
+        <BulkBar
+          allowed={{
+            send: canSend,
+            remind: canRemind,
+            trash: canTrash,
+            void: canVoid && actor.role === 'owner',
+            tag: canTag,
+          }}
+        />
+      ) : null}
       {nextHref ? (
         <p className="text-sm">
           <Link className="underline" href={nextHref}>

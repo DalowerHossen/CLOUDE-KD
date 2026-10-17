@@ -9,6 +9,7 @@ import { strings as s05Storage } from './en/s05-storage';
 import { strings as s06Public } from './en/s06-public';
 import { strings as s07Company } from './en/s07-company';
 import { strings as s08Crm } from './en/s08-crm';
+import { strings as s09Batches } from './en/s09-batches';
 import { strings as s09Credits } from './en/s09-credits';
 import { strings as s09Dashboard } from './en/s09-dashboard';
 import { strings as s09Dunning } from './en/s09-dunning';
@@ -27,6 +28,7 @@ export const en = {
   s06Public,
   s07Company,
   s08Crm,
+  s09Batches,
   s09Credits,
   s09Dashboard,
   s09Dunning,

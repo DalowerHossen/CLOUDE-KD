@@ -14,6 +14,7 @@ import {
 } from '@/lib/errors';
 import { invoiceLink } from '@/lib/billing/links';
 import { FIXED_PREFIX } from '@/lib/invoice/numbering';
+import { daysBetween } from '@/lib/invoice/terms';
 import type { InvoiceKind } from '@/lib/invoice/input';
 import { isOpen } from '@/lib/invoice/status';
 import { Money } from '@/lib/utils/currency';
@@ -27,6 +28,9 @@ import { getInvoice, type InvoiceView } from './invoices';
 import { logger } from '@/lib/logger';
 import { buildSeller } from './seller';
 import { snapshotInvoice } from './snapshots';
+
+/** An invoice sent with an issue date older than this many days is marked on its timeline as back-dated. */
+export const BACKDATED_AFTER_DAYS = 7;
 
 export interface SimilarInvoice {
   id: string;
@@ -160,6 +164,14 @@ async function finalizeSend(
     companyId,
     metadata: { number: sent.number, by, approvedBy },
   });
+  if (daysBetween(sent.issueDate, new Date().toISOString().slice(0, 10)) > BACKDATED_AFTER_DAYS)
+    await logInvoiceEvent(
+      companyId,
+      id,
+      'backdated',
+      `Sent with an issue date of ${sent.issueDate}, which is more than ${BACKDATED_AFTER_DAYS} days ago`,
+      by,
+    );
   // The PDF snapshot is best effort here; the "invoice-snapshots" job retries a failed one.
   await snapshotInvoice(companyId, id, 'sent', by).catch((e: unknown) =>
     logger.warn('invoice snapshot failed', { invoiceId: id, error: String(e) }),
@@ -342,7 +354,12 @@ export async function syncInvoiceApprovals(): Promise<number> {
 }
 
 /** Void a sent invoice (owner). Stock taken for it is given back by the inventory worker through `invoice.voided`. */
-export async function voidInvoice(actor: Actor, id: string, reason: string): Promise<InvoiceView> {
+export async function voidInvoice(
+  actor: Actor,
+  id: string,
+  reason: string,
+  options: { acknowledgePayments: boolean } = { acknowledgePayments: false },
+): Promise<InvoiceView> {
   if (!actor.companyId) throw new ValidationError('A company is needed.');
   if (actor.role !== 'owner') throw new ForbiddenError();
   const companyId = actor.companyId;
@@ -353,6 +370,12 @@ export async function voidInvoice(actor: Actor, id: string, reason: string): Pro
   const allowed =
     current.status === 'draft' || isOpen(current.status) || current.status === 'pending_approval';
   if (!allowed) throw new ValidationError('This invoice cannot be voided now.');
+  // Money was received: voiding does not move it. The payment STEP is told (invoice.voided carries the amount) and the
+  // owner must deal with the refund or the client credit, so the owner has to confirm that knowingly.
+  if (Money.parse(current.amountPaid).isPositive() && !options.acknowledgePayments)
+    throw new ValidationError(
+      `${formatMoney(Money.parse(current.amountPaid))} was already paid on this invoice. Confirm that you will refund it or credit the client, then void.`,
+    );
   const r = await getAdminSupabase()
     .from('invoices')
     .update({ status: 'void', voided_at: new Date().toISOString(), void_reason: reason })

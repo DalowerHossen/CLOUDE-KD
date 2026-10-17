@@ -90,6 +90,15 @@ import { reportParamsSchema, resolveParams, scheduleInputSchema } from '@/lib/re
 import { nextRun } from '@/lib/schedule/report-schedule';
 import { buildXlsx, zipStore } from '@/lib/export/xlsx';
 import { csvOf } from '@/lib/reports/csv';
+import {
+  ConflictError,
+  DuplicateError,
+  ForbiddenError,
+  InternalError,
+  NotFoundError,
+  ValidationError,
+} from '@/lib/errors';
+import { batchCreateSchema, batchPercent, outcomeOfError } from '@/lib/invoice/batch';
 import { buildCredit } from '@/lib/credit/build';
 import type { InvoiceView } from '@/services/invoice/invoices';
 import {
@@ -1692,6 +1701,99 @@ async function main(): Promise<void> {
     const names = new Map(registered.map((p) => [p.action, p]));
     assert.deepEqual(names.get('report.read')?.defaultRoles, ['owner']);
     assert.ok(names.has('report.export') && names.has('report.schedule'));
+  });
+
+  await check('batch input, progress and error handling', () => {
+    const id = '0190c1a0-0000-7000-8000-000000000001';
+    const id2 = '0190c1a0-0000-7000-8000-000000000002';
+    assert.ok(
+      batchCreateSchema.safeParse({
+        action: 'send',
+        invoiceIds: [id],
+        confirmDuplicate: false,
+        message: '',
+        runAfter: null,
+      }).success,
+    );
+    const dedup = batchCreateSchema.parse({
+      action: 'trash',
+      invoiceIds: [id, id, id2],
+      runAfter: null,
+    });
+    assert.deepEqual(
+      dedup.action === 'trash' ? dedup.invoiceIds : [],
+      [id, id2],
+      'the same invoice is listed once',
+    );
+    assert.ok(
+      !batchCreateSchema.safeParse({ action: 'trash', invoiceIds: [], runAfter: null }).success,
+      'at least one invoice',
+    );
+    assert.ok(
+      !batchCreateSchema.safeParse({
+        action: 'void',
+        invoiceIds: [id],
+        reason: 'ok',
+        acknowledgePayments: true,
+        runAfter: null,
+      }).success,
+      'a real reason',
+    );
+    assert.ok(
+      !batchCreateSchema.safeParse({
+        action: 'void',
+        invoiceIds: [id],
+        reason: 'Wrong client',
+        runAfter: null,
+      }).success,
+      'void must say whether payments are acknowledged',
+    );
+    assert.ok(
+      !batchCreateSchema.safeParse({ action: 'delete', invoiceIds: [id], runAfter: null }).success,
+      'known actions',
+    );
+    const many = Array.from(
+      { length: 501 },
+      (_, i) => `0190c1a0-0000-7000-8000-${String(i).padStart(12, '0')}`,
+    );
+    assert.ok(
+      !batchCreateSchema.safeParse({ action: 'trash', invoiceIds: many, runAfter: null }).success,
+      'at most 500',
+    );
+    assert.ok(
+      !batchCreateSchema.safeParse({
+        action: 'trash',
+        invoiceIds: [id],
+        runAfter: new Date(Date.now() + 200 * 86_400_000).toISOString(),
+      }).success,
+      'not months ahead',
+    );
+    assert.ok(
+      batchCreateSchema.safeParse({
+        action: 'trash',
+        invoiceIds: [id],
+        runAfter: new Date(Date.now() + 3600_000).toISOString(),
+      }).success,
+    );
+    assert.equal(batchPercent({ total: 200, done: 50, failed: 10, skipped: 40 }), 50);
+    assert.equal(batchPercent({ total: 3, done: 1, failed: 0, skipped: 0 }), 33);
+    assert.equal(batchPercent({ total: 0, done: 0, failed: 0, skipped: 0 }), 100);
+    assert.equal(outcomeOfError(new DuplicateError('similar invoice'), 1).status, 'skipped');
+    assert.equal(
+      outcomeOfError(new ValidationError('no lines'), 1).status,
+      'failed',
+      'a problem with the data is not retried',
+    );
+    assert.equal(outcomeOfError(new ForbiddenError(), 1).status, 'failed');
+    assert.equal(outcomeOfError(new NotFoundError(), 1).status, 'failed');
+    assert.equal(outcomeOfError(new ConflictError(), 1).status, 'failed');
+    assert.equal(
+      outcomeOfError(new InternalError(new Error('db down')), 1).status,
+      'pending',
+      'a server problem is tried again',
+    );
+    assert.equal(outcomeOfError(new Error('network'), 2).status, 'pending');
+    assert.equal(outcomeOfError(new Error('network'), 3).status, 'failed', 'three tries at most');
   });
 
   if (failures > 0) process.exit(1);

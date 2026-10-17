@@ -29,6 +29,7 @@ import { job as s07Support } from './jobs/s07-support';
 import { job as s08Clients } from './jobs/s08-clients';
 import { job as s08Inventory } from './jobs/s08-inventory';
 import { job as s08Purchasing } from './jobs/s08-purchasing';
+import { job as s09Batches } from './jobs/s09-batches';
 import { job as s09Estimates } from './jobs/s09-estimates';
 import { job as s09Fx } from './jobs/s09-fx';
 import { job as s09Invoices } from './jobs/s09-invoices';
@@ -40,4 +41,4 @@ import { job as s09ReportSchedules } from './jobs/s09-report-schedules';
 import { job as s09Snapshots } from './jobs/s09-snapshots';
 import { job as s09Time } from './jobs/s09-time';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle, s07Support, s08Clients, s08Inventory, s08Purchasing, s09Estimates, s09Fx, s09Invoices, s09LateFees, s09Overdue, s09Recurring, s09Reminders, s09ReportSchedules, s09Snapshots, s09Time];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle, s07Support, s08Clients, s08Inventory, s08Purchasing, s09Batches, s09Estimates, s09Fx, s09Invoices, s09LateFees, s09Overdue, s09Recurring, s09Reminders, s09ReportSchedules, s09Snapshots, s09Time];
