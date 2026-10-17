@@ -1,0 +1,14 @@
+# STEP 10 - Progress
+
+- [ ] 10.1 Payment schema
+- [ ] 10.2 Registry and adapter framework
+- [ ] 10.3 Credential vault
+- [ ] 10.4 Super admin processors page and API
+- [ ] 10.5 Mode framework
+- [ ] 10.6 Routing
+- [ ] 10.7 Payment orchestration
+- [ ] 10.8 Card rules engine
+- [ ] 10.9 Verification engine and review queue
+- [ ] 10.10 Webhook core
+- [ ] 10.11 Checkout, links, dashboard, reports
+- [ ] 10.12 Checks, verification record, handoff
