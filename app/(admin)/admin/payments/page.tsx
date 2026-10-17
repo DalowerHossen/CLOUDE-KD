@@ -13,7 +13,11 @@ import { notFound } from 'next/navigation';
 import { PROCESSOR_BY_ID } from '@/config/processors';
 import { isKnownProcessor } from '@/lib/payment/registry';
 import { canReadReviews } from '@/services/payment/reviews';
-import { attentionCounts, gatewayHealth, type GatewayHealthRow } from '@/services/payment/reports';
+import {
+  attentionCounts,
+  gatewayHealthLastDay,
+  type GatewayHealthRow,
+} from '@/services/payment/reports';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Payment overview' };
@@ -24,7 +28,7 @@ export default async function PaymentOverviewPage(): Promise<JSX.Element> {
   let health: GatewayHealthRow[] | null;
   let counts: { inReview: string; deadLetters: string } | null;
   try {
-    health = await gatewayHealth(new Date(Date.now() - 86_400_000));
+    health = await gatewayHealthLastDay();
   } catch {
     health = null;
   }

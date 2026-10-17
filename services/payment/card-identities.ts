@@ -59,7 +59,7 @@ export async function isBlacklisted(processorId: ProcessorId, hmac: string): Pro
     .maybeSingle();
   if (error) throw mapPaymentDbError(error);
   if (!data) return false;
-  return data.expires_at === null || new Date(String(data.expires_at)).getTime() > Date.now();
+  return !data.expires_at || new Date(String(data.expires_at)).getTime() > Date.now();
 }
 
 export async function cardStats(input: {

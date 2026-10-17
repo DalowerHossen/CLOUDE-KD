@@ -233,7 +233,7 @@ export async function listBlockedCards(): Promise<BlockedCard[]> {
     .limit(200);
   if (error) throw new InternalError(error);
   return (data ?? [])
-    .filter((c) => c.expires_at === null || new Date(String(c.expires_at)).getTime() > Date.now())
+    .filter((c) => !c.expires_at || new Date(String(c.expires_at)).getTime() > Date.now())
     .map((c) => ({
       id: String(c.id),
       processorId: String(c.processor_id),

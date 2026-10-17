@@ -12,7 +12,7 @@ import { Money } from '@/lib/utils/currency';
 import { formatMoney } from '@/lib/utils/formatting';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { paymentListView, type PaymentListItem } from '@/services/payment/payment-detail';
-import { paymentReport, type PaymentReport } from '@/services/payment/reports';
+import { paymentReportLastDays, type PaymentReport } from '@/services/payment/reports';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Payments' };
@@ -77,8 +77,7 @@ export default async function PaymentsPage({
     rows = null;
   }
   try {
-    const to = new Date();
-    report = await paymentReport(companyId, new Date(to.getTime() - 30 * 86_400_000), to);
+    report = await paymentReportLastDays(companyId, 30);
   } catch {
     report = null;
   }

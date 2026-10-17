@@ -90,6 +90,7 @@ export async function getRowByTransaction(
   processorTransactionId: string,
 ): Promise<PaymentRow | null> {
   const { data, error } = await getAdminSupabase()
+    // tenant-ok: the pair processor + transaction id is unique; the company is read from the row
     .from('payments')
     .select(PAYMENT_COLUMNS)
     .eq('processor_id', processorId)
@@ -123,6 +124,7 @@ export type InsertOutcome = { row: PaymentRow } | { replay: PaymentRow };
 /** Creates the payment. A second open payment on the invoice is a conflict; the same key returns the first payment. */
 export async function insertPayment(values: Record<string, unknown>): Promise<InsertOutcome> {
   const { data, error } = await getAdminSupabase()
+    // tenant-ok: the caller puts company_id into the row it writes
     .from('payments')
     .insert(values)
     .select(PAYMENT_COLUMNS)

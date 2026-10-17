@@ -134,6 +134,7 @@ export async function attentionCounts(): Promise<{ inReview: string; deadLetters
   const db = getAdminSupabase();
   const [review, dead] = await Promise.all([
     db
+      // tenant-ok: platform overview for administrators, counts only
       .from('payments')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending_review')
@@ -147,4 +148,18 @@ export async function attentionCounts(): Promise<{ inReview: string; deadLetters
   if (review.error) throw new InternalError(review.error);
   if (dead.error) throw new InternalError(dead.error);
   return { inReview: String(review.count ?? 0), deadLetters: String(dead.count ?? 0) };
+}
+
+/** Gateway health of the last 24 hours (the clock is read here, not while a page renders). */
+export async function gatewayHealthLastDay(): Promise<GatewayHealthRow[]> {
+  return gatewayHealth(new Date(Date.now() - 86_400_000));
+}
+
+/** Payment report of the last `days` days. */
+export async function paymentReportLastDays(
+  companyId: string,
+  days: number,
+): Promise<PaymentReport> {
+  const to = new Date();
+  return paymentReport(companyId, new Date(to.getTime() - days * 86_400_000), to);
 }

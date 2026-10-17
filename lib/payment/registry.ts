@@ -27,7 +27,7 @@ export function isKnownProcessor(value: unknown): value is ProcessorId {
 }
 
 export function hasAdapter(id: ProcessorId): boolean {
-  return adapterLoaders[id] !== undefined;
+  return adapterLoaders[id] !== undefined || cache.has(id);
 }
 
 export function listRegistry(): RegistryEntry[] {

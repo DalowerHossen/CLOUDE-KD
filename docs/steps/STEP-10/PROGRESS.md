@@ -11,4 +11,4 @@
 - [x] 10.9 Verification engine and review queue
 - [x] 10.10 Webhook core
 - [x] 10.11 Checkout, links, dashboard, reports (migration S10_003)
-- [ ] 10.12 Checks, verification record, handoff
+- [x] 10.12 Checks, verification record, handoff
