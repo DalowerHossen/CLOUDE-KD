@@ -36,8 +36,8 @@
 - [x] 11.7.d verifone: secure form
 - [ ] 11.7.e verifone: verification - local checks done (27), sandbox scenarios pending (no sandbox credentials)
 - [x] 11.8.a payarc: doc record
-- [ ] 11.8.b payarc: adapter
-- [ ] 11.8.c payarc: webhook route
-- [ ] 11.8.d payarc: secure form
-- [ ] 11.8.e payarc: verification
+- [x] 11.8.b payarc: adapter
+- [ ] 11.8.c payarc: webhook route - route exists, verification fails closed; BLOCKED by B2 (no webhook authentication documented)
+- [x] 11.8.d payarc: secure form (sandbox script only; live address blocked by B3)
+- [ ] 11.8.e payarc: verification - local checks done (16), sandbox scenarios pending (no sandbox credentials)
 - [ ] 11.9 status table and handoff

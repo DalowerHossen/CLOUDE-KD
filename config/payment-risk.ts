@@ -45,6 +45,8 @@ export const AUTH_VALIDITY_HOURS_BY_PROCESSOR: Readonly<Partial<Record<string, n
   square: 144,
   // Verifone: issuers release an unused authorization after 7 to 30 days; the platform keeps it inside 6 days.
   verifone: 144,
+  // PayArc: uncaptured charges expire after seven days; the platform hold stays inside 6 days.
+  payarc: 144,
 };
 
 /** A passing test of a mode stays valid for this many hours (REQ-NMI-MODES). */
