@@ -145,6 +145,7 @@ as $$
 declare
   inv public.invoices%rowtype;
   w uuid;
+  app uuid;
   res record;
 begin
   select * into inv from public.invoices where id = p_invoice and company_id = p_company and deleted_at is null for update;
@@ -153,8 +154,8 @@ begin
   if inv.status not in ('sent', 'viewed', 'partially_paid', 'overdue', 'disputed') then raise exception 'invoice is not open' using errcode = '22023'; end if;
   if p_amount is null or p_amount <= 0 or p_amount > inv.amount_due - inv.amount_paid then raise exception 'amount is more than the balance' using errcode = '22023'; end if;
   insert into public.invoice_writeoffs (company_id, invoice_id, amount, reason, created_by) values (p_company, p_invoice, p_amount, p_reason, p_by) returning id into w;
-  insert into public.credit_applications (company_id, source_type, source_id, invoice_id, amount, created_by) values (p_company, 'write_off', w, p_invoice, p_amount, p_by);
-  select * into res from public.kd_invoice_apply_payment(p_invoice, w, p_amount);
+  insert into public.credit_applications (company_id, source_type, source_id, invoice_id, amount, created_by) values (p_company, 'write_off', w, p_invoice, p_amount, p_by) returning id into app;
+  select * into res from public.kd_invoice_apply_payment(p_invoice, app, p_amount);
   return query select w, res.status, res.balance;
 end
 $$;

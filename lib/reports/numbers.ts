@@ -17,3 +17,12 @@ export function clampInt(value: unknown, min: number, max: number, fallback = mi
 export function floorDiv(a: number, b: number): number {
   return b === 0 ? 0 : Math.trunc(a / b);
 }
+
+/**
+ * The height of a bar or the position of a point for an amount given as text. This is for drawing charts only: the
+ * result is never added, compared for business rules or shown as an amount (amounts are shown from Money).
+ */
+export function plotValue(amountText: string): number {
+  const n = Number(amountText);
+  return Number.isFinite(n) ? n : 0;
+}

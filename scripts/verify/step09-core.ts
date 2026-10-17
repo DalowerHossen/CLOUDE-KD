@@ -61,6 +61,15 @@ import {
 } from '@/lib/project/time';
 import { hourLines, retainerSplit, type Claimed } from '@/lib/project/bill-lines';
 import { billInputSchema } from '@/lib/project/input';
+import { RANGE_KEYS, changePercent, previousRange, rangeFor } from '@/lib/reports/ranges';
+import {
+  WIDGET_IDS,
+  defaultLayout,
+  layoutSchema,
+  moveWidget,
+  normalizeLayout,
+  type WidgetId,
+} from '@/lib/reports/widgets';
 import { buildCredit } from '@/lib/credit/build';
 import type { InvoiceView } from '@/services/invoice/invoices';
 import {
@@ -1180,6 +1189,93 @@ async function main(): Promise<void> {
         .success,
     );
     assert.ok(!billInputSchema.safeParse({ ...bill, grouping: 'week' }).success);
+  });
+
+  await check('dashboard ranges, comparison and layout', () => {
+    assert.deepEqual(rangeFor('month', '2026-02-14'), { from: '2026-02-01', to: '2026-02-28' });
+    assert.deepEqual(
+      rangeFor('month', '2028-02-14'),
+      { from: '2028-02-01', to: '2028-02-29' },
+      'leap year',
+    );
+    assert.deepEqual(rangeFor('last_month', '2026-01-10'), {
+      from: '2025-12-01',
+      to: '2025-12-31',
+    });
+    assert.deepEqual(rangeFor('quarter', '2026-05-20'), { from: '2026-04-01', to: '2026-06-30' });
+    assert.deepEqual(rangeFor('quarter', '2026-12-31'), { from: '2026-10-01', to: '2026-12-31' });
+    assert.deepEqual(rangeFor('year', '2026-05-20'), { from: '2026-01-01', to: '2026-12-31' });
+    assert.deepEqual(rangeFor('last_year', '2026-05-20'), { from: '2025-01-01', to: '2025-12-31' });
+    assert.deepEqual(rangeFor('last_30', '2026-03-10'), { from: '2026-02-09', to: '2026-03-10' });
+    assert.deepEqual(previousRange('month', rangeFor('month', '2026-01-05')), {
+      from: '2025-12-01',
+      to: '2025-12-31',
+    });
+    assert.deepEqual(previousRange('quarter', rangeFor('quarter', '2026-02-05')), {
+      from: '2025-10-01',
+      to: '2025-12-31',
+    });
+    assert.deepEqual(previousRange('quarter', rangeFor('quarter', '2026-08-05')), {
+      from: '2026-04-01',
+      to: '2026-06-30',
+    });
+    assert.deepEqual(previousRange('year', rangeFor('year', '2026-08-05')), {
+      from: '2025-01-01',
+      to: '2025-12-31',
+    });
+    assert.deepEqual(previousRange('last_30', rangeFor('last_30', '2026-03-10')), {
+      from: '2026-01-10',
+      to: '2026-02-08',
+    });
+    for (const k of RANGE_KEYS) {
+      const r = rangeFor(k, '2026-07-04');
+      assert.ok(r.from <= r.to, k);
+      assert.ok(previousRange(k, r).to < r.from, `${k} previous ends before this starts`);
+    }
+    assert.equal(changePercent('150', '100'), '50.00');
+    assert.equal(changePercent('50', '100'), '-50.00');
+    assert.equal(changePercent('100', '0'), null, 'nothing to compare with');
+    assert.equal(changePercent('100.3333', '100'), '0.33');
+    const allowed = new Set<WidgetId>(WIDGET_IDS.filter((id) => id !== 'time'));
+    assert.deepEqual(
+      normalizeLayout(
+        [
+          { id: 'chart', visible: false },
+          { id: 'cards', visible: true },
+        ],
+        allowed,
+      )
+        .map((w) => w.id)
+        .slice(0, 2),
+      ['chart', 'cards'],
+      'saved order is kept',
+    );
+    assert.equal(normalizeLayout([], allowed).length, allowed.size, 'new widgets are added');
+    assert.ok(
+      !normalizeLayout([{ id: 'time', visible: true }], allowed).some((w) => w.id === 'time'),
+      'not allowed is dropped',
+    );
+    assert.ok(
+      normalizeLayout('garbage', allowed).length === allowed.size,
+      'a broken layout falls back',
+    );
+    assert.ok(
+      !layoutSchema.safeParse({
+        widgets: [
+          { id: 'cards', visible: true },
+          { id: 'cards', visible: false },
+        ],
+      }).success,
+      'once each',
+    );
+    assert.ok(!layoutSchema.safeParse({ widgets: [{ id: 'weather', visible: true }] }).success);
+    const moved = moveWidget(defaultLayout(), 'chart', -1);
+    assert.equal(moved[2]?.id, 'chart');
+    assert.deepEqual(
+      moveWidget(defaultLayout(), 'search', -1),
+      defaultLayout(),
+      'the first cannot move up',
+    );
   });
 
   if (failures > 0) process.exit(1);

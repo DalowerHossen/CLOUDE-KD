@@ -3,6 +3,16 @@ import type { NavItem } from '@/config/nav-types';
 
 export const nav: NavItem[] = [
   {
+    id: 'dashboard-home',
+    labelKey: 's09Dashboard.nav.home',
+    href: '/dashboard',
+    icon: 'home',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 5,
+    bottomNav: true,
+  },
+  {
     id: 'invoices',
     labelKey: 's09Invoicing.nav.invoices',
     href: '/invoices',
