@@ -2,7 +2,7 @@
 
 - [x] 09.1 calculation engine
 - [x] 09.2 tax rates, tax settings and FX
-- [ ] 09.3 invoice schema and CRUD
+- [x] 09.3 invoice schema and CRUD
 - [ ] 09.4 numbering
 - [ ] 09.5 invoice screens
 - [ ] 09.6 send, approval, duplicates and the invoices contract

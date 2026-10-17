@@ -7,6 +7,14 @@ import { certificateExpired, reverseChargeApplies } from '@/lib/tax/rules';
 import { TAX_TEMPLATES, US_STATES } from '@/lib/tax/templates';
 import { permissions as registered } from '@/config/permissions';
 import { Money } from '@/lib/utils/currency';
+import { canTransition, isEditable, isSent, statusAfterPayment } from '@/lib/invoice/status';
+import { addDays, daysBetween, dueDateFor, termsLabel } from '@/lib/invoice/terms';
+import {
+  invoiceInputSchema,
+  invoiceLineSchema,
+  invoiceUpdateSchema,
+  statusOverrideSchema,
+} from '@/lib/invoice/input';
 
 let failures = 0;
 function check(name: string, fn: () => unknown): Promise<void> {
@@ -155,6 +163,159 @@ async function main(): Promise<void> {
     const names = new Set(registered.map((p) => p.action));
     assert.ok(names.has('tax.read') && names.has('tax.manage'));
     assert.deepEqual(registered.find((p) => p.action === 'tax.manage')?.defaultRoles, ['owner']);
+  });
+
+  await check('invoice status machine', () => {
+    assert.ok(canTransition('draft', 'sent') && canTransition('draft', 'pending_approval'));
+    assert.ok(canTransition('pending_approval', 'draft'), 'a rejected invoice goes back to draft');
+    assert.ok(!canTransition('sent', 'draft'), 'a sent invoice never becomes a draft again');
+    assert.ok(!canTransition('void', 'sent') && !canTransition('paid', 'void'));
+    assert.ok(canTransition('paid', 'disputed') && canTransition('partially_paid', 'paid'));
+    assert.ok(isEditable('draft') && !isEditable('pending_approval') && !isEditable('sent'));
+    assert.ok(isSent('viewed') && !isSent('pending_approval'));
+    assert.equal(statusAfterPayment('sent', true, true), 'paid');
+    assert.equal(statusAfterPayment('overdue', false, true), 'partially_paid');
+    assert.equal(statusAfterPayment('disputed', false, true), 'disputed');
+    assert.equal(statusAfterPayment('void', true, true), 'void');
+  });
+
+  await check('payment terms and due dates', () => {
+    assert.equal(addDays('2026-01-31', 30), '2026-03-02');
+    assert.equal(addDays('2024-02-28', 1), '2024-02-29', 'leap year');
+    assert.equal(dueDateFor('2026-10-16', 'net_30', null), '2026-11-15');
+    assert.equal(dueDateFor('2026-10-16', 'due_on_receipt', null), '2026-10-16');
+    assert.equal(dueDateFor('2026-10-16', 'custom', '2026-12-01'), '2026-12-01');
+    assert.equal(
+      dueDateFor('2026-10-16', 'custom', '2026-01-01'),
+      '2026-10-16',
+      'never before the issue date',
+    );
+    assert.equal(daysBetween('2026-10-16', '2026-10-26'), 10);
+    assert.equal(termsLabel('net_60', '2026-10-16', '2026-12-15'), 'Net 60');
+  });
+
+  await check('invoice input', () => {
+    const id = '0190a0a0-0000-7000-8000-000000000001';
+    const line = {
+      productId: null,
+      variantId: null,
+      sku: '',
+      description: 'Consulting',
+      hsCode: '',
+      quantity: '2.5',
+      unit: 'hour',
+      unitPrice: '100',
+      discountKind: 'percent',
+      discountValue: '10',
+      taxExempt: false,
+      taxCodes: ['VAT15'],
+    };
+    const block = {
+      name: 'Buyer',
+      contactName: '',
+      email: '',
+      phone: '',
+      taxLabel: '',
+      taxId: '',
+      line1: '1 Main St',
+      line2: '',
+      city: 'NYC',
+      region: 'NY',
+      postalCode: '10001',
+      country: 'US',
+    };
+    const options = {
+      priceMode: 'exclusive',
+      discountOrder: 'before_tax',
+      roundingPolicy: 'per_line',
+      roundingMode: 'half_up',
+      precision: 2,
+      cashRounding: '0',
+      documentDiscountKind: 'none',
+      documentDiscountValue: '0',
+      shippingAmount: '0',
+      shippingTaxable: false,
+      shippingTaxCodes: [],
+      withholdingRate: '0',
+    };
+    const invoice = {
+      kind: 'invoice',
+      clientId: id,
+      walkInName: '',
+      billTo: block,
+      shipTo: null,
+      issueDate: '2026-10-16',
+      paymentTerms: 'net_30',
+      dueDate: '2026-11-15',
+      poNumber: 'PO-1',
+      notes: 'Thank you',
+      internalNotes: '',
+      tags: ['vip', 'vip'],
+      category: '',
+      projectId: null,
+      paperSize: 'letter',
+      template: 'classic',
+      displayCurrency: null,
+      options,
+      lines: [line],
+    };
+    const parsed = invoiceInputSchema.parse(invoice);
+    assert.deepEqual(parsed.tags, ['vip'], 'duplicate tags removed');
+    assert.ok(
+      !invoiceInputSchema.safeParse({ ...invoice, total: '1' }).success,
+      'totals cannot be sent',
+    );
+    assert.ok(!invoiceInputSchema.safeParse({ ...invoice, dueDate: '2026-10-01' }).success);
+    assert.ok(!invoiceInputSchema.safeParse({ ...invoice, kind: 'receipt' }).success);
+    assert.ok(!invoiceInputSchema.safeParse({ ...invoice, displayCurrency: 'USD' }).success);
+    assert.ok(!invoiceInputSchema.safeParse({ ...invoice, notes: '<script>' }).success);
+    assert.ok(
+      invoiceInputSchema.safeParse({ ...invoice, lines: [] }).success,
+      'a draft may have no lines',
+    );
+    assert.ok(invoiceLineSchema.safeParse({ ...line, discountValue: '100' }).success);
+    assert.ok(
+      !invoiceLineSchema.safeParse({ ...line, discountValue: '100.5' }).success,
+      'percent at most 100',
+    );
+    assert.ok(
+      invoiceLineSchema.safeParse({ ...line, quantity: '-1', unitPrice: '-5' }).success,
+      'negative lines are allowed',
+    );
+    assert.ok(!invoiceLineSchema.safeParse({ ...line, unitPrice: '1.23456' }).success);
+    assert.ok(
+      !invoiceLineSchema.safeParse({ ...line, taxCodes: ['a', 'b', 'c', 'd', 'e', 'f'] }).success,
+    );
+    assert.ok(!invoiceLineSchema.safeParse({ ...line, taxCodes: ['vat 15'] }).success);
+    assert.ok(
+      invoiceUpdateSchema.safeParse({ expectedVersion: 1, autosave: true, invoice }).success,
+    );
+    assert.ok(
+      !invoiceUpdateSchema.safeParse({ expectedVersion: 0, autosave: false, invoice }).success,
+    );
+    assert.ok(statusOverrideSchema.safeParse({ status: 'paid', reason: 'Paid by cheque' }).success);
+    assert.ok(!statusOverrideSchema.safeParse({ status: 'paid', reason: 'x' }).success);
+    const many = Array.from({ length: 2001 }, () => line);
+    assert.ok(
+      !invoiceInputSchema.safeParse({ ...invoice, lines: many }).success,
+      'at most 2000 lines',
+    );
+    assert.ok(invoiceInputSchema.safeParse({ ...invoice, lines: many.slice(0, 2000) }).success);
+  });
+
+  await check('invoice permissions are registered', () => {
+    const names = new Set(registered.map((p) => p.action));
+    for (const a of [
+      'invoice.read',
+      'invoice.create',
+      'invoice.update',
+      'invoice.delete',
+      'invoice.override_status',
+    ])
+      assert.ok(names.has(a), a);
+    assert.deepEqual(registered.find((p) => p.action === 'invoice.override_status')?.defaultRoles, [
+      'owner',
+    ]);
   });
 
   if (failures > 0) process.exit(1);
