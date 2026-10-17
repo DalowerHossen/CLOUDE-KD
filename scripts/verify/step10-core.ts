@@ -65,6 +65,14 @@ import {
 } from '@/lib/payment/verification';
 import { createPaymentSchema, refundBodySchema } from '@/schemas/payment/payments';
 import { reviewDecisionSchema } from '@/schemas/payment/review';
+import {
+  FORBIDDEN_PAYMENT_PAGE_HOSTS,
+  originsOf,
+  paymentPageOrigins,
+  violatesPaymentProfile,
+} from '@/lib/payment/csp';
+import { percentText } from '@/services/payment/report-math';
+import { linkCreateSchema, linkPayBodySchema, tokenParam } from '@/schemas/payment/payments';
 import { processorActionSchema, processorIdSchema } from '@/schemas/payment/processors';
 import { PROCESSOR_IDS, type EncryptedPayload, type ProcessorAdapter } from '@/types/contracts';
 
@@ -605,6 +613,52 @@ async function main(): Promise<void> {
     assert.ok(!reviewDecisionSchema.safeParse({ decision: 'void', note: 'no' }).success);
     assert.ok(!reviewDecisionSchema.safeParse({ decision: 'refund', note: 'abc' }).success);
     assert.ok(!reviewDecisionSchema.safeParse({ decision: 'capture', extra: 1 }).success);
+  });
+  await check('csp: only https processor origins, nothing from the forbidden list', () => {
+    for (const origin of paymentPageOrigins()) assert.match(origin, /^https:\/\//);
+    assert.deepEqual(violatesPaymentProfile(paymentPageOrigins()), []);
+    assert.deepEqual(
+      violatesPaymentProfile(['https://www.google-analytics.com', 'https://js.example.com']),
+      ['https://www.google-analytics.com'],
+    );
+    assert.deepEqual(violatesPaymentProfile(['https://static.hotjar.com']), [
+      'https://static.hotjar.com',
+    ]);
+    assert.ok(FORBIDDEN_PAYMENT_PAGE_HOSTS.length >= 8);
+    assert.deepEqual(
+      originsOf('stripe').filter((o) => !o.startsWith('https://')),
+      [],
+    );
+  });
+  await check('report math: percent text uses integers only', () => {
+    assert.equal(percentText(1n, 3n), '33.3');
+    assert.equal(percentText(985n, 1000n), '98.5');
+    assert.equal(percentText(0n, 5n), '0.0');
+    assert.equal(percentText(0n, 0n), null);
+    assert.equal(percentText(5n, 5n), '100.0');
+  });
+  await check('payment link schemas', () => {
+    const id = '0190b2f1-7c3a-7d2e-8f00-123456789abc';
+    assert.ok(linkCreateSchema.safeParse({ invoiceId: id }).success);
+    assert.ok(
+      linkCreateSchema.safeParse({ invoiceId: id, amount: '10.5', validHours: 24 }).success,
+    );
+    assert.ok(!linkCreateSchema.safeParse({ invoiceId: id, validHours: 721 }).success);
+    assert.ok(!linkCreateSchema.safeParse({ invoiceId: id, amount: '0.00001' }).success);
+    assert.ok(!linkCreateSchema.safeParse({ invoiceId: id, token: 'x' }).success);
+    assert.ok(tokenParam.safeParse({ token: 'a'.repeat(32) }).success);
+    assert.ok(!tokenParam.safeParse({ token: '../etc/passwd' }).success);
+    assert.ok(!tokenParam.safeParse({ token: 'short' }).success);
+    assert.ok(
+      linkPayBodySchema.safeParse({
+        paymentToken: 'tok_1234',
+        returnUrl: 'https://app.example.com/pay/x',
+      }).success,
+    );
+    assert.ok(
+      !linkPayBodySchema.safeParse({ paymentToken: 'tok_1234', returnUrl: 'data:text/html,x' })
+        .success,
+    );
   });
   process.stdout.write(`step10-core: ${checks} checks passed\n`);
 }

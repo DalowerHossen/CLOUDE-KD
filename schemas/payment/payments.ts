@@ -74,3 +74,27 @@ export const paymentListQuery = z
       .optional(),
   })
   .strict();
+
+export const linkCreateSchema = z
+  .object({
+    invoiceId: z.string().uuid(),
+    amount: z
+      .string()
+      .regex(/^\d{1,14}(\.\d{1,4})?$/)
+      .nullable()
+      .default(null),
+    validHours: z.number().int().min(1).max(720).nullable().default(null),
+  })
+  .strict();
+
+export const tokenParam = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{16,200}$/) }).strict();
+
+export const linkPayBodySchema = z
+  .object({
+    paymentToken: z.string().min(4).max(4000),
+    billingPostalCode: z.string().trim().max(20).nullable().default(null),
+    returnUrl,
+  })
+  .strict();
+
+export const linkResumeBodySchema = z.object({ paymentId: z.string().uuid() }).strict();

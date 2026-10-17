@@ -119,3 +119,10 @@ export const PROCESSOR_BY_ID: Readonly<Record<ProcessorId, ProcessorMetadata>> =
 /** Payment methods a routing rule can name. `card` is the only one with a secure form in STEP 10 to 12. */
 export const PAYMENT_METHODS = ['card', 'wallet', 'local_methods'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/**
+ * Script, frame and API origins of each processor's secure form (https only). Empty until the adapter sub-step has read
+ * the processor's documentation and recorded the hosts in docs/processors/<id>.md; then the host is added here.
+ * The payment page content security policy allows exactly these origins and nothing else.
+ */
+export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly string[]>>> = {};

@@ -29,4 +29,22 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 520,
   },
+  {
+    id: 'payments',
+    labelKey: 's10Payments.nav.payments',
+    href: '/payments',
+    icon: 'credit-card',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 60,
+  },
+  {
+    id: 'admin-payments',
+    labelKey: 's10Payments.nav.gateway',
+    href: '/admin/payments',
+    icon: 'activity',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 505,
+  },
 ];

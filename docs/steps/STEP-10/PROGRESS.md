@@ -10,5 +10,5 @@
 - [x] 10.8 Card rules engine (done before 10.7; 10.7 uses it)
 - [x] 10.9 Verification engine and review queue
 - [x] 10.10 Webhook core
-- [ ] 10.11 Checkout, links, dashboard, reports
+- [x] 10.11 Checkout, links, dashboard, reports (migration S10_003)
 - [ ] 10.12 Checks, verification record, handoff
