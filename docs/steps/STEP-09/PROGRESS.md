@@ -16,4 +16,4 @@
 - [x] 09.14 dashboard home
 - [x] 09.15 reports
 - [x] 09.16 batch invoicing, bulk actions and edge cases
-- [ ] 09.17 closure
+- [x] 09.17 closure
