@@ -70,6 +70,26 @@ import {
   normalizeLayout,
   type WidgetId,
 } from '@/lib/reports/widgets';
+import {
+  agingBucket,
+  creditsReport,
+  estimatesFunnel,
+  paymentsReceived,
+  receivablesAging,
+  revenueByClient,
+  revenueByItem,
+  salesSummary,
+  statusSummary,
+  taxSummary,
+  timeSummary,
+  type CreditFact,
+  type InvoiceFact,
+} from '@/lib/reports/aggregate';
+import { compareTotals } from '@/lib/reports/compare';
+import { reportParamsSchema, resolveParams, scheduleInputSchema } from '@/lib/reports/params';
+import { nextRun } from '@/lib/schedule/report-schedule';
+import { buildXlsx, zipStore } from '@/lib/export/xlsx';
+import { csvOf } from '@/lib/reports/csv';
 import { buildCredit } from '@/lib/credit/build';
 import type { InvoiceView } from '@/services/invoice/invoices';
 import {
@@ -1276,6 +1296,402 @@ async function main(): Promise<void> {
       defaultLayout(),
       'the first cannot move up',
     );
+  });
+
+  await check('report sums (hand-calculated)', () => {
+    const inv = (o: Partial<InvoiceFact>): InvoiceFact => ({
+      id: 'i',
+      number: 'INV-1',
+      clientId: 'c1',
+      clientName: 'Acme',
+      kind: 'invoice',
+      status: 'sent',
+      issueDate: '2026-01-10',
+      dueDate: '2026-02-09',
+      sentAt: '2026-01-10T10:00:00Z',
+      total: '0',
+      taxTotal: '0',
+      amountDue: '0',
+      amountPaid: '0',
+      taxBreakdown: [],
+      projectId: null,
+      ...o,
+    });
+    const invoices: InvoiceFact[] = [
+      inv({
+        id: 'a',
+        number: 'INV-1',
+        total: '1100.0000',
+        taxTotal: '100.0000',
+        amountDue: '1100',
+        amountPaid: '400',
+        taxBreakdown: [{ code: 'VAT10', rate: '10.0000', base: '1000', amount: '100' }],
+      }),
+      inv({
+        id: 'b',
+        number: 'INV-2',
+        clientId: 'c2',
+        clientName: 'Beta',
+        total: '550.5000',
+        taxTotal: '50.0000',
+        amountDue: '550.5',
+        amountPaid: '550.5',
+        status: 'paid',
+        sentAt: '2026-02-03T09:00:00Z',
+        issueDate: '2026-02-03',
+        dueDate: '2026-03-05',
+        taxBreakdown: [{ code: 'VAT10', rate: '10.0000', base: '500.5', amount: '50' }],
+      }),
+      inv({
+        id: 'c',
+        number: 'INV-3',
+        total: '200',
+        amountDue: '200',
+        status: 'void',
+        sentAt: '2026-02-05T09:00:00Z',
+        issueDate: '2026-02-05',
+      }),
+      inv({
+        id: 'd',
+        number: null,
+        total: '70',
+        status: 'draft',
+        sentAt: null,
+        issueDate: '2026-02-06',
+      }),
+      inv({
+        id: 'e',
+        number: 'INV-4',
+        total: '300',
+        amountDue: '300',
+        status: 'overdue',
+        sentAt: '2026-02-20T09:00:00Z',
+        issueDate: '2026-02-20',
+        dueDate: '2026-02-25',
+      }),
+    ];
+    const credits: CreditFact[] = [
+      {
+        id: 'n1',
+        number: 'CN-1',
+        clientName: 'Acme',
+        invoiceNumber: 'INV-1',
+        issueDate: '2026-02-10',
+        status: 'issued',
+        reason: 'return',
+        total: '110.0000',
+        taxTotal: '10.0000',
+        appliedAmount: '110',
+        taxBreakdown: [{ code: 'VAT10', rate: '10.0000', base: '100', amount: '10' }],
+      },
+      {
+        id: 'n2',
+        number: 'CN-2',
+        clientName: 'Acme',
+        invoiceNumber: 'INV-1',
+        issueDate: '2026-02-11',
+        status: 'void',
+        reason: 'other',
+        total: '50',
+        taxTotal: '0',
+        appliedAmount: '0',
+        taxBreakdown: [],
+      },
+    ];
+    const sales = salesSummary(invoices, credits, '2026-01-01', '2026-02-28');
+    assert.deepEqual(
+      sales.rows.map((r) => [r.month, r.count, r.sales, r.credits, r.net]),
+      [
+        ['2026-01', '1', '1100.0000', '0.0000', '1100.0000'],
+        ['2026-02', '2', '850.5000', '110.0000', '740.5000'],
+      ],
+      'void and draft invoices are not sales; void credit notes do not count',
+    );
+    assert.equal(sales.totals?.sales, '1950.5000');
+    assert.equal(sales.totals?.net, '1840.5000');
+    assert.equal(sales.totals?.count, '3');
+    const tax = taxSummary(invoices, credits, '2026-01-01', '2026-02-28');
+    assert.deepEqual(tax.rows[0], {
+      code: 'VAT10',
+      rate: '10',
+      base: '1500.5000',
+      tax: '150.0000',
+      creditTax: '10.0000',
+      net: '140.0000',
+    });
+    const payments = [
+      {
+        id: 'p1',
+        invoiceNumber: 'INV-1',
+        clientName: 'Acme',
+        amount: '400',
+        at: '2026-01-20T10:00:00Z',
+      },
+      {
+        id: 'p2',
+        invoiceNumber: 'INV-2',
+        clientName: 'Beta',
+        amount: '550.5',
+        at: '2026-02-04T10:00:00Z',
+      },
+    ];
+    const byClient = revenueByClient(invoices, payments, '2026-01-01', '2026-02-28');
+    assert.deepEqual(
+      byClient.rows.map((r) => [r.client, r.invoiced, r.collected, r.open]),
+      [
+        ['Acme', '1400.0000', '400.0000', '1000.0000'],
+        ['Beta', '550.5000', '550.5000', '0.0000'],
+      ],
+      'Acme: INV-1 1100 plus INV-4 300, unpaid 700 + 300',
+    );
+    assert.equal(paymentsReceived(payments, '2026-01-01', '2026-01-31').totals?.amount, '400.0000');
+    const aging = receivablesAging(invoices, '2026-03-01');
+    assert.equal(agingBucket('2026-03-02', '2026-03-01'), 'current');
+    assert.equal(agingBucket('2026-03-01', '2026-03-01'), 'current');
+    assert.equal(agingBucket('2026-02-28', '2026-03-01'), 'd1_30');
+    assert.equal(agingBucket('2026-01-31', '2026-03-01'), 'd1_30');
+    assert.equal(
+      agingBucket('2026-01-30', '2026-03-01'),
+      'd1_30',
+      '30 days late is still in the first bucket',
+    );
+    assert.equal(agingBucket('2026-01-29', '2026-03-01'), 'd31_60');
+    assert.equal(agingBucket('2025-11-01', '2026-03-01'), 'd90_plus');
+    assert.equal(
+      aging.rows.length,
+      2,
+      'INV-1 (700 unpaid) and INV-4 (300); paid, void and draft are left out',
+    );
+    assert.equal(aging.totals?.balance, '1000.0000');
+    assert.equal(
+      aging.totals?.d1_30,
+      '1000.0000',
+      'INV-1 is 20 days late and INV-4 is 4 days late',
+    );
+    assert.equal(aging.totals?.d31_60, '0.0000');
+    const status = statusSummary(invoices, '2026-01-01', '2026-02-28');
+    assert.deepEqual(
+      status.rows.map((r) => [r.status, r.count, r.total, r.unpaid]),
+      [
+        ['draft', '1', '70.0000', '0.0000'],
+        ['overdue', '1', '300.0000', '300.0000'],
+        ['paid', '1', '550.5000', '0.0000'],
+        ['sent', '1', '1100.0000', '700.0000'],
+        ['void', '1', '200.0000', '0.0000'],
+      ],
+    );
+    const items = revenueByItem(
+      [
+        {
+          sku: 'A1',
+          description: 'Design',
+          quantity: '2',
+          net: '200',
+          tax: '20',
+          lineTotal: '220',
+        },
+        {
+          sku: 'A1',
+          description: 'design',
+          quantity: '1.5',
+          net: '150',
+          tax: '15',
+          lineTotal: '165',
+        },
+        {
+          sku: '',
+          description: 'Hosting',
+          quantity: '1',
+          net: '99.99',
+          tax: '0',
+          lineTotal: '99.99',
+        },
+      ],
+      '2026-01-01',
+      '2026-01-31',
+    );
+    assert.deepEqual(
+      items.rows.map((r) => [r.description, r.quantity, r.net]),
+      [
+        ['Design', '3.50', '350.0000'],
+        ['Hosting', '1.00', '99.9900'],
+      ],
+      'same SKU and name (any case) are added',
+    );
+    assert.equal(items.totals?.total, '484.9900');
+    const credit = creditsReport(credits, '2026-02-01', '2026-02-28');
+    assert.equal(credit.totals?.total, '110.0000', 'void credit notes are listed but not counted');
+    assert.equal(credit.rows.length, 2);
+  });
+
+  await check('report time sums, comparison and schedules', () => {
+    const time = timeSummary(
+      [
+        {
+          projectId: 'p1',
+          projectName: 'Web',
+          userId: 'u1',
+          userName: 'Ann',
+          hours: '2.50',
+          billable: true,
+          rate: '100',
+          status: 'approved',
+        },
+        {
+          projectId: 'p1',
+          projectName: 'Web',
+          userId: 'u2',
+          userName: 'Bob',
+          hours: '1.00',
+          billable: false,
+          rate: '0',
+          status: 'draft',
+        },
+        {
+          projectId: 'p2',
+          projectName: 'App',
+          userId: 'u1',
+          userName: 'Ann',
+          hours: '4.00',
+          billable: true,
+          rate: '80',
+          status: 'invoiced',
+        },
+        {
+          projectId: 'p2',
+          projectName: 'App',
+          userId: 'u1',
+          userName: 'Ann',
+          hours: '9.00',
+          billable: true,
+          rate: '80',
+          status: 'rejected',
+        },
+      ],
+      'project',
+      '2026-01-01',
+      '2026-01-31',
+    );
+    assert.deepEqual(
+      time.rows.map((r) => [r.name, r.hours, r.billable, r.share, r.value, r.unbilled]),
+      [
+        ['App', '4.00', '4.00', '100.00', '320.0000', '0.0000'],
+        ['Web', '3.50', '2.50', '71.42', '250.0000', '250.0000'],
+      ],
+      'rejected time is left out; 2.5 of 3.5 hours is 71.42 percent',
+    );
+    assert.equal(time.totals?.hours, '7.50');
+    assert.equal(
+      timeSummary([], 'person', 'a', 'b').totals?.share,
+      '0.00',
+      'no hours, no division by zero',
+    );
+    const funnel = estimatesFunnel(
+      [
+        { status: 'sent', total: '100' },
+        { status: 'accepted', total: '200' },
+        { status: 'converted', total: '300' },
+        { status: 'declined', total: '50' },
+        { status: 'draft', total: '999' },
+      ],
+      'a',
+      'b',
+    );
+    assert.ok(funnel.notes[0]?.includes('50.00%'), 'two of four sent estimates were won');
+    const mk = (sales: string, credits: string): ReturnType<typeof salesSummary> => ({
+      ...salesSummary([], [], '2026-01-01', '2026-01-31'),
+      totals: { month: 'Total', count: '1', sales, tax: '0', credits, net: sales },
+    });
+    const rows = compareTotals(mk('850.5000', '110.0000'), mk('1100.0000', '0.0000'));
+    assert.equal(rows.find((r) => r.key === 'sales')?.change, '-22.68', '850.50 against 1100.00');
+    assert.equal(rows.find((r) => r.key === 'credits')?.change, null, 'nothing to compare with');
+    assert.ok(!rows.some((r) => r.key === 'month'), 'text columns are not compared');
+    assert.equal(nextRun('weekly', 1, null, '2026-03-01'), '2026-03-02');
+    assert.equal(nextRun('weekly', 1, null, '2026-03-02'), '2026-03-09', 'strictly after');
+    assert.equal(nextRun('weekly', 7, null, '2026-03-02'), '2026-03-08');
+    assert.equal(nextRun('monthly', null, 15, '2026-03-10'), '2026-03-15');
+    assert.equal(nextRun('monthly', null, 15, '2026-03-15'), '2026-04-15');
+    assert.equal(nextRun('monthly', null, 1, '2026-12-20'), '2027-01-01');
+    assert.equal(nextRun('monthly', null, 28, '2026-02-28'), '2026-03-28');
+  });
+
+  await check('report files and options', () => {
+    const run = salesSummary([], [], '2026-01-01', '2026-01-31');
+    const csv = csvOf(
+      {
+        ...run,
+        rows: [
+          {
+            month: '=SUM(A1)',
+            count: '1',
+            sales: '-5.5000',
+            tax: '0',
+            credits: '0',
+            net: '-5.5000',
+          },
+        ],
+      },
+      ['t', 'p', 'KD-EXPORT x'],
+    );
+    assert.ok(
+      csv.startsWith(String.fromCharCode(0xfeff)),
+      'a byte order mark so Excel reads UTF-8',
+    );
+    assert.ok(csv.includes("'=SUM(A1)"), 'a formula in a cell is neutralised');
+    assert.ok(csv.includes('-5.5000'), 'negative numbers stay numbers');
+    assert.ok(csv.includes('KD-EXPORT x'), 'the export line is present');
+    const xlsx = buildXlsx({
+      sheetName: 'A/B',
+      columns: [
+        { key: 'a', label: 'A', type: 'text' },
+        { key: 'b', label: 'B', type: 'money' },
+      ],
+      rows: [{ a: '<&>', b: '1.5000' }],
+      totals: { a: 'Total', b: '1.5000' },
+      titleLines: ['x'],
+    });
+    assert.equal(xlsx[0], 0x50);
+    assert.equal(xlsx[1], 0x4b, 'a zip file starts with PK');
+    const text = Buffer.from(xlsx).toString('latin1');
+    assert.ok(text.includes('xl/worksheets/sheet1.xml') && text.includes('[Content_Types].xml'));
+    assert.ok(text.includes('&lt;&amp;&gt;'), 'text is escaped');
+    assert.equal(zipStore([]).length, 22, 'an empty zip is the end record only');
+    assert.ok(reportParamsSchema.safeParse({ range: 'month' }).success);
+    assert.ok(!reportParamsSchema.safeParse({ from: '2026-01-01' }).success, 'both dates');
+    assert.ok(!reportParamsSchema.safeParse({ from: '2026-02-01', to: '2026-01-01' }).success);
+    assert.ok(
+      !reportParamsSchema.safeParse({ from: '2020-01-01', to: '2026-01-01' }).success,
+      'three years at most',
+    );
+    const rp = resolveParams({ range: 'last_month' }, '2026-03-10');
+    assert.deepEqual(
+      [rp.from, rp.to, rp.previous.from, rp.previous.to],
+      ['2026-02-01', '2026-02-28', '2026-01-01', '2026-01-31'],
+    );
+    const base = {
+      reportKey: 'sales_summary',
+      name: 'Monthly',
+      range: 'last_month',
+      format: 'pdf',
+      frequency: 'monthly',
+      weekday: null,
+      monthDay: 1,
+      recipients: ['Owner@Example.com'],
+      enabled: true,
+    };
+    const parsed = scheduleInputSchema.parse(base);
+    assert.deepEqual(parsed.recipients, ['owner@example.com'], 'addresses are lower-cased');
+    assert.ok(!scheduleInputSchema.safeParse({ ...base, monthDay: 29 }).success);
+    assert.ok(
+      !scheduleInputSchema.safeParse({ ...base, frequency: 'weekly' }).success,
+      'a weekly schedule needs a weekday',
+    );
+    assert.ok(!scheduleInputSchema.safeParse({ ...base, recipients: [] }).success);
+    assert.ok(!scheduleInputSchema.safeParse({ ...base, recipients: ['not an address'] }).success);
+    assert.ok(!scheduleInputSchema.safeParse({ ...base, range: 'whenever' }).success);
+    const names = new Map(registered.map((p) => [p.action, p]));
+    assert.deepEqual(names.get('report.read')?.defaultRoles, ['owner']);
+    assert.ok(names.has('report.export') && names.has('report.schedule'));
   });
 
   if (failures > 0) process.exit(1);

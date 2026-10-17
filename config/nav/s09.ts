@@ -86,6 +86,15 @@ export const nav: NavItem[] = [
     order: 31,
   },
   {
+    id: 'reports',
+    labelKey: 's09Reports.nav.reports',
+    href: '/reports',
+    icon: 'bar-chart',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 40,
+  },
+  {
     id: 'invoice-tax',
     labelKey: 's09Invoicing.nav.tax',
     href: '/invoices/tax',

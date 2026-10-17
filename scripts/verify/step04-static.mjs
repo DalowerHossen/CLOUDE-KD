@@ -43,6 +43,7 @@ const PLAIN_PREFIXES = [
   'app/api/products/[id]/images/[fileId]/',
   'app/api/invoices/tax/exemptions/[clientId]/certificate/file/',
   'app/api/pdf/',
+  'app/api/reports/[key]/export/',
   'app/api/email/track/',
   'app/api/email/unsubscribe/',
   'app/api/email/webhooks/',

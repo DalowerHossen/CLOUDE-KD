@@ -6,6 +6,7 @@ import type { EmailTemplateDefinition } from '@/types/contracts';
 import { EstimateSentEmail } from './estimate-sent';
 import { InvoiceReminderEmail } from './invoice-reminder';
 import { InvoiceSentEmail } from './invoice-sent';
+import { ReportReadyEmail } from './report-ready';
 
 export interface InvoiceEmailTemplate {
   definition: EmailTemplateDefinition;
@@ -46,5 +47,13 @@ export const invoiceEmailTemplates: readonly InvoiceEmailTemplate[] = [
       ],
     },
     component: InvoiceReminderEmail as ComponentType<never>,
+  },
+  {
+    definition: {
+      id: 'report.ready',
+      subject: 'Your report {reportTitle} is ready',
+      variables: ['companyName', 'reportTitle', 'period', 'format', 'link'],
+    },
+    component: ReportReadyEmail as ComponentType<never>,
   },
 ];

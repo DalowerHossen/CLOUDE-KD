@@ -12,7 +12,7 @@ const root = process.cwd();
 const outfile = join(root, 'node_modules/.cache/step09-pdf/bundle.mjs');
 await build({
   stdin: {
-    contents: `export * from '@/lib/pdf/invoice-pdf'; export * from '@/lib/pdf/pdf-engine'; export * from '@/lib/pdf/shared/fonts'; export * from '@/lib/pdf/invoice/data';`,
+    contents: `export * from '@/lib/pdf/invoice-pdf'; export * from '@/lib/pdf/pdf-engine'; export * from '@/lib/pdf/shared/fonts'; export * from '@/lib/pdf/invoice/data'; export * from '@/lib/pdf/report-pdf';`,
     resolveDir: root,
     loader: 'ts',
   },
@@ -32,8 +32,9 @@ const lib = (await import(pathToFileURL(outfile).href)) as {
   ) => Promise<{ bytes: Uint8Array; sha256: string }>;
   safeText: (t: string) => string;
   buildInvoicePdfData: (s: PdfSource) => { watermark: string | null };
+  ReportPdf: Parameters<typeof createElement>[0];
 };
-const { InvoicePdf, renderPdf, safeText, buildInvoicePdfData } = lib;
+const { InvoicePdf, renderPdf, safeText, buildInvoicePdfData, ReportPdf } = lib;
 
 let failed = 0;
 function check(name: string, ok: boolean): void {
@@ -131,5 +132,34 @@ check('same data gives a PDF with a checksum', big.sha256.length === 64);
 check('non-Latin text is replaced safely', safeText(`a${String.fromCharCode(0x9ac)}`) === 'a?');
 const paid = buildInvoicePdfData(source(1, 'classic', 'a4', 'paid'));
 check('paid watermark', paid.watermark === 'PAID');
+const report = {
+  key: 'sales_summary',
+  title: 'Sales summary',
+  period: { from: '2026-01-01', to: '2026-12-31' },
+  columns: [
+    { key: 'name', label: 'Client', type: 'text' },
+    { key: 'amount', label: 'Invoiced', type: 'money' },
+    { key: 'share', label: 'Share', type: 'percent' },
+  ],
+  rows: Array.from({ length: 150 }, (_, i) => ({
+    name: `Client ${i + 1}`,
+    amount: '1234.5000',
+    share: '0.67',
+  })),
+  totals: { name: 'Total', amount: '185175.0000', share: '100.00' },
+  notes: ['A note under the table.'],
+};
+const reportPdf = await renderPdf(
+  createElement(ReportPdf, { company: 'Seller Inc', generatedOn: '2026-03-01', result: report }),
+);
+check(
+  'report PDF is a PDF with several pages',
+  Buffer.from(reportPdf.bytes.slice(0, 5)).toString('latin1') === '%PDF-' &&
+    (
+      Buffer.from(reportPdf.bytes)
+        .toString('latin1')
+        .match(/\/Type \/Page\b/g) ?? []
+    ).length >= 3,
+);
 process.stdout.write(failed === 0 ? 'PDF checks passed\n' : `${failed} checks failed\n`);
 process.exit(failed === 0 ? 0 : 1);
