@@ -47,6 +47,7 @@ const PLAIN_PREFIXES = [
   'app/api/email/track/',
   'app/api/email/unsubscribe/',
   'app/api/email/webhooks/',
+  'app/api/webhooks/',
 ];
 const PLAIN_ROUTES = new Set([
   'app/api/storage/drive/callback/route.ts',

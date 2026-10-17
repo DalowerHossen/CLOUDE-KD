@@ -9,6 +9,6 @@
 - [x] 10.7 Payment orchestration (includes lib/payment/verification.ts, the pure part of 10.9)
 - [x] 10.8 Card rules engine (done before 10.7; 10.7 uses it)
 - [x] 10.9 Verification engine and review queue
-- [ ] 10.10 Webhook core
+- [x] 10.10 Webhook core
 - [ ] 10.11 Checkout, links, dashboard, reports
 - [ ] 10.12 Checks, verification record, handoff

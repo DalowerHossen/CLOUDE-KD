@@ -20,4 +20,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 510,
   },
+  {
+    id: 'admin-payment-webhooks',
+    labelKey: 's10Payments.nav.webhooks',
+    href: '/admin/payments/webhooks',
+    icon: 'server',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 520,
+  },
 ];

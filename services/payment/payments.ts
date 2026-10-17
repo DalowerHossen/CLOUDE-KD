@@ -774,3 +774,16 @@ export async function expireAbandonedChallenges(limit: number): Promise<number> 
   }
   return expired;
 }
+
+/** The processor says the authorization ended (voided or expired there): record it without calling the processor. */
+export async function applyExternalVoid(row: PaymentRow): Promise<PaymentRow> {
+  if (!['created', 'requires_action', 'authorized', 'pending_review'].includes(row.status))
+    return row;
+  const voided = await transition(row, 'voided', {
+    failure_reason: 'processor_voided',
+    voided_at: new Date().toISOString(),
+  });
+  await publishPaymentEvent('payment.voided', voided, { reason: 'processor_voided' });
+  await auditPayment('payment.voided', voided, { reason: 'processor_voided' });
+  return voided;
+}

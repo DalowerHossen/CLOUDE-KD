@@ -44,4 +44,31 @@ export const strings = {
       source: 'Source',
     },
   },
+  webhooks: {
+    title: 'Webhook deliveries',
+    description:
+      'Messages from payment processors. A delivery whose signature is wrong is refused and never listed. A failed delivery is tried again by itself; after the last attempt it waits here in the dead-letter list.',
+    loadError: 'The webhook deliveries could not be loaded.',
+    empty: 'No deliveries to show.',
+    filterAll: 'All',
+    columns: {
+      time: 'Received',
+      processor: 'Processor',
+      type: 'Type',
+      status: 'Status',
+      attempts: 'Attempts',
+      error: 'Problem',
+    },
+    statuses: {
+      received: 'Received',
+      processed: 'Processed',
+      failed: 'Will retry',
+      dead_letter: 'Dead letter',
+      ignored: 'No action needed',
+    },
+    retry: 'Process again',
+    retried: 'The delivery was processed again. New state: {status}.',
+    failed: 'The action could not be completed.',
+    needStepUp: 'Confirm your identity above first (password and code), then try again.',
+  },
 } as const;
