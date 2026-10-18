@@ -45,4 +45,28 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'dispute.read',
+    description: 'See disputes (chargebacks) of the company and their evidence',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'dispute.manage',
+    description: 'Move a dispute through its workflow, add evidence and generate the evidence pack',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'dispute.refund.decide',
+    description: 'Approve or deny a refund a client asked for',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'dispute.read.all',
+    description: 'See the disputes of every company (dispute centre)',
+    defaultRoles: ['super_admin', 'ceo', 'admin_staff'],
+    approvalLevel: 'L0',
+  },
 ];

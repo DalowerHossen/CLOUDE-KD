@@ -12,3 +12,9 @@ export const PORTAL_PAY_LINK_HOURS = 2;
 
 /** How long an invoice link opened from the client hub stays valid, in days. */
 export const HUB_OPEN_LINK_DAYS = 7;
+
+/** Days to answer a dispute when the processor did not tell us the date. The owner can enter the real date. */
+export const DISPUTE_RESPONSE_DAYS = 7;
+
+/** The owner is alerted this many hours before a dispute answer is due (and again when it is overdue). */
+export const DISPUTE_ALERT_HOURS = [72, 24] as const;

@@ -29,4 +29,22 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 77,
   },
+  {
+    id: 'disputes',
+    labelKey: 's13Portal.nav.disputes',
+    href: '/disputes',
+    icon: 'shield',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 78,
+  },
+  {
+    id: 'admin-disputes',
+    labelKey: 's13Portal.nav.adminDisputes',
+    href: '/admin/disputes',
+    icon: 'shield',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 530,
+  },
 ];

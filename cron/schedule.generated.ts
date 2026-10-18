@@ -45,6 +45,7 @@ import { job as s10ReviewExpiry } from './jobs/s10-review-expiry';
 import { job as s10WebhookRetry } from './jobs/s10-webhook-retry';
 import { job as s13Approvals } from './jobs/s13-approvals';
 import { job as s13Contracts } from './jobs/s13-contracts';
+import { job as s13Disputes } from './jobs/s13-disputes';
 import { job as s13Notices } from './jobs/s13-notices';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle, s07Support, s08Clients, s08Inventory, s08Purchasing, s09Batches, s09Estimates, s09Fx, s09Invoices, s09LateFees, s09Overdue, s09Recurring, s09Reminders, s09ReportSchedules, s09Snapshots, s09Time, s10PaymentUpkeep, s10ReviewExpiry, s10WebhookRetry, s13Approvals, s13Contracts, s13Notices];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle, s07Support, s08Clients, s08Inventory, s08Purchasing, s09Batches, s09Estimates, s09Fx, s09Invoices, s09LateFees, s09Overdue, s09Recurring, s09Reminders, s09ReportSchedules, s09Snapshots, s09Time, s10PaymentUpkeep, s10ReviewExpiry, s10WebhookRetry, s13Approvals, s13Contracts, s13Disputes, s13Notices];

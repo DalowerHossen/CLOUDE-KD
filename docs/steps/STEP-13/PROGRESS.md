@@ -8,7 +8,7 @@
 - [x] 13.6.a Contract templates, contracts, send, reminders (2026-10-18)
 - [x] 13.6.b Signing page and signing evidence (2026-10-18)
 - [x] 13.7 Owner workflows (2026-10-18)
-- [ ] 13.8 Disputes
+- [x] 13.8 Disputes (2026-10-18)
 - [ ] 13.9.a Evidence pack generator
 - [ ] 13.9.b Evidence pack ZIP, retention, pages
 - [ ] 13.10 Fragments and closure

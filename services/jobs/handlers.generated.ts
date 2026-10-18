@@ -7,6 +7,7 @@ import { eventHandler as inventoryInvoiceStockEvent } from '@/workers/inventory/
 import { eventHandler as notificationsDomainEventsEvent } from '@/workers/notifications/domain-events.event';
 import { eventHandler as onboardingMilestonesEvent } from '@/workers/onboarding/milestones.event';
 import { eventHandler as s13ClientNoticesEvent } from '@/workers/s13/client-notices.event';
+import { eventHandler as s13DisputeIntakeEvent } from '@/workers/s13/dispute-intake.event';
 
 export const jobHandlers: JobHandlerDefinition[] = [transferImportJob];
-export const eventHandlers: EventHandlerDefinition[] = [inventoryInvoiceStockEvent, notificationsDomainEventsEvent, onboardingMilestonesEvent, s13ClientNoticesEvent];
+export const eventHandlers: EventHandlerDefinition[] = [inventoryInvoiceStockEvent, notificationsDomainEventsEvent, onboardingMilestonesEvent, s13ClientNoticesEvent, s13DisputeIntakeEvent];

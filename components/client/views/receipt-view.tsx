@@ -1,9 +1,11 @@
 // path: components/client/views/receipt-view.tsx
 import type { ReactNode } from 'react';
 import { DocumentActions } from '@/components/client/document-actions';
+import { RefundRequestForm } from '@/components/client/refund-request-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { t } from '@/lib/i18n';
 import type { PortalSubject } from '@/services/portal/events';
+import { refundOption } from '@/services/dispute/refund-requests';
 import { getPortalReceipt } from '@/services/portal/receipt-view';
 
 function Row({
@@ -26,6 +28,7 @@ function Row({
 /** The receipt page of one payment: the facts, any refunds, the checksum, and the PDF. */
 export async function renderReceiptView(subject: PortalSubject, token: string): Promise<ReactNode> {
   const receipt = await getPortalReceipt(subject.companyId, subject.docId);
+  const option = await refundOption(subject.companyId, subject.docId).catch(() => null);
   const hasSurcharge = !/^0+(\.0+)?$/.test(receipt.surcharge);
   const hasRefund = !/^0+(\.0+)?$/.test(receipt.refunded);
   return (
@@ -70,6 +73,15 @@ export async function renderReceiptView(subject: PortalSubject, token: string): 
         </CardContent>
       </Card>
       <DocumentActions token={token} fileName={`receipt-${receipt.reference}`} />
+      {option?.canRequest ? (
+        <RefundRequestForm
+          token={token}
+          refundable={option.refundable}
+          windowDays={option.windowDays}
+        />
+      ) : option?.blockedReason ? (
+        <p className="text-caption text-muted-foreground print:hidden">{option.blockedReason}</p>
+      ) : null}
     </article>
   );
 }
