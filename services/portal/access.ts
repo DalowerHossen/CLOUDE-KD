@@ -8,6 +8,7 @@ import { hasValidSignature, hashToken } from '@/lib/auth/tokens';
 import { getServerEnv } from '@/lib/env';
 import { readRequestMeta } from '@/services/audit/request-meta';
 import type { TokenDocumentType } from '@/types/contracts';
+import { tenantForRequest } from '@/services/branding/domain';
 import { hasOtpSession } from './otp-session';
 import { recordPortalEvent, type PortalSubject } from './events';
 
@@ -39,6 +40,9 @@ export async function resolvePortalAccess(
   const checked = await getService('tokens').verify(token);
   if (!checked.valid) return { state: checked.reason };
   if (!allowed.includes(checked.docType)) return { state: 'invalid' };
+  // A company's own domain serves that company's links only; a link of another company looks like any wrong link.
+  const hostCompany = await tenantForRequest().catch(() => null);
+  if (hostCompany && hostCompany !== checked.companyId) return { state: 'invalid' };
   const subject: PortalSubject = {
     tokenId: checked.id,
     companyId: checked.companyId,

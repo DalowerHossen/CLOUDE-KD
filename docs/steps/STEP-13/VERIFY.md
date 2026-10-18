@@ -19,3 +19,8 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step13-emails.ts` -> 5 checks passed: nine client templates in the platform catalogue, ids tracked, every template renders with the forward warning exactly when it holds a link, subject variables declared and USD only, sender note shown only when given.
 - `scripts/db-apply.sh --clean`: `S13_003_delivery_proofs` applies; `sql/assertions/s13_003_delivery_proofs.sql` passes (RLS on, append only, one proof per message, hash and document type checks).
 - Not run here: a real send through a mail provider and the delivery events coming back; the owner page in a browser; recorded for the sandbox run in 13.10.
+
+## 13.5 Tenant branding (2026-10-18)
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step13-branding.ts` -> 6 checks passed: contrast maths (black on white 21), light colours refused and dark ones accepted, hex to token conversion and readable text colour, only the four safe fonts (no URL in any stack), branded pages are light and carry the brand colours, strict save, import and export shapes.
+- `scripts/db-apply.sh --clean`: `S13_004_branding` applies; `sql/assertions/s13_004_branding.sql` passes (RLS on, one row per company, colour format, history is a log).
+- Not run here: the host lookup against a database (a verified domain resolves, a pending or removed one does not), the branded pages and the editor in a browser, an e-mail with the brand colours; recorded for 13.10.

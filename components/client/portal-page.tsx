@@ -4,6 +4,9 @@ import { NotFoundError } from '@/lib/errors';
 import { t } from '@/lib/i18n';
 import { PORTAL_ROUTES, resolvePortalAccess, type PortalAccess } from '@/services/portal/access';
 import { recordPortalEvent } from '@/services/portal/events';
+import { getTenantBrand } from '@/services/branding/brand';
+import { tenantForRequest } from '@/services/branding/domain';
+import { BrandedFrame } from './branded-frame';
 import { OtpGate } from './otp-gate';
 import { RerequestForm } from './rerequest-form';
 import { StateCard } from './state-card';
@@ -74,5 +77,16 @@ async function show(access: PortalAccess, token: string): Promise<ReactNode> {
 export async function PortalPage({ route, token }: PortalPageProps): Promise<JSX.Element> {
   const doc = PORTAL_ROUTES[route];
   const access = doc ? await resolvePortalAccess(token, [doc]) : ({ state: 'invalid' } as const);
-  return <>{await show(access, token)}</>;
+  const body = await show(access, token);
+  const hostCompany = await tenantForRequest();
+  const companyId = 'companyId' in access ? access.companyId : hostCompany;
+  if (!companyId) return <>{body}</>;
+  // A brand that cannot be read must not hide the document: the page is then shown in the platform look.
+  const brand = await getTenantBrand(companyId).catch(() => null);
+  if (!brand) return <>{body}</>;
+  return (
+    <BrandedFrame brand={brand} showName={hostCompany !== companyId}>
+      {body}
+    </BrandedFrame>
+  );
 }

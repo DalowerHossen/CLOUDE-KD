@@ -5,6 +5,7 @@ import register_approval from '@/services/approval/register';
 import register_audit from '@/services/audit/register';
 import register_auth from '@/services/auth/register';
 import register_base from '@/services/base/register';
+import register_branding from '@/services/branding/register';
 import register_client from '@/services/client/register';
 import register_compliance from '@/services/compliance/register';
 import register_email from '@/services/email/register';
@@ -27,6 +28,7 @@ export async function bootstrapServices(): Promise<void> {
   await register_audit();
   await register_auth();
   await register_base();
+  await register_branding();
   await register_client();
   await register_compliance();
   await register_email();

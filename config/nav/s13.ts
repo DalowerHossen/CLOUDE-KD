@@ -11,4 +11,13 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 75,
   },
+  {
+    id: 'client-branding',
+    labelKey: 's13Portal.nav.clientBranding',
+    href: '/client-mail/branding',
+    icon: 'settings',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 76,
+  },
 ];
