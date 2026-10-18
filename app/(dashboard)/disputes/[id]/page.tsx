@@ -18,6 +18,9 @@ import {
   type EvidenceView,
 } from '@/services/dispute/disputes';
 import { isClosed } from '@/services/dispute/status';
+import { listPacks, type PackView } from '@/services/evidence/packs';
+import { PACK_SECTIONS } from '@/services/evidence/types';
+import { EvidencePackPanel } from '@/components/client/evidence-pack-panel';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Dispute' };
@@ -36,11 +39,13 @@ export default async function DisputePage({
   let dispute: DisputeView;
   let evidence: EvidenceView[];
   let events: DisputeEventView[];
+  let packs: PackView[];
   try {
     dispute = await getDispute(companyId, id);
-    [evidence, events] = await Promise.all([
+    [evidence, events, packs] = await Promise.all([
       listEvidence(companyId, id),
       listDisputeEvents(companyId, id),
+      listPacks(companyId, id),
     ]);
   } catch {
     notFound();
@@ -88,6 +93,20 @@ export default async function DisputePage({
         closed={isClosed(dispute.status)}
         reasonCode={dispute.reasonCode ?? ''}
         canManage={canManage}
+      />
+      <EvidencePackPanel
+        disputeId={dispute.id}
+        canGenerate={canManage}
+        closed={isClosed(dispute.status)}
+        packs={packs.map((p) => ({
+          id: p.id,
+          versionNo: p.versionNo,
+          createdAt: p.createdAt,
+          retainUntil: p.retainUntil,
+          zipHash: p.zipHash,
+          processorFormat: p.processorFormat,
+          missing: PACK_SECTIONS.filter((section) => !p.sections[section]),
+        }))}
       />
       <Card>
         <CardHeader>
