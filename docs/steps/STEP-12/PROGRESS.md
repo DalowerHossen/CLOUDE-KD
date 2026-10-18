@@ -7,7 +7,7 @@
 - [x] 12.1.e nmi: mode tests (`testConnection` per mode) - local checks done, sandbox scenarios pending (no credentials)
 - [x] 12.1.f nmi: webhook route and verification record
 - [ ] 12.2 adyen - doc record written from the available sources (incomplete); BLOCKED by B3 (docs host unreachable) and B4 (no payment lookup; request R3); no code
-- [ ] 12.3 paddle
+- [ ] 12.3 paddle - doc record, adapter (one-step sale, merchant of record), webhook, local checks (10) done; browser form BLOCKED by B5 (Paddle.js docs unreachable); sandbox pending
 - [ ] 12.4 fastspring
 - [ ] 12.5 payproglobal
 - [ ] 12.6 payoneer

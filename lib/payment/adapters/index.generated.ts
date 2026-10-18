@@ -9,6 +9,7 @@ export const adapterLoaders: Partial<Record<ProcessorId, () => Promise<AdapterMo
   bluesnap: () => import('./bluesnap'),
   braintree: () => import('./braintree'),
   nmi: () => import('./nmi'),
+  paddle: () => import('./paddle'),
   payarc: () => import('./payarc'),
   paypal: () => import('./paypal'),
   square: () => import('./square'),
