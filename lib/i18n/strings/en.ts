@@ -20,6 +20,7 @@ import { strings as s09Recurring } from './en/s09-recurring';
 import { strings as s09Reports } from './en/s09-reports';
 import { strings as s10Payments } from './en/s10-payments';
 import { strings as s10Processors } from './en/s10-processors';
+import { strings as s13Portal } from './en/s13-portal';
 
 export const en = {
   s01Core,
@@ -41,6 +42,7 @@ export const en = {
   s09Reports,
   s10Payments,
   s10Processors,
+  s13Portal,
 } as const;
 
 export type Strings = typeof en;

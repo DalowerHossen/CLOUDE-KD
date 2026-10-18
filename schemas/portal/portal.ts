@@ -1,0 +1,14 @@
+// path: schemas/portal/portal.ts
+// Request shapes of the public client portal routes. Strict: unknown fields are rejected.
+import { z } from 'zod';
+
+/** A token is "<22 URL-safe characters>.<22 URL-safe characters>" (lib/auth/tokens.ts). */
+export const portalTokenSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{22}$/, 'Invalid link.');
+
+export const tokenOnlyBody = z.strictObject({ token: portalTokenSchema });
+export const otpVerifyBody = z.strictObject({
+  token: portalTokenSchema,
+  code: z.string().regex(/^\d{6}$/, 'The code has six digits.'),
+});
