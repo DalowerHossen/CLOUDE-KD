@@ -156,6 +156,12 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
     'https://checkouttoolkit.rapyd.net',
     'https://checkout.rapyd.net',
   ],
+  // Adyen: Web Drop-in script and stylesheet (docs/processors/adyen.md section 12a); the hosts Drop-in itself calls are
+  // not documented on the pages read (open question 1).
+  adyen: [
+    'https://checkoutshopper-test.cdn.adyen.com',
+    'https://checkoutshopper-live.cdn.adyen.com',
+  ],
   // PayArc: sandbox Hosted Fields script and frames; the production hosts are not documented (STEP 11 blocker B3).
   payarc: ['https://testportal.payarc.net', 'https://testapi.payarc.net'],
   verifone: [
