@@ -9,4 +9,22 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner', 'staff'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'contract.read',
+    description: 'See contracts, their signers and their history',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'contract.create',
+    description: 'Write contract drafts and manage contract templates',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'contract.send',
+    description: 'Send a contract for signature, remind signers and cancel a contract',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L1',
+  },
 ];

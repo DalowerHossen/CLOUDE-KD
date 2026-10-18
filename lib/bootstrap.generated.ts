@@ -8,6 +8,7 @@ import register_base from '@/services/base/register';
 import register_branding from '@/services/branding/register';
 import register_client from '@/services/client/register';
 import register_compliance from '@/services/compliance/register';
+import register_contract from '@/services/contract/register';
 import register_email from '@/services/email/register';
 import register_encryption from '@/services/encryption/register';
 import register_events from '@/services/events/register';
@@ -31,6 +32,7 @@ export async function bootstrapServices(): Promise<void> {
   await register_branding();
   await register_client();
   await register_compliance();
+  await register_contract();
   await register_email();
   await register_encryption();
   await register_events();

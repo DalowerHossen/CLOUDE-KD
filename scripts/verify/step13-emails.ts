@@ -30,8 +30,8 @@ function sample(variables: readonly string[]): Record<string, string> {
 }
 
 async function main(): Promise<void> {
-  await check('nine client templates are in the platform catalogue', () => {
-    assert.equal(clientEmailTemplates.length, 9);
+  await check('eleven client templates are in the platform catalogue', () => {
+    assert.equal(clientEmailTemplates.length, 11);
     const ids = new Set(emailCatalog.map((t) => t.definition.id));
     for (const t of clientEmailTemplates) assert.ok(ids.has(t.definition.id), t.definition.id);
   });
@@ -75,7 +75,10 @@ async function main(): Promise<void> {
             sample(t.definition.variables),
           ),
         );
-        assert.ok(!/EUR|GBP|BDT|INR|[\u20ac\u00a3\u00a5]/.test(html), `${t.definition.id} currency`);
+        assert.ok(
+          !/EUR|GBP|BDT|INR|[\u20ac\u00a3\u00a5]/.test(html),
+          `${t.definition.id} currency`,
+        );
       }
     },
   );

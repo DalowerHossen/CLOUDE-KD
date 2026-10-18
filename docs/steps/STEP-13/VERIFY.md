@@ -24,3 +24,9 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step13-branding.ts` -> 6 checks passed: contrast maths (black on white 21), light colours refused and dark ones accepted, hex to token conversion and readable text colour, only the four safe fonts (no URL in any stack), branded pages are light and carry the brand colours, strict save, import and export shapes.
 - `scripts/db-apply.sh --clean`: `S13_004_branding` applies; `sql/assertions/s13_004_branding.sql` passes (RLS on, one row per company, colour format, history is a log).
 - Not run here: the host lookup against a database (a verified domain resolves, a pending or removed one does not), the branded pages and the editor in a browser, an e-mail with the brand colours; recorded for 13.10.
+
+## 13.6.a Contracts (2026-10-18)
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step13-contracts.ts` -> 7 checks passed: status machine (forward only, four final states), contract number format, merge fields (escaping, missing and unknown names), the four pre-built templates use only known fields and no script, strict contract, update, send, void and template requests (dates, duplicate signer e-mail, amount format, plain-text title).
+- `scripts/db-apply.sh --clean`: `S13_005_contracts` applies; `sql/assertions/s13_005_contracts.sql` passes (RLS on, numbers from one sequence, a sent contract needs its hash, status list, end not before start, one signer per e-mail, versions and events are logs, `kd_contract_save` creates, edits, replaces signers, counts versions, refuses a stale save and a sent contract).
+- `step13-emails.ts` now covers eleven client templates (contract invitation and reminder added).
+- Not run here: a real send (token, one-time code, mail), the daily job against real data, and the contract pages in a browser; recorded for the sandbox run in 13.10.

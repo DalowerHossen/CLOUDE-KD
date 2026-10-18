@@ -4,6 +4,8 @@
 // open and click tracking stays on (it feeds the delivery proof) and no unsubscribe header is added (they are documents).
 import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
+import { ContractReminderEmail } from './contract-reminder';
+import { ContractSentEmail } from './contract-sent';
 import { CreditNoteEmail } from './credit-note';
 import { EstimateExpiredEmail } from './estimate-expired';
 import { EstimateReminderEmail } from './estimate-reminder';
@@ -93,5 +95,17 @@ export const clientEmailTemplates: readonly ClientEmailTemplate[] = [
     'Your new link from {companyName}',
     ['clientName', 'companyName', 'docLabel', 'expiresAt', 'link'],
     NewLinkEmail,
+  ),
+  entry(
+    'client.contract-sent',
+    '{companyName} asks you to sign {title}',
+    ['clientName', 'companyName', 'title', 'number', 'signBy', 'message', 'link'],
+    ContractSentEmail,
+  ),
+  entry(
+    'client.contract-reminder',
+    'Reminder: please sign {title}',
+    ['clientName', 'companyName', 'title', 'number', 'signBy', 'message', 'link'],
+    ContractReminderEmail,
   ),
 ];

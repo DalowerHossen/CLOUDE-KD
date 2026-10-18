@@ -5,7 +5,7 @@
 - [x] 13.3 Estimates, receipts and client hub (2026-10-18)
 - [x] 13.4 Client emails (2026-10-18)
 - [x] 13.5 Tenant branding (2026-10-18)
-- [ ] 13.6.a Contract templates, contracts, send, reminders
+- [x] 13.6.a Contract templates, contracts, send, reminders (2026-10-18)
 - [ ] 13.6.b Signing page and signing evidence
 - [ ] 13.7 Owner workflows
 - [ ] 13.8 Disputes

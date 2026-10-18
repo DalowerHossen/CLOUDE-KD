@@ -20,4 +20,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 76,
   },
+  {
+    id: 'contracts',
+    labelKey: 's13Portal.nav.contracts',
+    href: '/contracts',
+    icon: 'file-text',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 77,
+  },
 ];
