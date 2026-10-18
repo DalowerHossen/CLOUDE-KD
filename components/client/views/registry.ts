@@ -4,7 +4,12 @@
 import type { ReactNode } from 'react';
 import type { PortalSubject } from '@/services/portal/events';
 import type { TokenDocumentType } from '@/types/contracts';
+import { renderInvoiceView } from './invoice-view';
+import { renderPaymentView } from './payment-view';
 
 export type PortalView = (subject: PortalSubject, token: string) => Promise<ReactNode>;
 
-export const portalViews: Partial<Record<TokenDocumentType, PortalView>> = {};
+export const portalViews: Partial<Record<TokenDocumentType, PortalView>> = {
+  invoice: renderInvoiceView,
+  payment: renderPaymentView,
+};

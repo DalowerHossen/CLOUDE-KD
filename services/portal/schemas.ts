@@ -12,3 +12,6 @@ export const otpVerifyBody = z.strictObject({
   token: portalTokenSchema,
   code: z.string().regex(/^\d{6}$/, 'The code has six digits.'),
 });
+
+/** The payer's acceptance of the terms and the refund policy: the box must be ticked (true). */
+export const consentBody = z.strictObject({ token: portalTokenSchema, accepted: z.literal(true) });

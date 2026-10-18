@@ -1,5 +1,6 @@
 // path: components/client/portal-page.tsx
 import type { ReactNode } from 'react';
+import { NotFoundError } from '@/lib/errors';
 import { t } from '@/lib/i18n';
 import { PORTAL_ROUTES, resolvePortalAccess, type PortalAccess } from '@/services/portal/access';
 import { recordPortalEvent } from '@/services/portal/events';
@@ -20,7 +21,7 @@ function invalid(): JSX.Element {
   );
 }
 
-async function show(access: PortalAccess, route: string, token: string): Promise<ReactNode> {
+async function show(access: PortalAccess, token: string): Promise<ReactNode> {
   switch (access.state) {
     case 'limited':
       return (
@@ -56,9 +57,15 @@ async function show(access: PortalAccess, route: string, token: string): Promise
     case 'ok': {
       const view = portalViews[access.docType];
       if (!view) return invalid();
-      await recordPortalEvent(access, 'view');
-      void route;
-      return view(access, token);
+      try {
+        const body = await view(access, token);
+        await recordPortalEvent(access, 'view');
+        return body;
+      } catch (thrown) {
+        // A document that cannot be shown (not found, not for the client yet) looks like an unavailable link.
+        if (thrown instanceof NotFoundError) return invalid();
+        throw thrown;
+      }
     }
   }
 }
@@ -67,5 +74,5 @@ async function show(access: PortalAccess, route: string, token: string): Promise
 export async function PortalPage({ route, token }: PortalPageProps): Promise<JSX.Element> {
   const doc = PORTAL_ROUTES[route];
   const access = doc ? await resolvePortalAccess(token, [doc]) : ({ state: 'invalid' } as const);
-  return <>{await show(access, route, token)}</>;
+  return <>{await show(access, token)}</>;
 }
