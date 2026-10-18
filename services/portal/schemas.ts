@@ -30,3 +30,17 @@ export const hubOpenBody = z.strictObject({
   token: portalTokenSchema,
   invoiceId: z.string().uuid(),
 });
+
+/** The owner's answer to a client's request for a new link. A denial needs a short reason. */
+export const decideRequestBody = z
+  .strictObject({
+    decision: z.enum(['approve', 'deny']),
+    reason: z.string().trim().max(500),
+  })
+  .refine((v) => v.decision === 'approve' || v.reason.length >= 3, {
+    message: 'Give a short reason when you deny a request.',
+    path: ['reason'],
+  });
+
+/** The owner confirms the exact number of reminders in a bulk run. */
+export const bulkConfirmBody = z.strictObject({ expectedCount: z.number().int().min(1).max(100) });

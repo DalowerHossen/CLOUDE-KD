@@ -3,7 +3,11 @@ import type { Metadata } from 'next';
 import { DataTable, type DataColumn } from '@/components/shared/data-table';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState, ErrorState } from '@/components/shared/state-views';
+import Link from 'next/link';
+import { BulkEstimateReminders } from '@/components/client/bulk-estimate-reminders';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { getService } from '@/lib/container';
 import { t, type StringKey } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { listDeliveries, type DeliveryRow } from '@/services/portal/delivery-proof';
@@ -61,6 +65,9 @@ const columns: readonly DataColumn<DeliveryRow>[] = [
 /** Owner view: every message sent to a client, with delivery, open, click and bounce status. */
 export default async function ClientMailPage(): Promise<JSX.Element> {
   const actor = await requirePagePermission('portal.mail.read', 'tenant', 'client_mail');
+  const permissions = getService('permissions');
+  const canBulk = await permissions.can(actor, 'portal.mail.bulk', { type: 'client_mail' });
+  const canDecide = await permissions.can(actor, 'portal.link.decide', { type: 'link_request' });
   let rows: DeliveryRow[] | null;
   try {
     rows = await listDeliveries(actor.companyId as string, { limit: 100 });
@@ -69,7 +76,18 @@ export default async function ClientMailPage(): Promise<JSX.Element> {
   }
   return (
     <div className="space-y-sp-16">
-      <PageHeader title={t('s13Portal.mail.title')} description={t('s13Portal.mail.description')} />
+      <PageHeader
+        title={t('s13Portal.mail.title')}
+        description={t('s13Portal.mail.description')}
+        actions={
+          canDecide ? (
+            <Button asChild variant="outline">
+              <Link href="/client-mail/requests">{t('s13Portal.requests.title')}</Link>
+            </Button>
+          ) : undefined
+        }
+      />
+      {canBulk ? <BulkEstimateReminders /> : null}
       {rows === null ? (
         <ErrorState description={t('s13Portal.mail.loadError')} />
       ) : (

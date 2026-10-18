@@ -48,6 +48,9 @@ export default async function ContractPage({
   if (contract.status === 'signed')
     seal = await verifySignedContract(companyId, id).catch(() => null);
   const canSend = await getService('permissions').can(actor, 'contract.send', { type: 'contract' });
+  const canRequest = await getService('permissions').can(actor, 'contract.request_send', {
+    type: 'contract',
+  });
   const canEdit =
     contract.status === 'draft' &&
     (await getService('permissions').can(actor, 'contract.create', { type: 'contract' }));
@@ -79,7 +82,14 @@ export default async function ContractPage({
           ) : null}
         </div>
       ) : null}
-      <ContractActions id={contract.id} status={contract.status} canSend={canSend} />
+      <ContractActions
+        id={contract.id}
+        status={contract.status}
+        canSend={canSend}
+        canRequest={canRequest}
+        requested={contract.sendRequested}
+        rejectedReason={contract.sendRejectedReason}
+      />
       {canEdit ? (
         <ContractForm
           edit={{ id: contract.id, version: contract.version }}

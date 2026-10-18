@@ -37,3 +37,8 @@
 - `scripts/db-apply.sh --clean`: `S13_006_signatures` applies; `sql/assertions/s13_006_signatures.sql` passes (signing out of turn, a wrong checksum, a drawn signature without a picture, a second signature, signing a closed contract, editing or deleting evidence are all refused; the first of two signers gives `partly_signed`, the last gives `signed` with its time; a decline ends the contract and cannot be repeated).
 - `step13-emails.ts` now covers twelve client templates (signed copy added).
 - Not run here: the signing page in a browser (drawing on a touch screen, upload, the one-time code), the real PDF with a stored picture through Drive or Supabase Storage, and the daily job; recorded for the sandbox run in 13.10.
+
+## 13.7 Owner workflows (2026-10-18)
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step13-owner.ts` -> 6 checks passed: the link-request decision (a denial needs a reason, nothing extra), the client page of every document type (unknown types go to the expired page), the bulk safeguards (confirmed number 1 to 100, no extra fields), the reminder windows, the staff-through-owner chain (approval rule L1, permissions and roles, no duplicate permission), the notice worker events and the cron schedules.
+- `scripts/db-apply.sh --clean`: `S13_007_owner_workflows` applies; `sql/assertions/s13_007_owner_workflows.sql` passes (denial reason kept and limited, a contract holds its send request, the two new log kinds work and others are refused).
+- Not run here: the approval flow end to end (staff ask, owner approves, the job sends), the payment event worker with a real payment, and the owner pages in a browser; recorded for the sandbox run in 13.10.

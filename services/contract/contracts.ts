@@ -50,10 +50,14 @@ export interface ContractView {
   version: number;
   createdAt: string;
   signers: SignerView[];
+  /** A staff member asked the owner to send this draft and the answer is still open. */
+  sendRequested: boolean;
+  /** Why the owner said no to the last request (empty when there was none). */
+  sendRejectedReason: string;
 }
 
 export const CONTRACT_COLUMNS =
-  'id, number, title, status, client_id, template_key, body_html, merge_data, amount, effective_on, ends_on, sign_by, renewal_notice_days, signing_order, body_hash, sent_at, signed_at, closed_reason, version, created_at';
+  'id, number, title, status, client_id, template_key, body_html, merge_data, amount, effective_on, ends_on, sign_by, renewal_notice_days, signing_order, body_hash, sent_at, signed_at, closed_reason, version, created_at, send_request_id, send_rejected_reason';
 export const SIGNER_COLUMNS =
   'id, position, name, email, role_label, status, invited_at, viewed_at, signed_at, reminder_count, last_reminded_at';
 
@@ -105,6 +109,8 @@ export function toContract(r: Row, signers: Row[], clientName: string): Contract
     version: Number(r.version),
     createdAt: String(r.created_at),
     signers: signers.map(toSigner),
+    sendRequested: r.send_request_id !== null && r.send_request_id !== undefined,
+    sendRejectedReason: String(r.send_rejected_reason ?? ''),
   };
 }
 
@@ -220,6 +226,11 @@ export async function saveContract(
   input: ContractInput,
 ): Promise<ContractView> {
   const companyId = need(actor);
+  if (id) {
+    const current = await getContract(companyId, id);
+    if (current.sendRequested)
+      throw new ValidationError('Take back the request to send before you change the contract.');
+  }
   if (input.clientId) {
     const client = await getService('clients').getById(input.clientId);
     if (client.companyId !== companyId) throw new NotFoundError();

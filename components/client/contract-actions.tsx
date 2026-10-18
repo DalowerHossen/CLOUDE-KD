@@ -8,17 +8,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { t } from '@/lib/i18n';
 
-type Action = 'send' | 'remind' | 'void';
+type Action = 'send' | 'remind' | 'void' | 'request-send';
 
 /** Send for signature, remind the signers who have not signed, or cancel the request. */
 export function ContractActions({
   id,
   status,
   canSend,
+  canRequest,
+  requested,
+  rejectedReason,
 }: {
   id: string;
   status: string;
   canSend: boolean;
+  /** Staff: may ask the owner to send. */
+  canRequest: boolean;
+  /** A request to send is waiting for the owner. */
+  requested: boolean;
+  rejectedReason: string;
 }): JSX.Element | null {
   const router = useRouter();
   const [busy, setBusy] = useState<Action | null>(null);
@@ -26,7 +34,21 @@ export function ContractActions({
   const [reason, setReason] = useState('');
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const open = status === 'sent' || status === 'viewed' || status === 'partly_signed';
-  if (!canSend || !(status === 'draft' || open)) return null;
+  const staffDraft = !canSend && canRequest && status === 'draft';
+  if (!staffDraft && (!canSend || !(status === 'draft' || open))) return null;
+
+  async function withdraw(): Promise<void> {
+    setBusy('request-send');
+    setNotice(null);
+    try {
+      const response = await fetch(`/api/contracts/${id}/request-send`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('withdraw');
+      router.refresh();
+    } catch {
+      setNotice({ ok: false, text: t('s13Portal.contracts.actionFailed') });
+    }
+    setBusy(null);
+  }
 
   async function run(action: Action, body: Record<string, unknown>, done: string): Promise<void> {
     setBusy(action);
@@ -64,7 +86,45 @@ export function ContractActions({
   return (
     <div className="space-y-sp-12 print:hidden">
       {notice ? <Alert variant={notice.ok ? 'success' : 'destructive'}>{notice.text}</Alert> : null}
-      {status === 'draft' ? (
+      {staffDraft ? (
+        <div className="space-y-1">
+          {rejectedReason ? <Alert variant="destructive">{rejectedReason}</Alert> : null}
+          {requested ? (
+            <>
+              <Alert>{t('s13Portal.contracts.requestWaiting')}</Alert>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy !== null}
+                onClick={() => void withdraw()}
+              >
+                {t('s13Portal.contracts.withdraw')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Label htmlFor="ct-req-message">{t('s13Portal.contracts.message')}</Label>
+              <Input
+                id="ct-req-message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                maxLength={1000}
+                disabled={busy !== null}
+              />
+              <Button
+                type="button"
+                disabled={busy !== null}
+                onClick={() =>
+                  void run('request-send', { message }, t('s13Portal.contracts.requestSent'))
+                }
+              >
+                {t('s13Portal.contracts.requestSend')}
+              </Button>
+            </>
+          )}
+        </div>
+      ) : null}
+      {canSend && status === 'draft' ? (
         <div className="space-y-1">
           <Label htmlFor="ct-message">{t('s13Portal.contracts.message')}</Label>
           <Input

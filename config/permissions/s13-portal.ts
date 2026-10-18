@@ -27,4 +27,22 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L1',
   },
+  {
+    action: 'contract.request_send',
+    description: 'Ask the owner to send a contract for signature, or take the request back',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'portal.link.decide',
+    description: 'Approve or deny a client request for a new link to an expired document',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'portal.mail.bulk',
+    description: 'Send reminders for many open estimates at once',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];
