@@ -28,7 +28,7 @@ const MAX_LINK_DAYS = 90;
 export const contractLink = (token: string): string =>
   `${siteUrl()}/c/${encodeURIComponent(token)}`;
 
-async function addEvent(
+export async function addEvent(
   companyId: string,
   contractId: string,
   kind: string,
@@ -49,7 +49,7 @@ async function addEvent(
   if (error) log.error('contract event not stored', { kind });
 }
 
-async function companyName(companyId: string): Promise<string> {
+export async function companyName(companyId: string): Promise<string> {
   const { data } = await getAdminSupabase()
     .from('companies')
     .select('name')
@@ -250,7 +250,7 @@ export async function remindSigners(
   return count;
 }
 
-async function revokeTokens(contract: ContractView): Promise<void> {
+export async function revokeTokens(contract: ContractView): Promise<void> {
   const { data } = await getAdminSupabase()
     .from('contract_signers')
     .select('token_id')

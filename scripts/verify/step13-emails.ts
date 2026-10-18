@@ -30,8 +30,8 @@ function sample(variables: readonly string[]): Record<string, string> {
 }
 
 async function main(): Promise<void> {
-  await check('eleven client templates are in the platform catalogue', () => {
-    assert.equal(clientEmailTemplates.length, 11);
+  await check('twelve client templates are in the platform catalogue', () => {
+    assert.equal(clientEmailTemplates.length, 12);
     const ids = new Set(emailCatalog.map((t) => t.definition.id));
     for (const t of clientEmailTemplates) assert.ok(ids.has(t.definition.id), t.definition.id);
   });

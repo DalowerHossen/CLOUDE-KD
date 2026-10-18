@@ -18,6 +18,9 @@ import {
   type EventView,
 } from '@/services/contract/contracts';
 import { listTemplates } from '@/services/contract/templates';
+import { verifySignedContract, type SealCheck } from '@/services/esign/finalize';
+import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Contract' };
@@ -41,6 +44,9 @@ export default async function ContractPage({
   } catch {
     notFound();
   }
+  let seal: SealCheck | null = null;
+  if (contract.status === 'signed')
+    seal = await verifySignedContract(companyId, id).catch(() => null);
   const canSend = await getService('permissions').can(actor, 'contract.send', { type: 'contract' });
   const canEdit =
     contract.status === 'draft' &&
@@ -59,6 +65,20 @@ export default async function ContractPage({
           </Badge>
         }
       />
+      {seal ? (
+        <div className="space-y-sp-8">
+          <Alert variant={seal.ok ? 'success' : 'destructive'}>
+            {seal.ok ? t('s13Portal.contracts.sealOk') : seal.reasons.join(' ')}
+          </Alert>
+          {seal.ok ? (
+            <Button asChild variant="outline">
+              <a href={`/api/contracts/${contract.id}/signed`}>
+                {t('s13Portal.contracts.downloadSigned')}
+              </a>
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       <ContractActions id={contract.id} status={contract.status} canSend={canSend} />
       {canEdit ? (
         <ContractForm

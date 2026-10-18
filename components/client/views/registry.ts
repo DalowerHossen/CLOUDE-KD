@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react';
 import type { PortalSubject } from '@/services/portal/events';
 import type { TokenDocumentType } from '@/types/contracts';
+import { renderContractView } from './contract-view';
 import { renderEstimateView } from './estimate-view';
 import { renderHubView } from './hub-view';
 import { renderInvoiceView } from './invoice-view';
@@ -18,4 +19,5 @@ export const portalViews: Partial<Record<TokenDocumentType, PortalView>> = {
   estimate: renderEstimateView,
   receipt: renderReceiptView,
   hub: renderHubView,
+  contract: renderContractView,
 };

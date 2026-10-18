@@ -30,3 +30,10 @@
 - `scripts/db-apply.sh --clean`: `S13_005_contracts` applies; `sql/assertions/s13_005_contracts.sql` passes (RLS on, numbers from one sequence, a sent contract needs its hash, status list, end not before start, one signer per e-mail, versions and events are logs, `kd_contract_save` creates, edits, replaces signers, counts versions, refuses a stale save and a sent contract).
 - `step13-emails.ts` now covers eleven client templates (contract invitation and reminder added).
 - Not run here: a real send (token, one-time code, mail), the daily job against real data, and the contract pages in a browser; recorded for the sandbox run in 13.10.
+
+## 13.6.b Signing page and evidence (2026-10-18)
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step13-esign.ts` -> 5 checks passed: the seal verifies and breaks when the file, the wording, a signature, the signature order or the key changes; the statement checksum is stable; a real picture is accepted and re-drawn as a PNG within 600 by 200; text with a picture name, a PNG header with junk, bad base64 and an oversized file are refused; the signing and decline requests are strict (accept box, picture tied to the method, checksum format, no markup in the name).
+- `npx tsx scripts/verify/step13-signed-pdf.mts` -> 2 checks passed: a short and a 120 clause contract with a typed and a drawn signature render real PDFs.
+- `scripts/db-apply.sh --clean`: `S13_006_signatures` applies; `sql/assertions/s13_006_signatures.sql` passes (signing out of turn, a wrong checksum, a drawn signature without a picture, a second signature, signing a closed contract, editing or deleting evidence are all refused; the first of two signers gives `partly_signed`, the last gives `signed` with its time; a decline ends the contract and cannot be repeated).
+- `step13-emails.ts` now covers twelve client templates (signed copy added).
+- Not run here: the signing page in a browser (drawing on a touch screen, upload, the one-time code), the real PDF with a stored picture through Drive or Supabase Storage, and the daily job; recorded for the sandbox run in 13.10.

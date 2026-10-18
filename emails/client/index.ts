@@ -6,6 +6,7 @@ import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
 import { ContractReminderEmail } from './contract-reminder';
 import { ContractSentEmail } from './contract-sent';
+import { ContractSignedEmail } from './contract-signed';
 import { CreditNoteEmail } from './credit-note';
 import { EstimateExpiredEmail } from './estimate-expired';
 import { EstimateReminderEmail } from './estimate-reminder';
@@ -107,5 +108,11 @@ export const clientEmailTemplates: readonly ClientEmailTemplate[] = [
     'Reminder: please sign {title}',
     ['clientName', 'companyName', 'title', 'number', 'signBy', 'message', 'link'],
     ContractReminderEmail,
+  ),
+  entry(
+    'client.contract-signed',
+    '{title} is signed by everyone',
+    ['clientName', 'companyName', 'title', 'number', 'link'],
+    ContractSignedEmail,
   ),
 ];
