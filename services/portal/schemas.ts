@@ -1,4 +1,4 @@
-// path: schemas/portal/portal.ts
+// path: services/portal/schemas.ts
 // Request shapes of the public client portal routes. Strict: unknown fields are rejected.
 import { z } from 'zod';
 

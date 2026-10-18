@@ -1,7 +1,7 @@
 // path: app/api/portal/otp/verify/route.ts
 import { withApi } from '@/lib/api/with-api';
 import { getService } from '@/lib/container';
-import { otpVerifyBody } from '@/schemas/portal/portal';
+import { otpVerifyBody } from '@/services/portal/schemas';
 import { recordPortalEvent } from '@/services/portal/events';
 import { grantOtpSession } from '@/services/portal/otp-session';
 

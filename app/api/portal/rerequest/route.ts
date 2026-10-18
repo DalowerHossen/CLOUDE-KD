@@ -1,6 +1,6 @@
 // path: app/api/portal/rerequest/route.ts
 import { withApi } from '@/lib/api/with-api';
-import { tokenOnlyBody } from '@/schemas/portal/portal';
+import { tokenOnlyBody } from '@/services/portal/schemas';
 import { requestNewLink } from '@/services/portal/rerequest';
 
 /** A client asks for a new link after the old one expired. The answer never depends on the link. */

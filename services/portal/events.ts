@@ -6,7 +6,7 @@ import { headers } from 'next/headers';
 import { getClientIp } from '@/lib/api/client-ip';
 import { getService } from '@/lib/container';
 import { createLogger } from '@/lib/logger';
-import { describeDevice } from '@/lib/portal/device';
+import { describeDevice } from '@/services/portal/device';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { hashIp } from '@/services/audit/request-meta';
 import { maskIp } from '@/services/audit/mask-ip';

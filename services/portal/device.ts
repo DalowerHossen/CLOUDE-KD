@@ -1,4 +1,4 @@
-// path: lib/portal/device.ts
+// path: services/portal/device.ts
 // A short, human-readable device label from the browser string ("Chrome on Windows"). Pure and approximate: it is a hint
 // for the owner and for evidence packs, not an identity.
 const BROWSERS: ReadonlyArray<readonly [RegExp, string]> = [

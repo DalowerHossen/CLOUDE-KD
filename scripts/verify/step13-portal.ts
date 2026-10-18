@@ -4,8 +4,8 @@
 // Run: SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step13-portal.ts
 import assert from 'node:assert/strict';
 import { registerService, unregisterService } from '@/lib/container';
-import { describeDevice } from '@/lib/portal/device';
-import { otpVerifyBody, portalTokenSchema, tokenOnlyBody } from '@/schemas/portal/portal';
+import { describeDevice } from '@/services/portal/device';
+import { otpVerifyBody, portalTokenSchema, tokenOnlyBody } from '@/services/portal/schemas';
 import { PORTAL_ROUTES, resolvePortalAccess } from '@/services/portal/access';
 import {
   OTP_SESSION_SECONDS,
