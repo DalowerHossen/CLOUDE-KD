@@ -8,7 +8,7 @@
 - [x] 12.1.f nmi: webhook route and verification record
 - [ ] 12.2 adyen - doc record written from the available sources (incomplete); BLOCKED by B3 (docs host unreachable) and B4 (no payment lookup; request R3); no code
 - [ ] 12.3 paddle - doc record, adapter (one-step sale, merchant of record), webhook, local checks (10) done; browser form BLOCKED by B5 (Paddle.js docs unreachable); sandbox pending
-- [ ] 12.4 fastspring
+- [x] 12.4 fastspring - doc record, adapter (one-step sale, merchant of record), webhook, Checkout Components form, local checks (11) done; sandbox pending (no credentials); Components must be enabled by FastSpring for the store
 - [ ] 12.5 payproglobal
 - [ ] 12.6 payoneer
 - [ ] 12.7 rapyd

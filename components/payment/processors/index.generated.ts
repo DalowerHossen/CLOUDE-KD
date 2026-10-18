@@ -9,6 +9,7 @@ export const secureFormLoaders: Partial<Record<ProcessorId, SecureFormLoader>> =
   authorizenet: () => import('./authorizenet'),
   bluesnap: () => import('./bluesnap'),
   braintree: () => import('./braintree'),
+  fastspring: () => import('./fastspring'),
   payarc: () => import('./payarc'),
   paypal: () => import('./paypal'),
   square: () => import('./square'),

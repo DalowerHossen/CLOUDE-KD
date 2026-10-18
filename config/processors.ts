@@ -147,6 +147,8 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
   // (docs/processors/verifone.md section 3).
   // NMI: sandbox browser scripts and frames; the production hosts are not confirmed (STEP 12 blockers B1, B2).
   nmi: ['https://sandbox.nmi.com'],
+  // FastSpring: Checkout Components script and the store checkout frames (docs/processors/fastspring.md section 12a).
+  fastspring: ['https://cdn.onfastspring.com', 'https://*.onfastspring.com'],
   // PayArc: sandbox Hosted Fields script and frames; the production hosts are not documented (STEP 11 blocker B3).
   payarc: ['https://testportal.payarc.net', 'https://testapi.payarc.net'],
   verifone: [
