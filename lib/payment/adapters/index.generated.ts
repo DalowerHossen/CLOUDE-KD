@@ -14,6 +14,7 @@ export const adapterLoaders: Partial<Record<ProcessorId, () => Promise<AdapterMo
   payarc: () => import('./payarc'),
   paypal: () => import('./paypal'),
   payproglobal: () => import('./payproglobal'),
+  rapyd: () => import('./rapyd'),
   square: () => import('./square'),
   stripe: () => import('./stripe'),
   verifone: () => import('./verifone'),

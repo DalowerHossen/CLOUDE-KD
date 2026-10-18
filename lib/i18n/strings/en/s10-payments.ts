@@ -94,6 +94,7 @@ export const strings = {
       'The checkout opens in a new window. When the payment is done, type the order number shown on the confirmation page.',
     orderNumber: 'Order number',
     confirmHosted: 'I have paid',
+    securePay: 'Pay securely',
     sandbox: 'Test mode: no real money is moved.',
     refundPolicy:
       'Refunds are possible for {days} days after the payment. Contact the seller to ask for one.',

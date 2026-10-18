@@ -149,6 +149,13 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
   nmi: ['https://sandbox.nmi.com'],
   // FastSpring: Checkout Components script and the store checkout frames (docs/processors/fastspring.md section 12a).
   fastspring: ['https://cdn.onfastspring.com', 'https://*.onfastspring.com'],
+  // Rapyd: Checkout Toolkit script and the hosted checkout frames (docs/processors/rapyd.md section 12a).
+  rapyd: [
+    'https://sandboxcheckouttoolkit.rapyd.net',
+    'https://sandboxcheckout.rapyd.net',
+    'https://checkouttoolkit.rapyd.net',
+    'https://checkout.rapyd.net',
+  ],
   // PayArc: sandbox Hosted Fields script and frames; the production hosts are not documented (STEP 11 blocker B3).
   payarc: ['https://testportal.payarc.net', 'https://testapi.payarc.net'],
   verifone: [
