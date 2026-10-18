@@ -15,3 +15,18 @@ export const otpVerifyBody = z.strictObject({
 
 /** The payer's acceptance of the terms and the refund policy: the box must be ticked (true). */
 export const consentBody = z.strictObject({ token: portalTokenSchema, accepted: z.literal(true) });
+
+/** The client's answer to an estimate. The address and browser come from the request, never from the body. */
+export const decideBody = z.strictObject({
+  token: portalTokenSchema,
+  decision: z.enum(['accepted', 'declined']),
+  signerName: z.string().trim().min(2).max(200),
+  note: z.string().trim().max(1000),
+  agree: z.boolean(),
+});
+
+/** "Open" on a hub row: the invoice must belong to the client of the hub link. */
+export const hubOpenBody = z.strictObject({
+  token: portalTokenSchema,
+  invoiceId: z.string().uuid(),
+});

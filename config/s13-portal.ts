@@ -9,3 +9,6 @@ export const PAYMENT_PAGE_TIMEOUT_MINUTES = 15;
 
 /** How long a payment link made from the invoice page stays valid, in hours. */
 export const PORTAL_PAY_LINK_HOURS = 2;
+
+/** How long an invoice link opened from the client hub stays valid, in days. */
+export const HUB_OPEN_LINK_DAYS = 7;
