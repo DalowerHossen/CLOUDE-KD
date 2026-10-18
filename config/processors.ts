@@ -145,6 +145,8 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
   bluesnap: ['https://sandpay.bluesnap.com', 'https://pay.bluesnap.com'],
   // Verifone: the iFrame checkout loader and the frame it opens come from the region host of the account
   // (docs/processors/verifone.md section 3).
+  // NMI: sandbox browser scripts and frames; the production hosts are not confirmed (STEP 12 blockers B1, B2).
+  nmi: ['https://sandbox.nmi.com'],
   // PayArc: sandbox Hosted Fields script and frames; the production hosts are not documented (STEP 11 blocker B3).
   payarc: ['https://testportal.payarc.net', 'https://testapi.payarc.net'],
   verifone: [
