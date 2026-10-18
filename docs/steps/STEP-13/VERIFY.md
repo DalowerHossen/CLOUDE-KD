@@ -14,3 +14,8 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step13-estimates.ts` -> 4 checks passed: receipt checksum (stable, 16 hex, changes with the facts), strict decision request, hub open request needs a uuid, hub summary adds only open balances.
 - `npx tsx scripts/verify/step13-receipt-pdf.mts` -> 2 checks passed: paid and refunded receipts render real PDF files.
 - Not run here: the browser run (estimate form, hub filter, receipt print) and a signed estimate against a database; recorded for 13.10.
+
+## 13.4 Client emails (2026-10-18)
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step13-emails.ts` -> 5 checks passed: nine client templates in the platform catalogue, ids tracked, every template renders with the forward warning exactly when it holds a link, subject variables declared and USD only, sender note shown only when given.
+- `scripts/db-apply.sh --clean`: `S13_003_delivery_proofs` applies; `sql/assertions/s13_003_delivery_proofs.sql` passes (RLS on, append only, one proof per message, hash and document type checks).
+- Not run here: a real send through a mail provider and the delivery events coming back; the owner page in a browser; recorded for the sandbox run in 13.10.

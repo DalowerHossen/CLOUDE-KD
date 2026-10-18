@@ -5,3 +5,5 @@
 **R2 Public payment link for the portal (`services/payment/links.ts`).** The invoice page's "Pay now" creates a link with a fixed portal actor (decision D8). Please add `createClientPaymentLink({ companyId, invoiceId, validHours })` that needs no actor, so STEP 13 can use it.
 
 **R3 Code-protected estimate links (`services/estimate/public.ts`).** `getEstimateByToken` and `decideEstimate` throw `ForbiddenError` for a token that needs a code, because they cannot know that the portal already checked the code. Please add an option (for example `{ otpVerified: true }`, set only by the portal after `resolvePortalAccess` returned `ok`) that skips that refusal. Until then such an estimate link shows as unavailable (decision D11).
+
+**R4 Forward warning in the invoice emails (`emails/invoice/*.tsx`).** The invoice, estimate and reminder messages hold a private link but do not warn against forwarding. Please render `ForwardNotice` (exported from `emails/client/client-frame.tsx`) at the end of `invoice-sent.tsx`, `estimate-sent.tsx` and `invoice-reminder.tsx`.

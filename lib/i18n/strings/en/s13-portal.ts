@@ -144,6 +144,33 @@ export const strings = {
     empty: 'No invoices match.',
     truncated: 'Only the 100 newest invoices are shown.',
   },
+  nav: {
+    clientMail: 'Client mail',
+  },
+  mail: {
+    title: 'Client mail',
+    description: 'Every message sent to your clients and what happened to it.',
+    loadError: 'The messages could not be loaded. Please try again.',
+    empty: 'No messages have been sent to clients yet.',
+    columns: {
+      sent: 'Sent',
+      to: 'To',
+      subject: 'Subject',
+      document: 'Document',
+      status: 'Status',
+      opened: 'Opened',
+    },
+    status: {
+      none: 'Queued',
+      sent: 'Sent',
+      delivered: 'Delivered',
+      opened: 'Opened',
+      clicked: 'Clicked',
+      bounced: 'Bounced',
+      complained: 'Spam report',
+      suppressed: 'Not sent',
+    },
+  },
   view: {
     unavailableTitle: 'This page is not available yet',
     unavailableBody: 'Please ask the sender for a link to a document.',
