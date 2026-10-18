@@ -8,6 +8,7 @@ export const adapterLoaders: Partial<Record<ProcessorId, () => Promise<AdapterMo
   authorizenet: () => import('./authorizenet'),
   bluesnap: () => import('./bluesnap'),
   braintree: () => import('./braintree'),
+  custom: () => import('./custom'),
   fastspring: () => import('./fastspring'),
   nmi: () => import('./nmi'),
   paddle: () => import('./paddle'),

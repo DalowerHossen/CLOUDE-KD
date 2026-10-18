@@ -12,5 +12,5 @@
 - [x] 12.5 payproglobal - doc record, adapter (hosted checkout, merchant of record), IPN webhook, form (payer types the order number), local checks (11) done; sandbox pending; request R4 (return route)
 - [ ] 12.6 payoneer - BLOCKED by B6 (official documentation unreachable); doc record of the attempt only, no code
 - [x] 12.7 rapyd - doc record, adapter (Checkout Toolkit, card, one-step), webhook, form, local checks (10) done; sandbox pending
-- [ ] 12.8 custom
+- [x] 12.8 custom - specification record, configuration-driven adapter (SSRF-guarded, hosted flow), webhook, form, local checks (13) done; owner scenarios pending
 - [ ] 12.9 status table and handoff
