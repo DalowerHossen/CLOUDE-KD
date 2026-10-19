@@ -64,4 +64,24 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'subscription.read',
+    description: 'See the plan, the billing invoices and the usage of the company',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'subscription.manage',
+    description:
+      'Subscribe to a plan, change it, cancel it at the end of the cycle and reactivate it',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'subscription.admin',
+    description:
+      'See every subscription and invoice, record bank payments, change plans and billing settings',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
 ];

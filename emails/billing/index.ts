@@ -5,6 +5,14 @@ import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
 import { PayoutFailedEmail } from './payout-failed';
 import { PayoutPaidEmail } from './payout-paid';
+import {
+  DowngradedEmail,
+  PaymentFailedEmail,
+  RenewalReminderEmail,
+  SubscriptionInvoiceEmail,
+  SubscriptionReceiptEmail,
+  TrialEndingEmail,
+} from './subscription-emails';
 
 export interface BillingEmailTemplate {
   definition: EmailTemplateDefinition;
@@ -33,5 +41,41 @@ export const billingEmailTemplates: readonly BillingEmailTemplate[] = [
     'A payout failed',
     ['companyName', 'amount', 'reason', 'link'],
     PayoutFailedEmail,
+  ),
+  entry(
+    'billing.invoice',
+    'Invoice {number}',
+    ['companyName', 'number', 'total', 'dueDate', 'description', 'link'],
+    SubscriptionInvoiceEmail,
+  ),
+  entry(
+    'billing.receipt',
+    'Receipt for invoice {number}',
+    ['companyName', 'number', 'total', 'paidAt', 'link'],
+    SubscriptionReceiptEmail,
+  ),
+  entry(
+    'billing.renewal-reminder',
+    'Your {planName} plan renews in {daysLeft} days',
+    ['companyName', 'planName', 'renewsOn', 'total', 'daysLeft', 'link'],
+    RenewalReminderEmail,
+  ),
+  entry(
+    'billing.payment-failed',
+    'Payment needed for invoice {number}',
+    ['companyName', 'number', 'total', 'attempt', 'graceEnds', 'link'],
+    PaymentFailedEmail,
+  ),
+  entry(
+    'billing.downgraded',
+    'Your company moved to the free plan',
+    ['companyName', 'planName', 'reason', 'link'],
+    DowngradedEmail,
+  ),
+  entry(
+    'billing.trial-ending',
+    'Your {planName} trial ends on {endsOn}',
+    ['companyName', 'planName', 'endsOn', 'link'],
+    TrialEndingEmail,
   ),
 ];

@@ -11,7 +11,11 @@ import type { EventHandlerDefinition } from '@/services/jobs/handler-types';
 import { ensureWallet } from '@/services/wallet/wallet-service';
 
 /** The amount of the dispute case (made by the dispute intake worker; it is the amount at stake). */
-async function disputedAmount(companyId: string, paymentId: string, processorDisputeId: string | null): Promise<Money | null> {
+async function disputedAmount(
+  companyId: string,
+  paymentId: string,
+  processorDisputeId: string | null,
+): Promise<Money | null> {
   let q = getAdminSupabase()
     .from('disputes')
     .select('amount')
@@ -28,7 +32,13 @@ const text = (v: unknown): string | null => (typeof v === 'string' && v.length >
 
 export const eventHandler: EventHandlerDefinition = {
   id: 'mor.settle',
-  events: ['payment.captured', 'payment.refunded', 'dispute.opened', 'dispute.lost', 'kyc.approved'],
+  events: [
+    'payment.captured',
+    'payment.refunded',
+    'dispute.opened',
+    'dispute.lost',
+    'kyc.approved',
+  ],
   async handle(event) {
     if (!event.companyId) return;
     const paymentId = text(event.payload.paymentId);
@@ -39,18 +49,26 @@ export const eventHandler: EventHandlerDefinition = {
       case 'payment.refunded': {
         const refundId = text(event.payload.refundId);
         const amount = text(event.payload.refundedAmount);
-        if (paymentId && refundId && amount) await reverseForRefund(paymentId, refundId, Money.parse(amount));
+        if (paymentId && refundId && amount)
+          await reverseForRefund(paymentId, refundId, Money.parse(amount));
         return;
       }
       case 'dispute.opened': {
         const disputeId = text(event.payload.disputeId) ?? event.id;
-        await extendActiveHolds(event.companyId, `A dispute was opened (${disputeId.slice(0, 40)}).`);
+        await extendActiveHolds(
+          event.companyId,
+          `A dispute was opened (${disputeId.slice(0, 40)}).`,
+        );
         return;
       }
       case 'dispute.lost': {
         const disputeId = text(event.payload.disputeId) ?? event.id;
         if (!paymentId) return;
-        const amount = await disputedAmount(event.companyId, paymentId, text(event.payload.disputeId));
+        const amount = await disputedAmount(
+          event.companyId,
+          paymentId,
+          text(event.payload.disputeId),
+        );
         if (amount) await chargeBack(paymentId, disputeId, amount);
         return;
       }

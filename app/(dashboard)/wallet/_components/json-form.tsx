@@ -35,6 +35,8 @@ interface JsonFormProps {
   fixed?: Record<string, unknown>;
   /** Puts all fields under this key of the body (for routes that take several groups of settings). */
   nest?: string;
+  /** The value of this field replaces `__company__` in the endpoint and is left out of the body. */
+  pathField?: string;
   resetAfter?: boolean;
 }
 
@@ -65,9 +67,17 @@ export function JsonForm(props: JsonFormProps): JSX.Element {
         if (props.emptyAsNull) body[f.name] = null;
       } else body[f.name] = f.whole ? toInt(raw, 0) : raw;
     }
+    let endpoint = props.endpoint;
+    if (props.pathField) {
+      endpoint = endpoint.replace(
+        '__company__',
+        encodeURIComponent(String(body[props.pathField] ?? '')),
+      );
+      delete body[props.pathField];
+    }
     const payload = props.nest ? { [props.nest]: body } : body;
     try {
-      const response = await fetch(props.endpoint, {
+      const response = await fetch(endpoint, {
         method: props.method ?? 'POST',
         headers: {
           'content-type': 'application/json',
