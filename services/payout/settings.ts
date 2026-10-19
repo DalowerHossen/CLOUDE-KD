@@ -13,7 +13,8 @@ import {
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 
-const COLUMNS = 'id, min_amount, period_limit, period_unit, fee_fixed, fee_percent, fx_fee_percent, large_threshold';
+const COLUMNS =
+  'id, min_amount, period_limit, period_unit, fee_fixed, fee_percent, fx_fee_percent, large_threshold';
 
 interface Row {
   id: string;
@@ -34,7 +35,8 @@ async function rowFor(companyId: string | null): Promise<Row | null> {
   return (data as Row | null) ?? null;
 }
 
-const text = (v: string | number | null | undefined): string | null => (v === null || v === undefined ? null : String(v));
+const text = (v: string | number | null | undefined): string | null =>
+  v === null || v === undefined ? null : String(v);
 
 export async function loadPayoutRules(companyId: string): Promise<PayoutRules> {
   const [own, platform] = await Promise.all([rowFor(companyId), rowFor(null)]);
@@ -46,7 +48,8 @@ export async function loadPayoutRules(companyId: string): Promise<PayoutRules> {
     feeFixed: text(own?.fee_fixed) ?? text(platform?.fee_fixed) ?? b.feeFixed,
     feePercent: text(own?.fee_percent) ?? text(platform?.fee_percent) ?? b.feePercent,
     fxFeePercent: text(own?.fx_fee_percent) ?? text(platform?.fx_fee_percent) ?? b.fxFeePercent,
-    largeThreshold: text(own?.large_threshold) ?? text(platform?.large_threshold) ?? b.largeThreshold,
+    largeThreshold:
+      text(own?.large_threshold) ?? text(platform?.large_threshold) ?? b.largeThreshold,
   };
 }
 
@@ -61,10 +64,15 @@ const COLUMN_OF: Record<keyof PayoutSettingsInput, string> = {
 };
 
 /** Saves the platform values (`companyId` null) or the values of one company. Super admin only. */
-export async function savePayoutSettings(actor: Actor, companyId: string | null, input: unknown): Promise<void> {
+export async function savePayoutSettings(
+  actor: Actor,
+  companyId: string | null,
+  input: unknown,
+): Promise<void> {
   if (actor.role !== 'super_admin') throw new ForbiddenError();
   const parsed = payoutSettingsInput.safeParse(input);
-  if (!parsed.success) throw new ValidationError(parsed.error.issues[0]?.message ?? 'The settings are not valid.');
+  if (!parsed.success)
+    throw new ValidationError(parsed.error.issues[0]?.message ?? 'The settings are not valid.');
   const patch: Record<string, unknown> = { updated_by: actor.userId };
   for (const [key, value] of Object.entries(parsed.data)) {
     if (value !== undefined) patch[COLUMN_OF[key as keyof PayoutSettingsInput]] = value;

@@ -10,6 +10,7 @@ import { onboardingEmailTemplates } from './onboarding';
 import { crmEmailTemplates } from './crm';
 import { invoiceEmailTemplates } from './invoice';
 import { clientEmailTemplates } from './client';
+import { billingEmailTemplates } from './billing';
 import { sharedEmailTemplates } from './shared';
 
 export interface CatalogTemplate {
@@ -26,4 +27,5 @@ export const emailCatalog: readonly CatalogTemplate[] = [
   ...crmEmailTemplates,
   ...invoiceEmailTemplates,
   ...clientEmailTemplates,
+  ...billingEmailTemplates,
 ];

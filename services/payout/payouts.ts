@@ -33,6 +33,7 @@ import {
 import { Money } from '@/lib/utils/currency';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { post } from '@/services/wallet/ledger';
+import { mailOwners } from '@/services/wallet/owner-mail';
 import { getWallet } from '@/services/wallet/wallet-service';
 import type { Actor } from '@/types/contracts';
 import { getMethod } from './methods';
@@ -118,7 +119,11 @@ export function toPayoutView(r: Row): PayoutView {
   };
 }
 
-const amountsOf = (r: Row): PayoutAmounts => ({ amount: m(r.amount), fee: m(r.fee), net: m(r.net) });
+const amountsOf = (r: Row): PayoutAmounts => ({
+  amount: m(r.amount),
+  fee: m(r.fee),
+  net: m(r.net),
+});
 
 const QUEUE_ROLES = ['super_admin', 'ceo', 'admin_staff'];
 const queueOnly = (actor: Actor | null): void => {
@@ -128,7 +133,11 @@ const queueOnly = (actor: Actor | null): void => {
 /* ---------------------------------------------------------------- reads */
 
 async function rowById(payoutId: string, companyId: string | null): Promise<Row> {
-  let q = getAdminSupabase().from('payouts').select(PAYOUT_COLUMNS).eq('id', payoutId).is('deleted_at', null);
+  let q = getAdminSupabase()
+    .from('payouts')
+    .select(PAYOUT_COLUMNS)
+    .eq('id', payoutId)
+    .is('deleted_at', null);
   if (companyId) q = q.eq('company_id', companyId);
   const { data, error } = await q.maybeSingle();
   if (error) throw new InternalError(error);
@@ -167,7 +176,10 @@ export async function listQueue(
     .order('created_at')
     .limit(200);
   if (error) throw new InternalError(error);
-  return ((data ?? []) as unknown as Row[]).map((r) => ({ ...toPayoutView(r), companyId: r.company_id }));
+  return ((data ?? []) as unknown as Row[]).map((r) => ({
+    ...toPayoutView(r),
+    companyId: r.company_id,
+  }));
 }
 
 export async function getPayout(companyId: string, payoutId: string): Promise<PayoutView> {
@@ -195,15 +207,23 @@ export async function payoutHistory(
 
 /* ---------------------------------------------------------------- moves */
 
-async function logMove(row: Row, from: PayoutStatus | null, to: PayoutStatus, actorId: string | null, note: string): Promise<void> {
-  const { error } = await getAdminSupabase().from('payout_events').insert({
-    company_id: row.company_id,
-    payout_id: row.id,
-    from_status: from,
-    to_status: to,
-    actor_id: actorId,
-    note: note.slice(0, 300),
-  });
+async function logMove(
+  row: Row,
+  from: PayoutStatus | null,
+  to: PayoutStatus,
+  actorId: string | null,
+  note: string,
+): Promise<void> {
+  const { error } = await getAdminSupabase()
+    .from('payout_events')
+    .insert({
+      company_id: row.company_id,
+      payout_id: row.id,
+      from_status: from,
+      to_status: to,
+      actor_id: actorId,
+      note: note.slice(0, 300),
+    });
   if (error) throw new InternalError(error);
 }
 
@@ -215,7 +235,10 @@ async function move(
   note: string,
   patch: Record<string, unknown> = {},
 ): Promise<Row> {
-  if (!canMove(row.status, to)) throw new ConflictError(`A payout that is ${row.status.replace('_', ' ')} cannot become ${to.replace('_', ' ')}.`);
+  if (!canMove(row.status, to))
+    throw new ConflictError(
+      `A payout that is ${row.status.replace('_', ' ')} cannot become ${to.replace('_', ' ')}.`,
+    );
   const { data, error } = await getAdminSupabase()
     .from('payouts')
     .update({ status: to, ...patch })
@@ -225,7 +248,8 @@ async function move(
     .select(PAYOUT_COLUMNS)
     .maybeSingle();
   if (error) throw new InternalError(error);
-  if (!data) throw new ConflictError('The payout was changed by someone else. Reload and try again.');
+  if (!data)
+    throw new ConflictError('The payout was changed by someone else. Reload and try again.');
   await logMove(row, row.status, to, actorId, note);
   return data as unknown as Row;
 }
@@ -239,7 +263,13 @@ async function announce(
     await getService('events').publish({
       name,
       companyId: row.company_id,
-      payload: { payoutId: row.id, amount: m(row.amount).toDbString(), net: m(row.net).toDbString(), methodId: row.method_id, ...extra },
+      payload: {
+        payoutId: row.id,
+        amount: m(row.amount).toDbString(),
+        net: m(row.net).toDbString(),
+        methodId: row.method_id,
+        ...extra,
+      },
     });
   } catch (error) {
     log.error('payout event not published', { name, payoutId: row.id, error: String(error) });
@@ -248,14 +278,30 @@ async function announce(
 
 async function tell(row: Row, type: string, title: string, body: string): Promise<void> {
   try {
-    await getService('notification').notify({ companyId: row.company_id, type, title, body, href: '/wallet/payouts' });
+    await getService('notification').notify({
+      companyId: row.company_id,
+      type,
+      title,
+      body,
+      href: '/wallet/payouts',
+    });
   } catch (error) {
     log.error('payout notice not sent', { payoutId: row.id, error: String(error) });
   }
 }
 
-async function audit(action: string, row: Row, metadata: Record<string, unknown> = {}): Promise<void> {
-  await getService('audit').record({ action, resourceType: 'payout', resourceId: row.id, companyId: row.company_id, metadata });
+async function audit(
+  action: string,
+  row: Row,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  await getService('audit').record({
+    action,
+    resourceType: 'payout',
+    resourceId: row.id,
+    companyId: row.company_id,
+    metadata,
+  });
 }
 
 /* ---------------------------------------------------------------- request */
@@ -304,7 +350,8 @@ async function createPayout(options: CreateOptions): Promise<PayoutView> {
     throw new ValidationError('The request key must have 8 to 128 characters.');
   const prior = await findByKey(companyId, input.idempotencyKey);
   if (prior) {
-    if (prior.method_id !== input.methodId || !m(prior.amount).eq(input.amount)) throw new IdempotencyConflictError();
+    if (prior.method_id !== input.methodId || !m(prior.amount).eq(input.amount))
+      throw new IdempotencyConflictError();
     return toPayoutView(prior);
   }
   if (!(await getService('kyc').isVerified(companyId)))
@@ -351,7 +398,8 @@ async function createPayout(options: CreateOptions): Promise<PayoutView> {
   if (inserted.error) {
     if (inserted.error.code === '23505') {
       const first = await findByKey(companyId, input.idempotencyKey);
-      if (first && first.method_id === input.methodId && m(first.amount).eq(input.amount)) return toPayoutView(first);
+      if (first && first.method_id === input.methodId && m(first.amount).eq(input.amount))
+        return toPayoutView(first);
       throw new IdempotencyConflictError();
     }
     throw new InternalError(inserted.error);
@@ -362,8 +410,12 @@ async function createPayout(options: CreateOptions): Promise<PayoutView> {
   // The period limit counts this request too, so two requests at once cannot both pass it.
   const spent = await spentInPeriod(companyId, periodStart(now, rules.periodUnit));
   if (spent.gt(rules.periodLimit)) {
-    await move(row, 'cancelled', actor?.userId ?? null, 'Over the payout limit', { failure_reason: 'Over the payout limit' });
-    throw new ValidationError(`The payout limit of ${Money.parse(rules.periodLimit).toDbString()} USD per ${rules.periodUnit} would be passed.`);
+    await move(row, 'cancelled', actor?.userId ?? null, 'Over the payout limit', {
+      failure_reason: 'Over the payout limit',
+    });
+    throw new ValidationError(
+      `The payout limit of ${Money.parse(rules.periodLimit).toDbString()} USD per ${rules.periodUnit} would be passed.`,
+    );
   }
 
   // The money leaves the available balance now: two requests at once cannot spend the same money.
@@ -379,12 +431,18 @@ async function createPayout(options: CreateOptions): Promise<PayoutView> {
     });
   } catch (error) {
     if (error instanceof ValidationError) {
-      await move(row, 'cancelled', actor?.userId ?? null, 'Not enough funds', { failure_reason: 'Not enough funds in the wallet' });
+      await move(row, 'cancelled', actor?.userId ?? null, 'Not enough funds', {
+        failure_reason: 'Not enough funds in the wallet',
+      });
       throw new ValidationError('There is not enough available balance for this payout.');
     }
     throw error;
   }
-  await audit('payout.requested', row, { amount: amounts.amount.toDbString(), fee: amounts.fee.toDbString(), source });
+  await audit('payout.requested', row, {
+    amount: amounts.amount.toDbString(),
+    fee: amounts.fee.toDbString(),
+    source,
+  });
   await announce('payout.requested', row);
 
   const need = actor ? approvalNeeded(actor.role, amounts.amount, rules.largeThreshold) : null;
@@ -395,12 +453,20 @@ async function createPayout(options: CreateOptions): Promise<PayoutView> {
       requesterId: actor.userId,
       companyId,
     });
-    row = await move(row, 'pending_approval', actor.userId, `Waiting for ${need === 'payout.large' ? 'the CEO' : 'the owner'}`, {
-      approval_request_id: state.requestId,
-    });
+    row = await move(
+      row,
+      'pending_approval',
+      actor.userId,
+      `Waiting for ${need === 'payout.large' ? 'the CEO' : 'the owner'}`,
+      {
+        approval_request_id: state.requestId,
+      },
+    );
     return toPayoutView(row);
   }
-  row = await move(row, 'approved', actor?.userId ?? null, 'No approval needed', { approved_at: now.toISOString() });
+  row = await move(row, 'approved', actor?.userId ?? null, 'No approval needed', {
+    approved_at: now.toISOString(),
+  });
   await announce('payout.approved', row);
   return toPayoutView(row);
 }
@@ -409,13 +475,17 @@ async function createPayout(options: CreateOptions): Promise<PayoutView> {
 export async function requestPayout(actor: Actor, input: RequestInput): Promise<PayoutView> {
   const companyId = actor.companyId;
   if (!companyId) throw new ForbiddenError();
-  if (!(await getService('permissions').can(actor, 'payout.request', { type: 'payout', id: null }))) throw new ForbiddenError();
+  if (!(await getService('permissions').can(actor, 'payout.request', { type: 'payout', id: null })))
+    throw new ForbiddenError();
   await getService('auth').requireStepUp(actor, { maxAgeSeconds: PAYOUT_STEP_UP_SECONDS });
   return createPayout({ companyId, actor, source: 'owner', input });
 }
 
 /** The schedule asks for a payout for a company (no person involved, never above the large threshold). */
-export async function requestScheduledPayout(companyId: string, input: RequestInput): Promise<PayoutView> {
+export async function requestScheduledPayout(
+  companyId: string,
+  input: RequestInput,
+): Promise<PayoutView> {
   return createPayout({ companyId, actor: null, source: 'schedule', input });
 }
 
@@ -434,7 +504,12 @@ async function postBack(row: Row, suffix: string, note: string): Promise<void> {
 }
 
 /** Gives the money back to the available balance and ends the payout in `to`. Safe to run again. */
-async function creditBackAndEnd(row: Row, to: 'cancelled' | 'failed', actorId: string | null, note: string): Promise<Row> {
+async function creditBackAndEnd(
+  row: Row,
+  to: 'cancelled' | 'failed',
+  actorId: string | null,
+  note: string,
+): Promise<Row> {
   await postBack(row, 'back', 'Payout credited back');
   return move(row, to, actorId, note, {
     failure_reason: note.slice(0, 300),
@@ -457,15 +532,27 @@ export async function decidePayout(
     reason,
   });
   if (state.status === 'approved') {
-    const next = await move(row, 'approved', actor.userId, 'Approved', { approved_at: new Date().toISOString() });
+    const next = await move(row, 'approved', actor.userId, 'Approved', {
+      approved_at: new Date().toISOString(),
+    });
     await audit('payout.approved', next, { by: actor.userId });
     await announce('payout.approved', next);
     return toPayoutView(next);
   }
   if (state.status === 'rejected' || state.status === 'cancelled' || state.status === 'expired') {
-    const next = await creditBackAndEnd(row, 'cancelled', actor.userId, 'The payout was not approved');
+    const next = await creditBackAndEnd(
+      row,
+      'cancelled',
+      actor.userId,
+      'The payout was not approved',
+    );
     await audit('payout.rejected', next, { by: actor.userId });
-    await tell(next, 'payout.rejected', 'A payout was not approved', 'The money is back in your available balance.');
+    await tell(
+      next,
+      'payout.rejected',
+      'A payout was not approved',
+      'The money is back in your available balance.',
+    );
     return toPayoutView(next);
   }
   return toPayoutView(row);
@@ -538,12 +625,22 @@ async function submitOne(raw: Row, now: Date): Promise<boolean> {
     await failRow(row, null, answer.reason, false, now);
     return true;
   }
-  if (answer.reference) await getAdminSupabase().from('payouts').update({ reference: answer.reference.slice(0, 120) }).eq('id', row.id);
-  if (answer.completed) await completeRow(await rowById(row.id, null), null, answer.reference ?? 'partner', now);
+  if (answer.reference)
+    await getAdminSupabase()
+      .from('payouts')
+      .update({ reference: answer.reference.slice(0, 120) })
+      .eq('id', row.id);
+  if (answer.completed)
+    await completeRow(await rowById(row.id, null), null, answer.reference ?? 'partner', now);
   return true;
 }
 
-async function completeRow(row: Row, actorId: string | null, reference: string, now: Date): Promise<Row> {
+async function completeRow(
+  row: Row,
+  actorId: string | null,
+  reference: string,
+  now: Date,
+): Promise<Row> {
   await post({
     companyId: row.company_id,
     key: `payout:${row.id}:paid`,
@@ -553,14 +650,39 @@ async function completeRow(row: Row, actorId: string | null, reference: string, 
     legs: paidLegs(amountsOf(row)),
     actorId,
   });
-  const next = await move(row, 'paid', actorId, 'Paid', { reference: reference.slice(0, 120), paid_at: now.toISOString() });
+  const next = await move(row, 'paid', actorId, 'Paid', {
+    reference: reference.slice(0, 120),
+    paid_at: now.toISOString(),
+  });
   await audit('payout.paid', next, { reference });
   await announce('payout.paid', next, { reference });
-  await tell(next, 'payout.paid', 'Your payout was sent', `${m(next.net).toDbString()} USD was sent to your payout method.`);
+  await tell(
+    next,
+    'payout.paid',
+    'Your payout was sent',
+    `${m(next.net).toDbString()} USD was sent to your payout method.`,
+  );
+  await mailOwners(
+    next.company_id,
+    'billing.payout-paid',
+    {
+      companyName: 'your company',
+      amount: `${m(next.net).toDbString()} USD`,
+      reference,
+      link: '/wallet/payouts',
+    },
+    `payout-paid:${next.id}`,
+  );
   return next;
 }
 
-async function failRow(row: Row, actorId: string | null, reason: string, final: boolean, now: Date): Promise<Row> {
+async function failRow(
+  row: Row,
+  actorId: string | null,
+  reason: string,
+  final: boolean,
+  now: Date,
+): Promise<Row> {
   const clean = reason.trim().slice(0, 300);
   const when = final ? null : retryAt(row.attempts, now);
   if (when && row.attempts < MAX_ATTEMPTS) {
@@ -568,43 +690,79 @@ async function failRow(row: Row, actorId: string | null, reason: string, final: 
       next_attempt_at: when.toISOString(),
       failure_reason: clean,
     });
-    await audit('payout.attempt_failed', next, { reason: clean, nextAttemptAt: when.toISOString() });
+    await audit('payout.attempt_failed', next, {
+      reason: clean,
+      nextAttemptAt: when.toISOString(),
+    });
     return next;
   }
   const next = await creditBackAndEnd(row, 'failed', actorId, clean || 'The payout failed');
   await audit('payout.failed', next, { reason: clean });
   await announce('payout.failed', next, { reason: clean });
-  await tell(next, 'payout.failed', 'A payout failed', 'The money is back in your available balance.');
+  await tell(
+    next,
+    'payout.failed',
+    'A payout failed',
+    'The money is back in your available balance.',
+  );
+  await mailOwners(
+    next.company_id,
+    'billing.payout-failed',
+    {
+      companyName: 'your company',
+      amount: `${m(next.amount).toDbString()} USD`,
+      reason: clean || 'The payout failed',
+      link: '/wallet',
+    },
+    `payout-failed:${next.id}`,
+  );
   return next;
 }
 
 /* ---------------------------------------------------------------- the queue (platform team) */
 
 /** The platform team confirms that a payout in `processing` was sent (manual partner). */
-export async function markPaid(actor: Actor, payoutId: string, reference: string): Promise<PayoutView> {
+export async function markPaid(
+  actor: Actor,
+  payoutId: string,
+  reference: string,
+): Promise<PayoutView> {
   queueOnly(actor);
   const clean = reference.trim();
-  if (!/^[A-Za-z0-9 ._:/-]{3,120}$/.test(clean)) throw new ValidationError('Enter the bank reference (3 to 120 letters, digits or . _ : / -).');
+  if (!/^[A-Za-z0-9 ._:/-]{3,120}$/.test(clean))
+    throw new ValidationError('Enter the bank reference (3 to 120 letters, digits or . _ : / -).');
   const row = await rowById(payoutId, null);
-  if (row.status !== 'processing') throw new ValidationError('Only a payout that is being processed can be marked as paid.');
+  if (row.status !== 'processing')
+    throw new ValidationError('Only a payout that is being processed can be marked as paid.');
   return toPayoutView(await completeRow(row, actor.userId, clean, new Date()));
 }
 
 /** The platform team reports that a payout in `processing` did not go through. `final` stops the retries. */
-export async function markFailed(actor: Actor, payoutId: string, reason: string, final: boolean): Promise<PayoutView> {
+export async function markFailed(
+  actor: Actor,
+  payoutId: string,
+  reason: string,
+  final: boolean,
+): Promise<PayoutView> {
   queueOnly(actor);
   if (reason.trim().length < 3) throw new ValidationError('Give a reason of at least 3 letters.');
   const row = await rowById(payoutId, null);
-  if (row.status !== 'processing') throw new ValidationError('Only a payout that is being processed can be marked as failed.');
+  if (row.status !== 'processing')
+    throw new ValidationError('Only a payout that is being processed can be marked as failed.');
   return toPayoutView(await failRow(row, actor.userId, reason, final, new Date()));
 }
 
 /** Money sent came back (the bank returned it): the amount goes back to the wallet. Super admin only. */
-export async function reversePayout(actor: Actor, payoutId: string, reason: string): Promise<PayoutView> {
+export async function reversePayout(
+  actor: Actor,
+  payoutId: string,
+  reason: string,
+): Promise<PayoutView> {
   if (actor.role !== 'super_admin') throw new ForbiddenError();
   if (reason.trim().length < 3) throw new ValidationError('Give a reason of at least 3 letters.');
   const row = await rowById(payoutId, null);
-  if (row.status !== 'paid') throw new ValidationError('Only a payout that was paid can be reversed.');
+  if (row.status !== 'paid')
+    throw new ValidationError('Only a payout that was paid can be reversed.');
   await post({
     companyId: row.company_id,
     key: `payout:${row.id}:reversed`,
@@ -614,8 +772,15 @@ export async function reversePayout(actor: Actor, payoutId: string, reason: stri
     legs: reversedLegs(row.wallet_id, amountsOf(row)),
     actorId: actor.userId,
   });
-  const next = await move(row, 'reversed', actor.userId, reason, { failure_reason: reason.trim().slice(0, 300) });
+  const next = await move(row, 'reversed', actor.userId, reason, {
+    failure_reason: reason.trim().slice(0, 300),
+  });
   await audit('payout.reversed', next, { reason: reason.trim() });
-  await tell(next, 'payout.reversed', 'A payout came back', 'The money is back in your available balance.');
+  await tell(
+    next,
+    'payout.reversed',
+    'A payout came back',
+    'The money is back in your available balance.',
+  );
   return toPayoutView(next);
 }

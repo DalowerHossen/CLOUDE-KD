@@ -54,7 +54,9 @@ export const BUILT_IN_RULES: MorRules = {
   riskExtensionDays: 7,
 };
 
-const moneyText = z.string().regex(/^\d{1,14}(\.\d{1,4})?$/, 'Enter an amount like 1500 or 1500.50.');
+const moneyText = z
+  .string()
+  .regex(/^\d{1,14}(\.\d{1,4})?$/, 'Enter an amount like 1500 or 1500.50.');
 const percentText = z.string().regex(/^\d{1,2}(\.\d{1,4})?$/, 'Enter a percent like 5 or 2.5.');
 
 /** What the platform team may set. Every field is optional: a missing field falls back to the platform, then built-in. */
@@ -66,7 +68,10 @@ export const morSettingsInput = z
     newMerchantDays: z.number().int().min(0).max(365).nullable().optional(),
     reservePercent: percentText.nullable().optional(),
     reserveDays: z.number().int().min(0).max(365).nullable().optional(),
-    cycleDays: z.union([z.literal(1), z.literal(3), z.literal(7)]).nullable().optional(),
+    cycleDays: z
+      .union([z.literal(1), z.literal(3), z.literal(7)])
+      .nullable()
+      .optional(),
     dailyLimit: moneyText.nullable().optional(),
     largePayment: moneyText.nullable().optional(),
     velocityCount: z.number().int().min(1).max(100000).nullable().optional(),
@@ -75,8 +80,16 @@ export const morSettingsInput = z
   })
   .strict()
   .superRefine((v, ctx) => {
-    if (v.reservePercent !== null && v.reservePercent !== undefined && Money.parse(v.reservePercent).gt('50'))
-      ctx.addIssue({ code: 'custom', path: ['reservePercent'], message: 'The reserve cannot be above 50 percent.' });
+    if (
+      v.reservePercent !== null &&
+      v.reservePercent !== undefined &&
+      Money.parse(v.reservePercent).gt('50')
+    )
+      ctx.addIssue({
+        code: 'custom',
+        path: ['reservePercent'],
+        message: 'The reserve cannot be above 50 percent.',
+      });
   });
 export type MorSettingsInput = z.infer<typeof morSettingsInput>;
 
@@ -96,17 +109,21 @@ export interface ModeDecision {
 }
 
 const MODE_TEXT: Record<ModeReason, string> = {
-  ready: 'The platform collects your online payments and pays them into your wallet after the hold period.',
+  ready:
+    'The platform collects your online payments and pays them into your wallet after the hold period.',
   platform_off:
     'Wallet settlement is not switched on for the platform yet. Your online payments are recorded and the platform fee is billed to you.',
   company_off:
     'Wallet settlement is switched off for your company. Your online payments are recorded and the platform fee is billed to you.',
   suspended:
     'Wallet settlement is paused for your company. New payments wait until the platform team reviews the account. Money already held stays safe.',
-  kyc_missing: 'Verify your business to unlock wallet settlement. Until then your payments are recorded and the fee is billed to you.',
+  kyc_missing:
+    'Verify your business to unlock wallet settlement. Until then your payments are recorded and the fee is billed to you.',
   kyc_pending: 'Your verification is in review. Wallet settlement starts when it is approved.',
-  kyc_rejected: 'Your verification was not approved. Update your details and send them again to unlock wallet settlement.',
-  kyc_expired: 'Your verification has ended, so wallet settlement is paused. Renew it to start again.',
+  kyc_rejected:
+    'Your verification was not approved. Update your details and send them again to unlock wallet settlement.',
+  kyc_expired:
+    'Your verification has ended, so wallet settlement is paused. Renew it to start again.',
 };
 
 export function decideMode(input: {
@@ -115,7 +132,11 @@ export function decideMode(input: {
   suspended: boolean;
   kyc: KycFacts;
 }): ModeDecision {
-  const make = (mode: MorMode, reason: ModeReason): ModeDecision => ({ mode, reason, message: MODE_TEXT[reason] });
+  const make = (mode: MorMode, reason: ModeReason): ModeDecision => ({
+    mode,
+    reason,
+    message: MODE_TEXT[reason],
+  });
   if (input.suspended) return make('suspended', 'suspended');
   if (!input.platformEnabled) return make('direct', 'platform_off');
   if (!input.companyEnabled) return make('direct', 'company_off');
@@ -182,7 +203,10 @@ export interface HoldPlan {
   text: string;
 }
 
-export function holdPlan(rules: MorRules, facts: { merchantAgeDays: number; riskLevel: RiskResult['level'] }): HoldPlan {
+export function holdPlan(
+  rules: MorRules,
+  facts: { merchantAgeDays: number; riskLevel: RiskResult['level'] },
+): HoldPlan {
   const isNew = facts.merchantAgeDays < rules.newMerchantDays;
   let days = isNew
     ? rules.newMerchantHoldDays > rules.holdDays
@@ -228,7 +252,10 @@ export function refundTakeBack(input: {
   const feeBackTotal = total.gte(input.gross)
     ? input.fee
     : input.fee.mul(total.div(input.gross.toDbString()).toDbString());
-  const feeBack = Money.max(Money.zero(), Money.min(feeBackTotal.sub(input.feeReturnedBefore), input.refund));
+  const feeBack = Money.max(
+    Money.zero(),
+    Money.min(feeBackTotal.sub(input.feeReturnedBefore), input.refund),
+  );
   return { companyDebit: input.refund.sub(feeBack), feeBack };
 }
 
@@ -251,13 +278,26 @@ export function periodEnded(periodEnd: string, now: Date): boolean {
 /* ---------------------------------------------------------------- postings */
 
 /** The legs of a settlement: the company gets `main` (held, or available when there is no hold); the platform keeps the fees. */
-export function settlementLegs(input: { walletId: string; main: Money; fees: Money; instant: boolean }): Leg[] {
+export function settlementLegs(input: {
+  walletId: string;
+  main: Money;
+  fees: Money;
+  instant: boolean;
+}): Leg[] {
   const { walletId, main, fees } = input;
   return [
     ...(main.isPositive()
-      ? [{ walletId, account: input.instant ? ('available' as const) : ('held' as const), amount: main }]
+      ? [
+          {
+            walletId,
+            account: input.instant ? ('available' as const) : ('held' as const),
+            amount: main,
+          },
+        ]
       : []),
-    ...(fees.isPositive() ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: fees }] : []),
+    ...(fees.isPositive()
+      ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: fees }]
+      : []),
     { walletId: null, account: 'processor_receivable' as const, amount: main.add(fees).negate() },
   ];
 }
@@ -271,13 +311,31 @@ export function reserveLegs(walletId: string, reserve: Money): Leg[] {
 }
 
 /** The legs of a refund: the company pays back what it received, the platform gives back its fee share. */
-export function refundLegs(input: { walletId: string; refund: Money; companyDebit: Money; feeBack: Money }): Leg[] {
+export function refundLegs(input: {
+  walletId: string;
+  refund: Money;
+  companyDebit: Money;
+  feeBack: Money;
+}): Leg[] {
   return [
     ...(input.companyDebit.isPositive()
-      ? [{ walletId: input.walletId, account: 'available' as const, amount: input.companyDebit.negate(), floor: false }]
+      ? [
+          {
+            walletId: input.walletId,
+            account: 'available' as const,
+            amount: input.companyDebit.negate(),
+            floor: false,
+          },
+        ]
       : []),
     ...(input.feeBack.isPositive()
-      ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: input.feeBack.negate() }]
+      ? [
+          {
+            walletId: null,
+            account: 'platform_fee_revenue' as const,
+            amount: input.feeBack.negate(),
+          },
+        ]
       : []),
     { walletId: null, account: 'processor_receivable' as const, amount: input.refund },
   ];

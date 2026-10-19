@@ -5,7 +5,12 @@
 import 'server-only';
 import { getService } from '@/lib/container';
 import { InternalError } from '@/lib/errors';
-import { decideMode, type KycFacts, type ModeDecision, type MorRules } from '@/lib/payment/mor-engine';
+import {
+  decideMode,
+  type KycFacts,
+  type ModeDecision,
+  type MorRules,
+} from '@/lib/payment/mor-engine';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { loadSettings } from './settings';
 

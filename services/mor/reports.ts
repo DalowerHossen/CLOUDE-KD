@@ -88,7 +88,9 @@ export interface SettlementView {
 export async function listSettlements(companyId: string, limit = 60): Promise<SettlementView[]> {
   const { data, error } = await getAdminSupabase()
     .from('settlements')
-    .select('id, period_start, period_end, cycle_days, item_count, gross, fees, refunds, net, closed_at')
+    .select(
+      'id, period_start, period_end, cycle_days, item_count, gross, fees, refunds, net, closed_at',
+    )
     .eq('company_id', companyId)
     .is('deleted_at', null)
     .order('period_start', { ascending: false })
@@ -111,7 +113,9 @@ export async function listSettlements(companyId: string, limit = 60): Promise<Se
 export function settlementsCsv(rows: readonly SettlementView[]): string {
   const head = ['Period start', 'Period end', 'Payments', 'Gross', 'Fees', 'Refunds', 'Net'];
   const lines = rows.map((r) =>
-    [r.periodStart, r.periodEnd, String(r.itemCount), r.gross, r.fees, r.refunds, r.net].map(csvCell).join(','),
+    [r.periodStart, r.periodEnd, String(r.itemCount), r.gross, r.fees, r.refunds, r.net]
+      .map(csvCell)
+      .join(','),
   );
   return [head.map(csvCell).join(','), ...lines].join('\n');
 }
@@ -132,7 +136,10 @@ export async function closeSettlements(now: Date = new Date()): Promise<number> 
     .order('released_at')
     .limit(2000);
   if (error) throw new InternalError(error);
-  const groups = new Map<string, { companyId: string; start: string; end: string; ids: string[] }>();
+  const groups = new Map<
+    string,
+    { companyId: string; start: string; end: string; ids: string[] }
+  >();
   const cycles = new Map<string, 1 | 3 | 7>();
   for (const r of data ?? []) {
     const companyId = String(r.company_id);
@@ -162,13 +169,21 @@ export async function closeSettlements(now: Date = new Date()): Promise<number> 
     if (!settlementId) {
       const made = await admin
         .from('settlements')
-        .insert({ company_id: g.companyId, period_start: g.start, period_end: g.end, cycle_days: cycle })
+        .insert({
+          company_id: g.companyId,
+          period_start: g.start,
+          period_end: g.end,
+          cycle_days: cycle,
+        })
         .select('id')
         .single();
       if (made.error) throw new InternalError(made.error);
       settlementId = String(made.data.id);
     }
-    const attach = await admin.from('settlement_items').update({ settlement_id: settlementId }).in('id', g.ids);
+    const attach = await admin
+      .from('settlement_items')
+      .update({ settlement_id: settlementId })
+      .in('id', g.ids);
     if (attach.error) throw new InternalError(attach.error);
     const all = await admin
       .from('settlement_items')

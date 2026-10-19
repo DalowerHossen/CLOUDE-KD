@@ -30,7 +30,8 @@ export interface ScheduleView {
   lastRunAt: string | null;
 }
 
-const COLUMNS = 'id, company_id, method_id, frequency, weekday, month_day, keep_amount, enabled, next_run_at, last_run_at, version';
+const COLUMNS =
+  'id, company_id, method_id, frequency, weekday, month_day, keep_amount, enabled, next_run_at, last_run_at, version';
 
 interface Row {
   id: string;
@@ -81,14 +82,22 @@ export interface ScheduleInput {
 export async function saveSchedule(actor: Actor, input: ScheduleInput): Promise<ScheduleView> {
   const companyId = actor.companyId;
   if (!companyId) throw new ForbiddenError();
-  if (!(await getService('permissions').can(actor, 'payout.method.manage', { type: 'payout_schedule', id: null })))
+  if (
+    !(await getService('permissions').can(actor, 'payout.method.manage', {
+      type: 'payout_schedule',
+      id: null,
+    }))
+  )
     throw new ForbiddenError();
   await getService('auth').requireStepUp(actor, { maxAgeSeconds: PAYOUT_STEP_UP_SECONDS });
-  if (!['daily', 'weekly', 'monthly'].includes(input.frequency)) throw new ValidationError('Choose daily, weekly or monthly.');
-  const weekday = input.frequency === 'weekly' ? input.weekday ?? 1 : null;
-  const monthDay = input.frequency === 'monthly' ? input.monthDay ?? 1 : null;
-  if (weekday !== null && (!Number.isInteger(weekday) || weekday < 0 || weekday > 6)) throw new ValidationError('Choose a weekday.');
-  if (monthDay !== null && (!Number.isInteger(monthDay) || monthDay < 1 || monthDay > 28)) throw new ValidationError('Choose a day between 1 and 28.');
+  if (!['daily', 'weekly', 'monthly'].includes(input.frequency))
+    throw new ValidationError('Choose daily, weekly or monthly.');
+  const weekday = input.frequency === 'weekly' ? (input.weekday ?? 1) : null;
+  const monthDay = input.frequency === 'monthly' ? (input.monthDay ?? 1) : null;
+  if (weekday !== null && (!Number.isInteger(weekday) || weekday < 0 || weekday > 6))
+    throw new ValidationError('Choose a weekday.');
+  if (monthDay !== null && (!Number.isInteger(monthDay) || monthDay < 1 || monthDay > 28))
+    throw new ValidationError('Choose a day between 1 and 28.');
   const keep = Money.parse(input.keepAmount ?? '0');
   if (keep.isNegative()) throw new ValidationError('The amount to keep cannot be negative.');
   const method = await getMethod(companyId, input.methodId);
@@ -105,8 +114,17 @@ export async function saveSchedule(actor: Actor, input: ScheduleInput): Promise<
   const current = await getSchedule(companyId);
   const admin = getAdminSupabase();
   const written = current
-    ? await admin.from('payout_schedules').update(values).eq('id', current.id).select(COLUMNS).single()
-    : await admin.from('payout_schedules').insert({ company_id: companyId, ...values }).select(COLUMNS).single();
+    ? await admin
+        .from('payout_schedules')
+        .update(values)
+        .eq('id', current.id)
+        .select(COLUMNS)
+        .single()
+    : await admin
+        .from('payout_schedules')
+        .insert({ company_id: companyId, ...values })
+        .select(COLUMNS)
+        .single();
   if (written.error) throw new InternalError(written.error);
   await getService('audit').record({
     action: 'payout.schedule_saved',
@@ -121,7 +139,12 @@ export async function saveSchedule(actor: Actor, input: ScheduleInput): Promise<
 export async function removeSchedule(actor: Actor): Promise<void> {
   const companyId = actor.companyId;
   if (!companyId) throw new ForbiddenError();
-  if (!(await getService('permissions').can(actor, 'payout.method.manage', { type: 'payout_schedule', id: null })))
+  if (
+    !(await getService('permissions').can(actor, 'payout.method.manage', {
+      type: 'payout_schedule',
+      id: null,
+    }))
+  )
     throw new ForbiddenError();
   const current = await getSchedule(companyId);
   if (!current) throw new NotFoundError();
@@ -160,7 +183,10 @@ export async function runSchedules(now: Date = new Date()): Promise<number> {
     // The next run is set even when this one made no payout (not enough balance, or an error), so it is not retried every hour.
     const { error: upError } = await getAdminSupabase()
       .from('payout_schedules')
-      .update({ last_run_at: now.toISOString(), next_run_at: nextRun(now, s.frequency, s.weekday, s.month_day).toISOString() })
+      .update({
+        last_run_at: now.toISOString(),
+        next_run_at: nextRun(now, s.frequency, s.weekday, s.month_day).toISOString(),
+      })
       .eq('id', s.id)
       .eq('next_run_at', s.next_run_at);
     if (upError) throw new InternalError(upError);
@@ -173,7 +199,9 @@ async function runOne(s: Row): Promise<boolean> {
   if (!wallet || wallet.status !== 'active') return false;
   const rules = await loadPayoutRules(s.company_id);
   const room = Money.parse(rules.largeThreshold).sub('0.0001');
-  const spendable = Money.parseRounded(wallet.available).sub(Money.parseRounded(String(s.keep_amount)));
+  const spendable = Money.parseRounded(wallet.available).sub(
+    Money.parseRounded(String(s.keep_amount)),
+  );
   const amount = spendable.gt(room) ? room : spendable;
   if (!amount.isPositive() || amount.lt(rules.minAmount)) return false;
   await requestScheduledPayout(s.company_id, {

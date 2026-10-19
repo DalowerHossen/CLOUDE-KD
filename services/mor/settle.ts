@@ -135,7 +135,11 @@ export async function itemForPayment(paymentId: string): Promise<ItemRow | null>
   return (data as ItemRow | null) ?? null;
 }
 
-async function riskFacts(companyId: string, amount: Money, now: Date): Promise<{ result: RiskResult; ageDays: number }> {
+async function riskFacts(
+  companyId: string,
+  amount: Money,
+  now: Date,
+): Promise<{ result: RiskResult; ageDays: number }> {
   const admin = getAdminSupabase();
   const since24 = new Date(now.getTime() - DAY).toISOString();
   const since90 = new Date(now.getTime() - 90 * DAY).toISOString();
@@ -167,13 +171,17 @@ async function riskFacts(companyId: string, amount: Money, now: Date): Promise<{
   if (recent.error) throw new InternalError(recent.error);
   if (disputes.error) throw new InternalError(disputes.error);
   if (refunds.error) throw new InternalError(refunds.error);
-  const created = company.data?.created_at ? Date.parse(String(company.data.created_at)) : now.getTime();
+  const created = company.data?.created_at
+    ? Date.parse(String(company.data.created_at))
+    : now.getTime();
   const ageDays = toInt((now.getTime() - created) / DAY, 0);
   const rows = recent.data ?? [];
   const amount24h = Money.sum(rows.map((r) => m(r.captured_amount)));
   const grossSum = Money.sum((refunds.data ?? []).map((r) => m(r.gross)));
   const refundSum = Money.sum((refunds.data ?? []).map((r) => m(r.refunded)));
-  const refundPercent = grossSum.isPositive() ? toInt(refundSum.mul('100').div(grossSum.toDbString()).toDbString(), 0) : 0;
+  const refundPercent = grossSum.isPositive()
+    ? toInt(refundSum.mul('100').div(grossSum.toDbString()).toDbString(), 0)
+    : 0;
   const { rules } = await getMode(companyId);
   const result = scoreRisk(rules, {
     amount,
@@ -186,11 +194,20 @@ async function riskFacts(companyId: string, amount: Money, now: Date): Promise<{
   return { result, ageDays };
 }
 
-async function upsertItem(paymentId: string, companyId: string, values: Record<string, unknown>): Promise<ItemRow> {
+async function upsertItem(
+  paymentId: string,
+  companyId: string,
+  values: Record<string, unknown>,
+): Promise<ItemRow> {
   const admin = getAdminSupabase();
   const existing = await itemForPayment(paymentId);
   const written = existing
-    ? await admin.from('settlement_items').update(values).eq('id', existing.id).select(ITEM_COLUMNS).single()
+    ? await admin
+        .from('settlement_items')
+        .update(values)
+        .eq('id', existing.id)
+        .select(ITEM_COLUMNS)
+        .single()
     : await admin
         .from('settlement_items')
         .insert({ company_id: companyId, payment_id: paymentId, ...values })
@@ -211,7 +228,10 @@ async function upsertItem(paymentId: string, companyId: string, values: Record<s
  * Settles one captured payment. Returns the settlement item. Safe to run again for the same payment: a payment that
  * is already settled is returned as it is, and a payment that waited (suspended) is settled when the mode allows.
  */
-export async function settlePayment(paymentId: string, now: Date = new Date()): Promise<ItemRow | null> {
+export async function settlePayment(
+  paymentId: string,
+  now: Date = new Date(),
+): Promise<ItemRow | null> {
   const payment = await loadPayment(paymentId);
   const gross = m(payment.captured_amount);
   if (!gross.isPositive()) return null;
@@ -276,7 +296,15 @@ export async function settlePayment(paymentId: string, now: Date = new Date()): 
       legs,
       actorId: null,
       ...(main.isPositive() && !instant
-        ? { hold: { walletId: wallet.id, amount: main, reason: plan.text, source: 'settlement' as const, releaseAt } }
+        ? {
+            hold: {
+              walletId: wallet.id,
+              amount: main,
+              reason: plan.text,
+              source: 'settlement' as const,
+              releaseAt,
+            },
+          }
         : {}),
     });
     holdId = posted.holdId;
@@ -319,13 +347,22 @@ export async function settlePayment(paymentId: string, now: Date = new Date()): 
     resourceType: 'payment',
     resourceId: paymentId,
     companyId,
-    metadata: { net: fees.net.toDbString(), fee: totalFees.toDbString(), holdDays: plan.days, risk: risk.level },
+    metadata: {
+      net: fees.net.toDbString(),
+      fee: totalFees.toDbString(),
+      holdDays: plan.days,
+      risk: risk.level,
+    },
   });
   if (risk.level === 'high') await handleHighRisk(companyId, risk, mode.rules.autoSuspend);
   return item;
 }
 
-async function handleHighRisk(companyId: string, risk: RiskResult, autoSuspend: boolean): Promise<void> {
+async function handleHighRisk(
+  companyId: string,
+  risk: RiskResult,
+  autoSuspend: boolean,
+): Promise<void> {
   log.warn('high risk payment', { companyId, score: risk.score });
   if (!autoSuspend) return;
   // A fraud alert pauses new settlement only; money already held stays where it is.
@@ -388,13 +425,21 @@ export async function reverseForRefund(
     resourceType: 'payment',
     resourceId: paymentId,
     companyId: payment.company_id,
-    metadata: { refundId, refund: refund.toDbString(), takenFromCompany: companyDebit.toDbString() },
+    metadata: {
+      refundId,
+      refund: refund.toDbString(),
+      takenFromCompany: companyDebit.toDbString(),
+    },
   });
   return updated;
 }
 
 /** A lost dispute takes the disputed amount (not the fee) out of the wallet; the balance may go below zero. */
-export async function chargeBack(paymentId: string, disputeId: string, amount: Money): Promise<ItemRow | null> {
+export async function chargeBack(
+  paymentId: string,
+  disputeId: string,
+  amount: Money,
+): Promise<ItemRow | null> {
   let item = await itemForPayment(paymentId);
   if (!item || item.status === 'pending') item = await settlePayment(paymentId);
   if (!item) return null;
@@ -416,7 +461,11 @@ export async function chargeBack(paymentId: string, disputeId: string, amount: M
   }
   return upsertItem(paymentId, payment.company_id, {
     charged_back: m(item.charged_back).add(taken).toDbString(),
-    status: m(item.charged_back).add(taken).gte(gross.sub(m(item.refunded))) ? 'charged_back' : item.status,
+    status: m(item.charged_back)
+      .add(taken)
+      .gte(gross.sub(m(item.refunded)))
+      ? 'charged_back'
+      : item.status,
   });
 }
 

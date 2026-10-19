@@ -6,7 +6,13 @@ import 'server-only';
 import { z } from 'zod';
 import { PAYOUT_STEP_UP_SECONDS } from '@/config/s14-payouts';
 import { getService } from '@/lib/container';
-import { ConflictError, ForbiddenError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
+import {
+  ConflictError,
+  ForbiddenError,
+  InternalError,
+  NotFoundError,
+  ValidationError,
+} from '@/lib/errors';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor, EncryptedPayload } from '@/types/contracts';
 
@@ -24,13 +30,31 @@ export const methodInput = z
   .object({
     kind: z.enum(['bank_transfer', 'wire', 'partner_payout']),
     label: plain(1, 80),
-    country: z.string().regex(/^[A-Z]{2}$/, 'Use a two-letter country code.').nullable().optional(),
-    currency: z.string().regex(/^[A-Z]{3}$/, 'Use a three-letter currency code.').default('USD'),
+    country: z
+      .string()
+      .regex(/^[A-Z]{2}$/, 'Use a two-letter country code.')
+      .nullable()
+      .optional(),
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/, 'Use a three-letter currency code.')
+      .default('USD'),
     holderName: plain(2, 120),
-    accountNumber: z.string().trim().regex(/^[A-Za-z0-9 -]{4,40}$/, 'Enter the account number or IBAN.'),
+    accountNumber: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9 -]{4,40}$/, 'Enter the account number or IBAN.'),
     bankName: plain(2, 120),
-    routingCode: z.string().trim().regex(/^[A-Za-z0-9 -]{0,40}$/, 'Enter a valid routing code.').optional(),
-    swiftCode: z.string().trim().regex(/^([A-Za-z0-9]{8}|[A-Za-z0-9]{11})?$/, 'A SWIFT code has 8 or 11 characters.').optional(),
+    routingCode: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9 -]{0,40}$/, 'Enter a valid routing code.')
+      .optional(),
+    swiftCode: z
+      .string()
+      .trim()
+      .regex(/^([A-Za-z0-9]{8}|[A-Za-z0-9]{11})?$/, 'A SWIFT code has 8 or 11 characters.')
+      .optional(),
   })
   .strict();
 export type MethodInput = z.infer<typeof methodInput>;
@@ -48,7 +72,8 @@ export interface MethodView {
   createdAt: string;
 }
 
-const COLUMNS = 'id, company_id, partner, kind, label, country, currency, hint, status, is_default, created_at, version';
+const COLUMNS =
+  'id, company_id, partner, kind, label, country, currency, hint, status, is_default, created_at, version';
 
 interface Row {
   id: string;
@@ -81,7 +106,12 @@ const view = (r: Row): MethodView => ({
 async function guard(actor: Actor): Promise<string> {
   const companyId = actor.companyId;
   if (!companyId) throw new ForbiddenError();
-  if (!(await getService('permissions').can(actor, 'payout.method.manage', { type: 'payout_method', id: null })))
+  if (
+    !(await getService('permissions').can(actor, 'payout.method.manage', {
+      type: 'payout_method',
+      id: null,
+    }))
+  )
     throw new ForbiddenError();
   await getService('auth').requireStepUp(actor, { maxAgeSeconds: PAYOUT_STEP_UP_SECONDS });
   return companyId;
@@ -118,7 +148,8 @@ export async function getMethod(companyId: string, methodId: string): Promise<Me
 export async function addMethod(actor: Actor, input: unknown): Promise<MethodView> {
   const companyId = await guard(actor);
   const parsed = methodInput.safeParse(input);
-  if (!parsed.success) throw new ValidationError(parsed.error.issues[0]?.message ?? 'The details are not valid.');
+  if (!parsed.success)
+    throw new ValidationError(parsed.error.issues[0]?.message ?? 'The details are not valid.');
   const d = parsed.data;
   if (d.currency !== 'USD') {
     try {
@@ -128,7 +159,8 @@ export async function addMethod(actor: Actor, input: unknown): Promise<MethodVie
     }
   }
   const existing = await listMethods(companyId);
-  if (existing.length >= MAX_METHODS) throw new ValidationError(`You can keep up to ${MAX_METHODS} payout methods.`);
+  if (existing.length >= MAX_METHODS)
+    throw new ValidationError(`You can keep up to ${MAX_METHODS} payout methods.`);
   const payload = await getService('encryption').encrypt(
     'pii',
     JSON.stringify({
@@ -170,7 +202,8 @@ export async function addMethod(actor: Actor, input: unknown): Promise<MethodVie
 export async function setDefaultMethod(actor: Actor, methodId: string): Promise<void> {
   const companyId = await guard(actor);
   const row = await rowOf(companyId, methodId);
-  if (row.status !== 'active') throw new ValidationError('A disabled method cannot be the default.');
+  if (row.status !== 'active')
+    throw new ValidationError('A disabled method cannot be the default.');
   const admin = getAdminSupabase();
   // The unique index allows one default: clear the old one first, then set the new one.
   const cleared = await admin
@@ -180,7 +213,11 @@ export async function setDefaultMethod(actor: Actor, methodId: string): Promise<
     .eq('is_default', true)
     .is('deleted_at', null);
   if (cleared.error) throw new InternalError(cleared.error);
-  const set = await admin.from('payout_methods').update({ is_default: true }).eq('id', methodId).eq('company_id', companyId);
+  const set = await admin
+    .from('payout_methods')
+    .update({ is_default: true })
+    .eq('id', methodId)
+    .eq('company_id', companyId);
   if (set.error) throw new InternalError(set.error);
   await getService('audit').record({
     action: 'payout.method_default_set',
@@ -203,14 +240,16 @@ export async function removeMethod(actor: Actor, methodId: string): Promise<void
     .in('status', ['requested', 'pending_approval', 'approved', 'processing'])
     .is('deleted_at', null);
   if (open.error) throw new InternalError(open.error);
-  if ((open.count ?? 0) > 0) throw new ConflictError('A payout to this method is still on its way.');
+  if ((open.count ?? 0) > 0)
+    throw new ConflictError('A payout to this method is still on its way.');
   const scheduled = await admin
     .from('payout_schedules')
     .select('id', { count: 'exact', head: true })
     .eq('method_id', methodId)
     .is('deleted_at', null);
   if (scheduled.error) throw new InternalError(scheduled.error);
-  if ((scheduled.count ?? 0) > 0) throw new ConflictError('The payout schedule uses this method. Change the schedule first.');
+  if ((scheduled.count ?? 0) > 0)
+    throw new ConflictError('The payout schedule uses this method. Change the schedule first.');
   const { error } = await admin
     .from('payout_methods')
     .update({ deleted_at: new Date().toISOString(), is_default: false, status: 'disabled' })
@@ -230,7 +269,13 @@ export async function removeMethod(actor: Actor, methodId: string): Promise<void
 export async function readMethodDetails(
   companyId: string,
   methodId: string,
-): Promise<{ holderName: string; accountNumber: string; bankName: string; routingCode: string; swiftCode: string }> {
+): Promise<{
+  holderName: string;
+  accountNumber: string;
+  bankName: string;
+  routingCode: string;
+  swiftCode: string;
+}> {
   const { data, error } = await getAdminSupabase()
     .from('payout_methods')
     .select('details_encrypted')
@@ -239,6 +284,10 @@ export async function readMethodDetails(
     .maybeSingle();
   if (error) throw new InternalError(error);
   if (!data) throw new NotFoundError();
-  const bytes = await getService('encryption').decrypt('pii', data.details_encrypted as EncryptedPayload, companyId);
+  const bytes = await getService('encryption').decrypt(
+    'pii',
+    data.details_encrypted as EncryptedPayload,
+    companyId,
+  );
   return JSON.parse(new TextDecoder().decode(bytes));
 }

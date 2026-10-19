@@ -66,18 +66,34 @@ export async function loadSettings(companyId: string): Promise<ResolvedSettings>
     platformEnabled: platform?.enabled ?? b.platformEnabled,
     companyEnabled: own?.enabled ?? b.companyEnabled,
     holdDays: pick(own?.hold_days, platform?.hold_days, b.holdDays),
-    newMerchantHoldDays: pick(own?.new_merchant_hold_days, platform?.new_merchant_hold_days, b.newMerchantHoldDays),
+    newMerchantHoldDays: pick(
+      own?.new_merchant_hold_days,
+      platform?.new_merchant_hold_days,
+      b.newMerchantHoldDays,
+    ),
     newMerchantDays: pick(own?.new_merchant_days, platform?.new_merchant_days, b.newMerchantDays),
-    reservePercent: pick(text(own?.reserve_percent), text(platform?.reserve_percent), b.reservePercent),
+    reservePercent: pick(
+      text(own?.reserve_percent),
+      text(platform?.reserve_percent),
+      b.reservePercent,
+    ),
     reserveDays: pick(own?.reserve_days, platform?.reserve_days, b.reserveDays),
     cycleDays: cycle === 3 || cycle === 7 ? cycle : 1,
     dailyLimit: pick(text(own?.daily_limit), text(platform?.daily_limit), b.dailyLimit),
     largePayment: pick(text(own?.large_payment), text(platform?.large_payment), b.largePayment),
     velocityCount: pick(own?.velocity_count, platform?.velocity_count, b.velocityCount),
     autoSuspend: pick(own?.auto_suspend, platform?.auto_suspend, b.autoSuspend),
-    riskExtensionDays: pick(own?.risk_extension_days, platform?.risk_extension_days, b.riskExtensionDays),
+    riskExtensionDays: pick(
+      own?.risk_extension_days,
+      platform?.risk_extension_days,
+      b.riskExtensionDays,
+    ),
   };
-  return { rules, suspended: own?.suspended ?? false, suspendedReason: own?.suspended_reason ?? null };
+  return {
+    rules,
+    suspended: own?.suspended ?? false,
+    suspendedReason: own?.suspended_reason ?? null,
+  };
 }
 
 const COLUMN_OF: Record<keyof MorSettingsInput, string> = {
@@ -112,10 +128,15 @@ export async function readOverrides(companyId: string | null): Promise<MorSettin
 }
 
 /** Saves settings for the platform (`companyId` null) or one company. Super admin only. */
-export async function saveSettings(actor: Actor, companyId: string | null, input: unknown): Promise<void> {
+export async function saveSettings(
+  actor: Actor,
+  companyId: string | null,
+  input: unknown,
+): Promise<void> {
   if (actor.role !== 'super_admin') throw new ForbiddenError();
   const parsed = morSettingsInput.safeParse(input);
-  if (!parsed.success) throw new ValidationError(parsed.error.issues[0]?.message ?? 'The settings are not valid.');
+  if (!parsed.success)
+    throw new ValidationError(parsed.error.issues[0]?.message ?? 'The settings are not valid.');
   const patch: Record<string, unknown> = { updated_by: actor.userId };
   for (const [key, value] of Object.entries(parsed.data)) {
     if (value !== undefined) patch[COLUMN_OF[key as keyof MorSettingsInput]] = value;
@@ -136,7 +157,11 @@ export async function saveSettings(actor: Actor, companyId: string | null, input
 }
 
 /** Pauses settlement for a company (a person or the risk rules). Existing holds stay. */
-export async function suspendCompany(actorId: string | null, companyId: string, reason: string): Promise<void> {
+export async function suspendCompany(
+  actorId: string | null,
+  companyId: string,
+  reason: string,
+): Promise<void> {
   const clean = reason.trim().slice(0, 300);
   if (clean.length < 3) throw new ValidationError('Give a reason of at least 3 letters.');
   const admin = getAdminSupabase();
@@ -167,7 +192,12 @@ export async function reinstateCompany(actor: Actor, companyId: string): Promise
   if (!current?.suspended) return;
   const { error } = await getAdminSupabase()
     .from('mor_settings')
-    .update({ suspended: false, suspended_reason: null, suspended_at: null, updated_by: actor.userId })
+    .update({
+      suspended: false,
+      suspended_reason: null,
+      suspended_at: null,
+      updated_by: actor.userId,
+    })
     .eq('id', current.id);
   if (error) throw new InternalError(error);
   await getService('audit').record({

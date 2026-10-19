@@ -52,7 +52,12 @@ export function isFinal(status: PayoutStatus): boolean {
 
 /** States in which the money is out of the available balance and not yet sent or returned. */
 export function holdsMoney(status: PayoutStatus): boolean {
-  return status === 'requested' || status === 'pending_approval' || status === 'approved' || status === 'processing';
+  return (
+    status === 'requested' ||
+    status === 'pending_approval' ||
+    status === 'approved' ||
+    status === 'processing'
+  );
 }
 
 /* ---------------------------------------------------------------- rules */
@@ -77,7 +82,9 @@ export const BUILT_IN_PAYOUT_RULES: PayoutRules = {
   largeThreshold: PAYOUT_LARGE_THRESHOLD,
 };
 
-const moneyText = z.string().regex(/^\d{1,14}(\.\d{1,4})?$/, 'Enter an amount like 1500 or 1500.50.');
+const moneyText = z
+  .string()
+  .regex(/^\d{1,14}(\.\d{1,4})?$/, 'Enter an amount like 1500 or 1500.50.');
 const percentText = z.string().regex(/^\d{1,2}(\.\d{1,4})?$/, 'Enter a percent like 1 or 2.5.');
 
 export const payoutSettingsInput = z
@@ -114,7 +121,10 @@ export interface PayoutAmounts {
 }
 
 /** The fee is a fixed part plus a percent of the amount, and never more than the amount. */
-export function payoutAmounts(amount: Money, rules: Pick<PayoutRules, 'feeFixed' | 'feePercent'>): PayoutAmounts {
+export function payoutAmounts(
+  amount: Money,
+  rules: Pick<PayoutRules, 'feeFixed' | 'feePercent'>,
+): PayoutAmounts {
   const raw = Money.parse(rules.feeFixed).add(amount.percent(rules.feePercent));
   const fee = raw.gt(amount) ? amount : raw;
   return { amount, fee, net: amount.sub(fee) };
@@ -129,8 +139,10 @@ export function localAmount(net: Money, rate: string, fxFeePercent: string): Mon
 /** The smallest payout that is worth its fee: the amount must be above the fee and at least the minimum. */
 export function checkAmount(amount: Money, rules: PayoutRules): string | null {
   if (!amount.isPositive()) return 'The payout amount must be above zero.';
-  if (amount.lt(rules.minAmount)) return `The smallest payout is ${Money.parse(rules.minAmount).toDbString()} USD.`;
-  if (payoutAmounts(amount, rules).net.isZero()) return 'The payout fee is not less than the amount.';
+  if (amount.lt(rules.minAmount))
+    return `The smallest payout is ${Money.parse(rules.minAmount).toDbString()} USD.`;
+  if (payoutAmounts(amount, rules).net.isZero())
+    return 'The payout fee is not less than the amount.';
   return null;
 }
 
@@ -165,8 +177,14 @@ export const MAX_ATTEMPTS = PAYOUT_RETRY_HOURS.length + 1;
 export type Frequency = 'daily' | 'weekly' | 'monthly';
 
 /** The next run strictly after `from`: at the fixed hour (UTC) of the next day, the weekday (0 Sunday) or the month day (1 to 28). */
-export function nextRun(from: Date, frequency: Frequency, weekday: number | null, monthDay: number | null): Date {
-  const at = (y: number, mo: number, d: number): Date => new Date(Date.UTC(y, mo, d, PAYOUT_SCHEDULE_HOUR_UTC));
+export function nextRun(
+  from: Date,
+  frequency: Frequency,
+  weekday: number | null,
+  monthDay: number | null,
+): Date {
+  const at = (y: number, mo: number, d: number): Date =>
+    new Date(Date.UTC(y, mo, d, PAYOUT_SCHEDULE_HOUR_UTC));
   const y = from.getUTCFullYear();
   const mo = from.getUTCMonth();
   const d = from.getUTCDate();
@@ -178,7 +196,8 @@ export function nextRun(from: Date, frequency: Frequency, weekday: number | null
     const target = weekday ?? 1;
     for (let add = 0; add <= 7; add += 1) {
       const candidate = at(y, mo, d + add);
-      if (candidate.getUTCDay() === target && candidate.getTime() > from.getTime()) return candidate;
+      if (candidate.getUTCDay() === target && candidate.getTime() > from.getTime())
+        return candidate;
     }
   }
   const day = monthDay ?? 1;
@@ -193,7 +212,9 @@ export function requestLegs(walletId: string, p: PayoutAmounts): Leg[] {
   return [
     { walletId, account: 'available', amount: p.amount.negate() },
     { walletId: null, account: 'payout_in_transit', amount: p.net },
-    ...(p.fee.isPositive() ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: p.fee }] : []),
+    ...(p.fee.isPositive()
+      ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: p.fee }]
+      : []),
   ];
 }
 
@@ -210,7 +231,9 @@ export function creditBackLegs(walletId: string, p: PayoutAmounts): Leg[] {
   return [
     { walletId, account: 'available', amount: p.amount },
     { walletId: null, account: 'payout_in_transit', amount: p.net.negate() },
-    ...(p.fee.isPositive() ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: p.fee.negate() }] : []),
+    ...(p.fee.isPositive()
+      ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: p.fee.negate() }]
+      : []),
   ];
 }
 
@@ -219,7 +242,9 @@ export function reversedLegs(walletId: string, p: PayoutAmounts): Leg[] {
   return [
     { walletId, account: 'available', amount: p.amount },
     { walletId: null, account: 'clearing', amount: p.net.negate() },
-    ...(p.fee.isPositive() ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: p.fee.negate() }] : []),
+    ...(p.fee.isPositive()
+      ? [{ walletId: null, account: 'platform_fee_revenue' as const, amount: p.fee.negate() }]
+      : []),
   ];
 }
 

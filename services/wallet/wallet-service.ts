@@ -141,3 +141,17 @@ export const walletService: WalletService = {
     await releaseHold(String(data.company_id), holdId, null);
   },
 };
+
+/** Sets (or clears with null) the amount below which the owner is told the available balance is low. */
+export async function setLowBalanceThreshold(
+  companyId: string,
+  amount: Money | null,
+): Promise<void> {
+  if (amount && amount.isNegative()) throw new ValidationError('The amount cannot be negative.');
+  const { error } = await getAdminSupabase()
+    .from('wallets')
+    .update({ low_balance_threshold: amount ? amount.toDbString() : null, low_alerted_at: null })
+    .eq('company_id', companyId)
+    .is('deleted_at', null);
+  if (error) throw new InternalError(error);
+}

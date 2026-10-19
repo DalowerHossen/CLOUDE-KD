@@ -49,7 +49,10 @@ const view = (r: HoldRow): HoldView => ({
 });
 
 /** The holds of a company, newest first, for the owner's wallet page. */
-export async function listHolds(companyId: string, status?: 'active' | 'released'): Promise<HoldView[]> {
+export async function listHolds(
+  companyId: string,
+  status?: 'active' | 'released',
+): Promise<HoldView[]> {
   let q = getAdminSupabase()
     .from('wallet_holds')
     .select(HOLD_COLUMNS)
@@ -146,20 +149,34 @@ export async function releaseHoldNow(actor: Actor, holdId: string, reason: strin
 }
 
 /** Moves the release time of an active hold later. Super admin only. */
-export async function extendHold(actor: Actor, holdId: string, days: number, reason: string): Promise<void> {
+export async function extendHold(
+  actor: Actor,
+  holdId: string,
+  days: number,
+  reason: string,
+): Promise<void> {
   if (actor.role !== 'super_admin') throw new ForbiddenError();
-  if (!Number.isInteger(days) || days < 1 || days > 90) throw new ValidationError('Choose between 1 and 90 days.');
+  if (!Number.isInteger(days) || days < 1 || days > 90)
+    throw new ValidationError('Choose between 1 and 90 days.');
   const clean = reason.trim().slice(0, 300);
   if (clean.length < 3) throw new ValidationError('Give a reason of at least 3 letters.');
   await pushBack(await holdOf(holdId), days, clean, actor.userId);
 }
 
-async function pushBack(hold: HoldRow, days: number, reason: string, actorId: string | null): Promise<void> {
+async function pushBack(
+  hold: HoldRow,
+  days: number,
+  reason: string,
+  actorId: string | null,
+): Promise<void> {
   if (hold.status !== 'active') throw new ValidationError('This hold was already released.');
   const releaseAt = addDays(new Date(hold.release_at), days);
   const { error } = await getAdminSupabase()
     .from('wallet_holds')
-    .update({ release_at: releaseAt.toISOString(), reason: `${hold.reason} Extended by ${days} days: ${reason}`.slice(0, 300) })
+    .update({
+      release_at: releaseAt.toISOString(),
+      reason: `${hold.reason} Extended by ${days} days: ${reason}`.slice(0, 300),
+    })
     .eq('id', hold.id)
     .eq('status', 'active');
   if (error) throw new InternalError(error);
@@ -179,7 +196,11 @@ export async function extendActiveHolds(companyId: string, reason: string): Prom
   const holds = await listHolds(companyId, 'active');
   let moved = 0;
   for (const h of holds) {
-    const { data } = await getAdminSupabase().from('wallet_holds').select(HOLD_COLUMNS).eq('id', h.id).maybeSingle();
+    const { data } = await getAdminSupabase()
+      .from('wallet_holds')
+      .select(HOLD_COLUMNS)
+      .eq('id', h.id)
+      .maybeSingle();
     if (!data || String((data as HoldRow).reason).includes(reason)) continue; // this reason was already applied
     await pushBack(data as HoldRow, rules.riskExtensionDays, reason, null);
     moved += 1;
