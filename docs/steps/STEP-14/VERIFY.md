@@ -28,3 +28,9 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step14-methods.ts` -> 7 checks passed: no brand name in the catalogue, only methods of the country listed, a method the platform has not switched on is never on, the country row wins over the all-countries row, plan rules, the plan limit enforced when switching on, order and words layering, strict inputs.
 - `npx tsc --noEmit`, `npm run lint`, `bash scripts/check-all.sh` (including the brand-name guard): clean.
 - Not run here: the pages `/wallet/payment-settings` and `/admin/payouts/methods` and the routes `/api/wallet/payment-methods`, `/api/payouts/platform-methods` in the running app; recorded for the sandbox run.
+
+## 14.5 Plans and entitlements (2026-10-19)
+- `scripts/db-apply.sh --clean`: `S14_005_plans` applies and re-applies cleanly; `sql/assertions/s14_005_plans.sql` passes (RLS on; one plan per slug and a bad slug refused; an archived plan needs its time; one value per plan and key; a text or negative value refused; the history cannot be changed; the usage function adds in one step, a strict add over the limit adds nothing, a soft add records the units over the limit, the counter never goes below zero, no limit never blocks, a bad period refused).
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step14-plans.ts` -> 8 checks passed: key kinds match the built-in values, plan and feature input, saved values over built-in values and the fallback to the built-in catalogue, quota bars, the plan offered for a locked feature, the downgrade impact, the plan cache.
+- `npx tsc --noEmit`, `npm run lint`, `bash scripts/check-all.sh`: clean.
+- Not run here (needs the running app and PostgREST): `has` and `limit` answering from a saved plan change, hidden archived plans at sign-up, the plan seeding, bulk migration with a dry run, the admin pages `/admin/plans` and `/admin/plans/[id]`, the daily usage job; recorded for the sandbox run.

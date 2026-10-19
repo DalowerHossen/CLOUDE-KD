@@ -17,3 +17,7 @@
 **R8 Email catalogue line.** `emails/catalog.ts` got one line for `emails/billing/index.ts`, as the STEP 05 convention allows.
 
 **R9 Checkout method list and method fee.** `checkoutMethods(companyId)` in `services/payout/payment-methods.ts` answers the methods a payer can choose (ordered, with icon and words). Please call it from the payment page of STEP 10 and, when a method has a fee model (`feeModel` of `resolveMethods`), let `services/mor/settle.ts` use it in place of the platform schedule (a later request once the partner adapters exist, R3).
+
+**R10 Limit checks at the creation points.** Please call `assertWithinLimit(companyId, key)` from `services/entitlement/usage.ts` (or `getService('entitlement').limit` with your own count) before creating an invoice (`invoices.monthly`), a client (`clients.max`) and a team member (`staff.seats`), and `paywall(companyId, key)` where a locked feature is opened, so the server enforces plan limits everywhere (FEATURE_LIST 2676, 2680). STEP 14 provides the functions; the calls belong to the creating STEPs.
+
+**R11 Plan change on the tenant.** `services/plan/migrate.ts` writes `companies.plan_key` with the service role. Please add a method to the `tenant` contract (for example `setPlan(companyId, planKey)`) so the write goes through STEP 02, and let `changeCompanyPlan` call it.

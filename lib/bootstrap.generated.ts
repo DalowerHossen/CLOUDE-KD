@@ -11,6 +11,7 @@ import register_compliance from '@/services/compliance/register';
 import register_contract from '@/services/contract/register';
 import register_email from '@/services/email/register';
 import register_encryption from '@/services/encryption/register';
+import register_entitlement from '@/services/entitlement/register';
 import register_events from '@/services/events/register';
 import register_fx from '@/services/fx/register';
 import register_inventory from '@/services/inventory/register';
@@ -38,6 +39,7 @@ export async function bootstrapServices(): Promise<void> {
   await register_contract();
   await register_email();
   await register_encryption();
+  await register_entitlement();
   await register_events();
   await register_fx();
   await register_inventory();

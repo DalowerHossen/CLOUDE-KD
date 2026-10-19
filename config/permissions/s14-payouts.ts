@@ -51,4 +51,17 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'plan.usage.read',
+    description: 'See the plan, the usage meters and the upgrade prompts of the company',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'plan.manage',
+    description:
+      'Create and edit plans, features, limits and prices, archive plans and move companies between plans',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
 ];

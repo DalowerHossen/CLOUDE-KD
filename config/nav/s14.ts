@@ -47,4 +47,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin'],
     order: 522,
   },
+  {
+    id: 'admin-plans',
+    labelKey: 's14Wallet.nav.adminPlans',
+    href: '/admin/plans',
+    icon: 'layers',
+    group: 'admin',
+    roles: ['super_admin'],
+    order: 523,
+  },
 ];
