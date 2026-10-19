@@ -22,6 +22,7 @@ import register_payment from '@/services/payment/register';
 import register_portal from '@/services/portal/register';
 import register_security from '@/services/security/register';
 import register_storage from '@/services/storage/register';
+import register_wallet from '@/services/wallet/register';
 
 /** Registers every service implementation in the container. Runs after the boot hooks. */
 export async function bootstrapServices(): Promise<void> {
@@ -46,4 +47,5 @@ export async function bootstrapServices(): Promise<void> {
   await register_portal();
   await register_security();
   await register_storage();
+  await register_wallet();
 }

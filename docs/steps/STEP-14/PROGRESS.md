@@ -1,6 +1,6 @@
 # STEP 14 - Progress
 
-- [ ] 14.1 Ledger and wallet
+- [x] 14.1 Ledger and wallet (2026-10-19)
 - [ ] 14.2 Settlement and merchant-of-record engine
 - [ ] 14.3.a Payouts: data and services
 - [ ] 14.3.b Payouts: pages and APIs
