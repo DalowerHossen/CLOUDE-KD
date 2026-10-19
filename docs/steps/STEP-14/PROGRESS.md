@@ -2,7 +2,7 @@
 
 - [x] 14.1 Ledger and wallet (2026-10-19)
 - [x] 14.2 Settlement and merchant-of-record engine (2026-10-19)
-- [ ] 14.3.a Payouts: data and services
+- [x] 14.3.a Payouts: data and services (2026-10-19)
 - [ ] 14.3.b Payouts: pages and APIs
 - [ ] 14.4 Local payment methods catalogue and tenant payment settings
 - [ ] 14.5 Plans and entitlements
