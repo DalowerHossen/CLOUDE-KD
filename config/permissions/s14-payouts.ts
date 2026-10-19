@@ -38,4 +38,17 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'payment.methods.manage',
+    description: 'Choose which payment methods the company offers to clients',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'payment.methods.platform',
+    description:
+      'Switch payment methods on or off per country, set their order, fee and client instructions',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
 ];

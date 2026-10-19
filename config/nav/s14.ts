@@ -29,4 +29,22 @@ export const nav: NavItem[] = [
     roles: ['super_admin'],
     order: 521,
   },
+  {
+    id: 'payment-settings',
+    labelKey: 's14Wallet.paymentSettings.pageTitle',
+    href: '/wallet/payment-settings',
+    icon: 'credit-card',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 46,
+  },
+  {
+    id: 'admin-payment-methods',
+    labelKey: 's14Wallet.nav.adminMethods',
+    href: '/admin/payouts/methods',
+    icon: 'credit-card',
+    group: 'admin',
+    roles: ['super_admin'],
+    order: 522,
+  },
 ];
