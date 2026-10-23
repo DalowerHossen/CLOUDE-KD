@@ -101,4 +101,22 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 48,
   },
+  {
+    id: 'bnpl',
+    labelKey: 's14Wallet.nav.bnpl',
+    href: '/wallet/bnpl',
+    icon: 'credit-card',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 49,
+  },
+  {
+    id: 'admin-bnpl',
+    labelKey: 's14Wallet.nav.adminBnpl',
+    href: '/admin/bnpl',
+    icon: 'credit-card',
+    group: 'admin',
+    roles: ['super_admin'],
+    order: 527,
+  },
 ];

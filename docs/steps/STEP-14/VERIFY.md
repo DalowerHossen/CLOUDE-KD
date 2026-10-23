@@ -55,3 +55,9 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step14-client-subscriptions.ts` -> 8 checks passed: plan input, cycle price with seats, MRR with a yearly plan, churn and lifetime value, pause moves the billing date, prorated upgrade and unbilled downgrade, cycle dates and trial, three notices then grace then the end (simulated hour by hour).
 - `npx tsc --noEmit`, `npm run lint`, `bash scripts/check-all.sh`: clean.
 - Not run here (needs the running app, PostgREST and the invoice service): making and sending a real invoice for a cycle (`createInvoice` and `sendInvoice` from the job), the first invoice at subscribe, the unpaid-invoice notices against real invoice statuses, the pages `/subscriptions`, `/subscriptions/plans`, `/subscriptions/[id]`; recorded for the sandbox run.
+
+## 14.9 Installments (BNPL framework) (2026-10-23)
+- `scripts/db-apply.sh --clean`: `S14_009_bnpl` applies and re-applies cleanly; `sql/assertions/s14_009_bnpl.sql` passes (RLS on; one platform settings row; allowed terms only; one live plan per invoice and a cancelled plan frees the invoice; completed plans carry their time; the history cannot be changed).
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step14-bnpl.ts` -> 5 checks passed: settings input and the form adapter, every eligibility rule, offers (parts add up to the invoice, the client pays nothing extra, the fee is the seller's, tiny parts are not offered), late parts after the grace days and the plan outcome (active, defaulted, completed).
+- `npx tsc --noEmit`, `npm run lint`, `bash scripts/check-all.sh`: clean.
+- Not run here (running app needed): accepting an offer against a real invoice (`savePlan` through the service), the daily plan check against real payments, `/wallet/bnpl` and `/admin/bnpl`.
