@@ -65,4 +65,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 91,
   },
+  {
+    id: 'commerce',
+    labelKey: 's16Commerce.nav.commerce',
+    href: '/integrations/stores',
+    icon: 'package',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 92,
+  },
 ];

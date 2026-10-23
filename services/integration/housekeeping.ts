@@ -4,9 +4,11 @@
 //   - API keys that expire within 7 days: the company is told once (the time is kept on the key).
 //   - The rate limit counters of past days (one row per key and minute) are removed; the usage per day is kept for 400 days.
 //   - An import file that was uploaded or checked and then left for 7 days is cancelled (nothing was written for it).
+//   - The sync log lines and the webhook delivery ids of the stores older than 90 days are removed (soft delete).
 import 'server-only';
 import { getService } from '@/lib/container';
 import { InternalError } from '@/lib/errors';
+import { SYNC_LOG_KEEP_DAYS } from '@/config/s16-commerce';
 import { createLogger } from '@/lib/logger';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 
@@ -89,8 +91,30 @@ export async function cancelIdleImports(): Promise<{ cancelled: number }> {
   return { cancelled: (data ?? []).length };
 }
 
+/** Removes (soft delete) the sync log lines and the webhook delivery ids of the stores that are older than 90 days. */
+export async function trimCommerceLog(): Promise<{ lines: number; deliveries: number }> {
+  const admin = getAdminSupabase();
+  const cutoff = daysAgo(SYNC_LOG_KEEP_DAYS).toISOString();
+  const now = new Date().toISOString();
+  const lines = await admin
+    .from('integration_sync_log')
+    .update({ deleted_at: now })
+    .lt('created_at', cutoff)
+    .is('deleted_at', null)
+    .select('id');
+  if (lines.error) throw new InternalError(lines.error);
+  const deliveries = await admin
+    .from('integration_webhook_events')
+    .update({ deleted_at: now })
+    .lt('created_at', cutoff)
+    .is('deleted_at', null)
+    .select('id');
+  if (deliveries.error) throw new InternalError(deliveries.error);
+  return { lines: (lines.data ?? []).length, deliveries: (deliveries.data ?? []).length };
+}
+
 export async function runHousekeeping(): Promise<void> {
-  for (const step of [noticeExpiringKeys, trimUsage, cancelIdleImports]) {
+  for (const step of [noticeExpiringKeys, trimUsage, cancelIdleImports, trimCommerceLog]) {
     try {
       await step();
     } catch (e) {

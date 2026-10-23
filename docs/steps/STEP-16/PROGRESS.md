@@ -8,7 +8,7 @@
 - [x] 16.4.a Social: connections, adapters, composer, publishing (Facebook, Instagram, Threads, sandbox) (2026-10-23)
 - [x] 16.4.a2 Social: LinkedIn, X, Telegram and Pinterest adapters (2026-10-23)
 - [x] 16.4.b Social: scheduling, rules, approval, analytics, share widgets (2026-10-23)
-- [ ] 16.5 Commerce: Shopify and WooCommerce
+- [x] 16.5 Commerce: Shopify and WooCommerce (2026-10-23; invoice drafts wait for R1, BLOCKERS B7)
 - [x] 16.6 Automation tools (2026-10-23)
 - [ ] 16.7 Bank feed
 - [x] 16.8 Receipt OCR (2026-10-23)

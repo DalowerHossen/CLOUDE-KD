@@ -1,6 +1,6 @@
 # STEP 16 - Handoff
 
-Integrations and automation. Branch `claude/clever-goldberg-8ncdae`. Sub-steps 16.1.a, 16.1.b, 16.2, 16.3.a, 16.3.b, 16.4.a, 16.4.a2, 16.4.b, 16.6, 16.8, 16.9, 16.10 and 16.11 are done. **Not done:** 16.5 (Shopify and WooCommerce) and 16.7 (bank feed), all waiting on documentation hosts that this environment cannot reach (BLOCKERS B3 and the notes below). Their rows in the FEATURE_LIST are therefore not implemented.
+Integrations and automation. Branch `claude/clever-goldberg-8ncdae`. Sub-steps 16.1.a, 16.1.b, 16.2, 16.3.a, 16.3.b, 16.4.a, 16.4.a2, 16.4.b, 16.5, 16.6, 16.8, 16.9, 16.10 and 16.11 are done. **Not done:** 16.7 (bank feed), waiting on documentation hosts that were not reachable when it was last tested. 16.5 stops at "client ready": invoice drafts and credit notes wait for request R1 (BLOCKERS B7).
 
 ## What the Integrator must do
 
@@ -10,25 +10,25 @@ Integrations and automation. Branch `claude/clever-goldberg-8ncdae`. Sub-steps 1
 
 ## Sub-steps and features
 
-| Sub-step | Feature list | State |
-|---|---|---|
-| 16.1.a, 16.1.b Public API v1, keys, sandbox, OpenAPI, developer portal | D (2100-2150 range of the plan) | built; live writes blocked by R1 (sandbox keys write) |
-| 16.2 Outgoing webhooks | D (webhook part), Part 9 I | built |
-| 16.3.a, 16.3.b WhatsApp | A | built (sandbox mode until the owner goes live; Meta hosts unreachable here) |
-| 16.4.a, 16.4.a2, 16.4.b Social media (Facebook, Instagram, Threads, LinkedIn, X, Telegram, Pinterest, sandbox) | B, C | built (LinkedIn, X, Telegram, Pinterest send text and a link; Telegram and Pinterest also images; no insights for these four) |
-| 16.5 Shopify and WooCommerce | Part 3 J | **not built** |
-| 16.6 Zapier, Make, browser extension | E (2181-2202) | endpoints and extension source built; app packages, OAuth sign-in, store publishing not built |
-| 16.7 Bank feed | F | **not built** |
-| 16.8 Receipt OCR | G | built (Google Cloud Vision) |
-| 16.9 Multi-channel messaging | I | built for e-mail and WhatsApp; SMS, Telegram, Viber not built |
-| 16.10 Migration wizard | K | clients, products, suppliers; invoices, payments, opening balances of accounts, OFX not built |
-| 16.11 Cron jobs and closure | Part 10 B | built, except the commerce sync and bank feed jobs (their sub-steps are open) |
+| Sub-step                                                                                                       | Feature list                    | State                                                                                                                         |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 16.1.a, 16.1.b Public API v1, keys, sandbox, OpenAPI, developer portal                                         | D (2100-2150 range of the plan) | built; live writes blocked by R1 (sandbox keys write)                                                                         |
+| 16.2 Outgoing webhooks                                                                                         | D (webhook part), Part 9 I      | built                                                                                                                         |
+| 16.3.a, 16.3.b WhatsApp                                                                                        | A                               | built (sandbox mode until the owner goes live; Meta hosts unreachable here)                                                   |
+| 16.4.a, 16.4.a2, 16.4.b Social media (Facebook, Instagram, Threads, LinkedIn, X, Telegram, Pinterest, sandbox) | B, C                            | built (LinkedIn, X, Telegram, Pinterest send text and a link; Telegram and Pinterest also images; no insights for these four) |
+| 16.5 Shopify and WooCommerce                                                                                   | Part 3 J (1091-1115)            | built up to the client; invoice draft, credit note, product and status sync not built (B7, D14)                               |
+| 16.6 Zapier, Make, browser extension                                                                           | E (2181-2202)                   | endpoints and extension source built; app packages, OAuth sign-in, store publishing not built                                 |
+| 16.7 Bank feed                                                                                                 | F                               | **not built**                                                                                                                 |
+| 16.8 Receipt OCR                                                                                               | G                               | built (Google Cloud Vision)                                                                                                   |
+| 16.9 Multi-channel messaging                                                                                   | I                               | built for e-mail and WhatsApp; SMS, Telegram, Viber not built                                                                 |
+| 16.10 Migration wizard                                                                                         | K                               | clients, products, suppliers; invoices, payments, opening balances of accounts, OFX not built                                 |
+| 16.11 Cron jobs and closure                                                                                    | Part 10 B                       | built, except the bank feed job (its sub-step is open)                                                                        |
 
-Each DECISIONS entry (D1 to D13) lists what is not built inside its sub-step.
+Each DECISIONS entry (D1 to D14) lists what is not built inside its sub-step.
 
 ## Migrations (block `S16_*`, each with `_down`)
 
-S16_001 api_keys, S16_002 webhooks_out, S16_003 whatsapp, S16_004 whatsapp_automation, S16_005 social, S16_006 social_schedule, S16_009 ocr, S16_010 messaging, S16_011 migration, S16_012 housekeeping. S16_007 (commerce) and S16_008 (bank feed) are reserved and unused. SQL assertions: `sql/assertions/s16_*.sql` (one per migration).
+S16_001 api_keys, S16_002 webhooks_out, S16_003 whatsapp, S16_004 whatsapp_automation, S16_005 social, S16_006 social_schedule, S16_009 ocr, S16_010 messaging, S16_011 migration, S16_012 housekeeping, S16_013 social_networks, S16_014 commerce. S16_007 and S16_008 are unused (the commerce tables were made as S16_014; S16_008 stays reserved for the bank feed). SQL assertions: `sql/assertions/s16_*.sql` (one per migration).
 
 ## Endpoints
 
@@ -151,6 +151,19 @@ S16_001 api_keys, S16_002 webhooks_out, S16_003 whatsapp, S16_004 whatsapp_autom
 - `/api/migration/jobs/[id]/rows [GET]`
 - `/api/migration/jobs/[id]/start [POST]`
 - `/api/migration/jobs/[id]/validate [POST]`
+- `/api/integrations/commerce/connections [GET, POST]`
+- `/api/integrations/commerce/connections/[id] [GET, PATCH, DELETE]`
+- `/api/integrations/commerce/connections/[id]/check [POST]`
+- `/api/integrations/commerce/connections/[id]/webhooks [POST]`
+- `/api/integrations/commerce/connections/[id]/mappings [GET, PUT]`
+- `/api/integrations/commerce/connections/[id]/mappings/[mappingId] [DELETE]`
+- `/api/integrations/commerce/orders [GET]`
+- `/api/integrations/commerce/orders/[id]/retry [POST]`
+- `/api/integrations/commerce/orders/[id]/ignore [POST]`
+- `/api/integrations/commerce/conflicts [GET]`
+- `/api/integrations/commerce/conflicts/[id] [POST]`
+- `/api/integrations/commerce/log [GET]`
+- `/api/webhooks/shopify [POST]` and `/api/webhooks/woocommerce [POST]` (signed by the store, key in the query)
 
 The public API document is served at `/api/public/v1/openapi.json`; it is built from `lib/integrations/public-registry.ts`.
 
@@ -160,7 +173,7 @@ The public API document is served at `/api/public/v1/openapi.json`; it is built 
 
 ## Permissions (owner by default)
 
-`integrations.apikey.read|manage`, `integrations.webhook.read|manage`, `integrations.ocr.read|manage`, `integrations.messaging.read|manage`, `migration.read|manage`, `social.read|manage|post|approve`, `whatsapp.read|manage|send|contacts.manage|campaigns.manage`. Actions that need a fresh identity check: creating or rotating a key, changing an account or the OCR settings, starting a campaign (WhatsApp and messaging), starting or rolling back an import, changing a social rule.
+`integrations.apikey.read|manage`, `integrations.webhook.read|manage`, `integrations.ocr.read|manage`, `integrations.messaging.read|manage`, `migration.read|manage`, `social.read|manage|post|approve`, `commerce.read|sync|manage`, `whatsapp.read|manage|send|contacts.manage|campaigns.manage`. Actions that need a fresh identity check: creating or rotating a key, changing an account or the OCR settings, starting a campaign (WhatsApp and messaging), starting or rolling back an import, changing a social rule.
 
 ## Approval rule
 
@@ -174,7 +187,8 @@ Outgoing webhooks (`WEBHOOK_EVENTS` in `config/s16-api.ts`, signed `X-KD-Signatu
 
 - WhatsApp Cloud API v26.0, Facebook Pages, Instagram and Threads publishing and Threads insights: read 2026-10-23 with `curl` from developers.facebook.com (`docs/integrations/whatsapp.md`, `docs/integrations/social.md`).
 - Google Cloud Vision: the official API description (discovery document revision 20260918), read 2026-10-23; the guides could not be reached (`docs/integrations/google-vision.md`).
-- Not read, because the hosts are blocked: Facebook and Instagram insights (not requested), Shopify, WooCommerce, Plaid, Salt Edge, Zapier, Make, Twilio and the export formats of the invoicing tools (presets are marked as a first guess).
+- LinkedIn, X, Telegram and Pinterest posting: read 2026-10-23 with `curl` (`docs/integrations/social-more.md`). Shopify Admin GraphQL 2026-10 and webhooks, WooCommerce REST API v3 and webhooks: read 2026-10-23 with `curl` (`docs/integrations/shopify.md`, `woocommerce.md`).
+- Not read, because the hosts were blocked when tried: Facebook and Instagram insights (not requested), Plaid, Salt Edge, Zapier, Make, Twilio and the export formats of the invoicing tools (presets are marked as a first guess).
 
 ## Environment keys
 
@@ -182,20 +196,21 @@ None are new. Company-specific secrets (WhatsApp token and app secret, social ac
 
 ## Cron jobs (`cron/jobs/s16-*.ts`, all in the generated list)
 
-| Job | Schedule | Work |
-|---|---|---|
-| webhook-deliveries | every minute | sends due outgoing webhook deliveries and retries |
-| whatsapp-automation | every minute | sends due rule runs and campaign batches |
-| whatsapp-due-soon | daily 08:17 | queues due-date rule runs |
-| social-publish | every minute | publishes due posts, finishes waiting containers |
-| social-quarter-hour | every 15 minutes | auto-approves unanswered posts, evergreen queue |
-| social-hourly | hourly | makes posts for schedules, reads Threads insights |
-| ocr-jobs | every minute | queues receipts, reads a batch |
-| messaging | every minute | sends due messages, engagement, A/B winners |
-| migration-jobs | every minute | import and rollback batches |
-| integrations-housekeeping | daily 03:43 | key expiry notices, old counters, idle imports |
+| Job                       | Schedule         | Work                                                               |
+| ------------------------- | ---------------- | ------------------------------------------------------------------ |
+| webhook-deliveries        | every minute     | sends due outgoing webhook deliveries and retries                  |
+| whatsapp-automation       | every minute     | sends due rule runs and campaign batches                           |
+| whatsapp-due-soon         | daily 08:17      | queues due-date rule runs                                          |
+| social-publish            | every minute     | publishes due posts, finishes waiting containers                   |
+| social-quarter-hour       | every 15 minutes | auto-approves unanswered posts, evergreen queue                    |
+| social-hourly             | hourly           | makes posts for schedules, reads Threads insights                  |
+| ocr-jobs                  | every minute     | queues receipts, reads a batch                                     |
+| messaging                 | every minute     | sends due messages, engagement, A/B winners                        |
+| migration-jobs            | every minute     | import and rollback batches                                        |
+| commerce-orders           | every minute     | handles due store orders (hourly and daily stores, retries)        |
+| integrations-housekeeping | daily 03:43      | key expiry notices, old counters, idle imports, old store sync log |
 
-Not present, because the sub-steps are open: commerce sync and bank feed refresh. Every job is safe to run twice (claims by database function, unique keys, or a state check).
+Not present, because the sub-step is open: bank feed refresh. Every job is safe to run twice (claims by database function, unique keys, or a state check).
 
 ## Contracts used
 
@@ -203,12 +218,12 @@ approval, audit, consent, email, encryption, idempotency, notification, permissi
 
 ## Navigation and strings
 
-Nav items `developers`, `whatsapp`, `social`, `automation`, `ocr`, `messaging`, `migration` in `config/nav/s16.ts`. Strings namespaces `s16Developers`, `s16Whatsapp`, `s16Social`, `s16Automation`, `s16Ocr`, `s16Messaging`, `s16Migration`.
+Nav items `developers`, `whatsapp`, `social`, `automation`, `ocr`, `messaging`, `migration`, `commerce` in `config/nav/s16.ts`. Strings namespaces `s16Developers`, `s16Whatsapp`, `s16Social`, `s16Automation`, `s16Ocr`, `s16Messaging`, `s16Migration`, `s16Commerce`.
 
 ## Known issues
 
 - Nothing was sent to or received from any provider: the Meta Graph host, Google Vision and all other providers could not be called from this environment. Every adapter was tested with a fake fetch built from the documented request and response shapes.
 - The services, cron jobs, routes and pages were type-checked and linted, and their rules tested as pure functions and SQL assertions, but no end-to-end run against a running app and database was possible (see each section of `VERIFY.md` for what was not run).
-- Live writes through the public API and the import of invoices and payments wait for R1.
+- Live writes through the public API, the import of invoices and payments, and the invoice drafts and credit notes of store orders wait for R1 (B1, B7).
 - A crash between making a record and writing its row can leave one imported record without a row (skip mode finds it as a duplicate on the next try).
 - The presets of the migration wizard and the Instagram daily limit (50 or 100) are best guesses, marked as such.
