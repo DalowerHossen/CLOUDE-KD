@@ -31,3 +31,18 @@ export const MAX_TAGS_PER_GROUP = 30;
 export const PUBLISHING_STALE_MINUTES = 30;
 export const MAX_PUBLISH_ATTEMPTS = 3;
 export const SOCIAL_STEP_UP_SECONDS = 300;
+
+/* 16.4.b: schedules, rules, evergreen queue, approval and link tracking. */
+export const SCHEDULE_HORIZON_DAYS = 14;
+export const MAX_SLOTS_PER_SCHEDULE_RUN = 30;
+export const MAX_SCHEDULES_PER_COMPANY = 50;
+export const MAX_RULES_PER_COMPANY = 50;
+export const MAX_EVERGREEN_ITEMS = 500;
+export const SOCIAL_LINK_CODE_LENGTH = 10;
+export const SOCIAL_LINK_PATH = '/api/social/l';
+export const AUTO_APPROVE_BATCH = 50;
+export const LOW_QUEUE_NOTICE_DAYS = 7;
+export const STATS_REFRESH_HOURS = 6;
+export const STATS_WINDOW_DAYS = 30;
+export const STATS_BATCH = 20;
+export const ANALYTICS_MAX_DAYS = 365;

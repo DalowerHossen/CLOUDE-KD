@@ -7,3 +7,6 @@
 **R3 Packages.** None is required to start (REST through `fetch`). If the owner wants the official Plaid or Google Vision clients, a QR image library or an SDK build, they are requested here before use.
 
 **R4 Cron file names.** This STEP names cron files `cron/jobs/s16-*.ts` like the earlier STEPs; SCOPE.md says `16-*`. Confirm that `s16-*` is right for `scripts/gen.mjs`.
+
+**R5 Content events for social rules.** Auto-post rules (16.4.b) should start by themselves when a blog post is published or a product is added. The event list (`types/events.ts`) has no `blog.published`, `product.created` or similar name, and STEP 16 may not invent one. Until the owning STEPs (06 CMS, 08 products) publish such events, a rule is started by an authenticated call, `POST /api/social/rules/fire` with a trigger key and a source id. If the Integrator adds the events, one worker file in `workers/integrations/` can call the same service (`fireTrigger`) with the payload mapped to `title`, `url`, `summary` and `imageUrl`; nothing else changes.
+

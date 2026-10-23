@@ -6,6 +6,10 @@ import { t, type StringKey } from '@/lib/i18n';
 const TABS: readonly (readonly [string, StringKey])[] = [
   ['/social', 's16Social.tabs.accounts'],
   ['/social/posts', 's16Social.tabs.posts'],
+  ['/social/calendar', 's16Social.tabs.calendar'],
+  ['/social/automation', 's16Social.tabs.automation'],
+  ['/social/approvals', 's16Social.tabs.approvals'],
+  ['/social/analytics', 's16Social.tabs.analytics'],
 ];
 
 /** The links between the social media pages. */

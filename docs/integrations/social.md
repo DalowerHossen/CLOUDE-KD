@@ -30,7 +30,12 @@ Read on 2026-10-23 from the official Meta documentation (`https://developers.fac
 - Text posts are limited to 500 characters; emojis count as the number of UTF-8 bytes. Profiles may publish 250 posts per 24 hours (a carousel counts once).
 - Tokens: short-lived (1 hour) exchanged for long-lived (60 days), refreshed with `GET /refresh_access_token` before they expire; a permission grant of a public profile lasts 90 days.
 
+## Threads insights (read 2026-10-23, page `threads/insights`)
+
+- Media insights: `GET https://graph.threads.com/v1.0/{media-id}/insights?metric=views,likes,replies,reposts,quotes,shares`, token in the `Authorization: Bearer` header; the answer is `{ "data": [ { "name": "views", "values": [ { "value": 40 } ], ... } ] }` (a metric can also carry `total_value.value`). Used by `lib/social/adapters/threads.ts` (`insights`) and read by the cron job every hour for posts of the last 30 days, at most 20 per run, each post at most every 6 hours.
+- The engagement rate shown is our own calculation: likes + replies + reposts + quotes divided by views, in percent with one decimal.
+
 ## Not read (not built)
 
-- The authorization windows and code exchange of the three networks (a connection is made by pasting an access token), the token refresh call of Threads, long-lived Page token exchange, video, reels, stories, carousels, insights and webhooks, comment APIs, and the maximum length of a Facebook post.
+- The authorization windows and code exchange of the three networks (a connection is made by pasting an access token), the token refresh call of Threads, long-lived Page token exchange, video, reels, stories, carousels, insights of Facebook Pages and Instagram posts (so their numbers are not shown), follower counts, and webhooks, comment APIs, and the maximum length of a Facebook post.
 - LinkedIn, X, Telegram and Pinterest (hosts unreachable).

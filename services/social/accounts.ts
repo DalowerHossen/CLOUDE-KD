@@ -14,7 +14,7 @@ import { mapIntegrationError } from '@/services/publicapi/db-errors';
 import { need, open, record, seal } from './db';
 
 const COLUMNS =
-  'id, provider, display_name, external_id, token_last4, token_expires_at, status, last_error, last_checked_at, version, created_at';
+  'id, provider, display_name, external_id, token_last4, token_expires_at, status, last_error, last_checked_at, max_posts_per_day, version, created_at';
 
 interface Row {
   id: string;
@@ -26,6 +26,7 @@ interface Row {
   status: string;
   last_error: string | null;
   last_checked_at: string | null;
+  max_posts_per_day: number | null;
   version: number;
   created_at: string;
 }
@@ -40,6 +41,7 @@ export interface SocialAccountView {
   status: 'active' | 'paused' | 'needs_reconnect';
   lastError: string | null;
   lastCheckedAt: string | null;
+  maxPostsPerDay: number | null;
   version: number;
 }
 
@@ -59,6 +61,7 @@ const toView = (r: Row): SocialAccountView => ({
         : 'active',
   lastError: r.last_error,
   lastCheckedAt: r.last_checked_at,
+  maxPostsPerDay: r.max_posts_per_day,
   version: r.version,
 });
 
@@ -148,6 +151,7 @@ export async function updateAccount(
   }
   if (d.tokenExpiresInDays !== undefined) patch.token_expires_at = expiry(d.tokenExpiresInDays);
   if (d.status !== undefined) patch.status = d.status;
+  if (d.maxPostsPerDay !== undefined) patch.max_posts_per_day = d.maxPostsPerDay;
   const { data, error } = await getAdminSupabase()
     .from('social_accounts')
     .update(patch)

@@ -6,6 +6,7 @@ import 'server-only';
 import { THREADS_GRAPH_URL, THREADS_PUBLISH_DELAY_SECONDS } from '@/config/s16-social';
 import type { SocialAdapter } from '../adapter';
 import { graph, idOf } from '../graph';
+import { metricsOf } from '../analytics';
 import { threadsTopicTag } from '../rules';
 
 export const threadsAdapter: SocialAdapter = {
@@ -53,5 +54,19 @@ export const threadsAdapter: SocialAdapter = {
       fetcher,
     );
     return { state: 'published', externalId: idOf(json), url: null };
+  },
+  async insights(account, externalId, fetcher) {
+    const json = await graph(
+      {
+        base: THREADS_GRAPH_URL,
+        path: `${externalId}/insights`,
+        method: 'GET',
+        token: account.token,
+        tokenIn: 'bearer',
+        params: { metric: 'views,likes,replies,reposts,quotes,shares' },
+      },
+      fetcher,
+    );
+    return metricsOf(json);
   },
 };

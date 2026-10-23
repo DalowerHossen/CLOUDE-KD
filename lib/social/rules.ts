@@ -83,6 +83,7 @@ export const accountUpdate = z
     accessToken: z.string().trim().min(20).max(1000).regex(/^\S+$/).optional(),
     tokenExpiresInDays: z.number().int().min(1).max(365).nullable().optional(),
     status: z.enum(['active', 'paused']).optional(),
+    maxPostsPerDay: z.number().int().min(1).max(100).nullable().optional(),
   })
   .strict();
 
@@ -220,9 +221,20 @@ export const dailyLimitOf = (provider: SocialProvider): number | null =>
   DAILY_POST_LIMITS[provider];
 
 /** May another post be published now, given how many were published in the last 24 hours? */
-export function withinDailyLimit(provider: SocialProvider, publishedLast24h: number): boolean {
-  const limit = dailyLimitOf(provider);
+export function withinDailyLimit(
+  provider: SocialProvider,
+  publishedLast24h: number,
+  own: number | null = null,
+): boolean {
+  const limit = effectiveLimit(provider, own);
   return limit === null || publishedLast24h < limit;
+}
+
+/** The lower of the network limit and the limit the company set for the account. */
+export function effectiveLimit(provider: SocialProvider, own: number | null): number | null {
+  const network = dailyLimitOf(provider);
+  if (own === null) return network;
+  return network === null ? own : Math.min(network, own);
 }
 
 /** Is a long-lived token about to expire (within the number of days)? */

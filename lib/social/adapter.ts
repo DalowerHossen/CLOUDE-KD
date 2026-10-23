@@ -35,6 +35,12 @@ export interface SocialAdapter {
   ): Promise<PublishedPost | PendingPost>;
   /** Finishes a pending post (publishes its container). Adapters that publish at once do not have it. */
   finish?(account: AdapterAccount, containerId: string, fetcher?: Fetcher): Promise<PublishedPost>;
+  /** The numbers the network reports for a published post (only where the documentation was read: Threads). */
+  insights?(
+    account: AdapterAccount,
+    externalId: string,
+    fetcher?: Fetcher,
+  ): Promise<Record<string, number>>;
   /** A cheap read that proves the token and the id belong together; returns the name the network shows. */
   check?(account: AdapterAccount, fetcher?: Fetcher): Promise<{ name: string }>;
 }

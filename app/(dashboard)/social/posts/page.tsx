@@ -1,5 +1,6 @@
 // path: app/(dashboard)/social/posts/page.tsx
 import type { Metadata } from 'next';
+import { ShareBar } from '@/components/social/share-bar';
 import { ComposeForm, PostActionButton } from '@/components/social/social-forms';
 import { PageHeader } from '@/components/shared/page-header';
 import { ErrorState } from '@/components/shared/state-views';
@@ -102,6 +103,16 @@ export default async function SocialPostsPage(): Promise<JSX.Element> {
                       <Badge variant="outline">
                         {t(`s16Social.posts.states.${p.status}` as StringKey)}
                       </Badge>
+                      {p.approvalStatus !== 'none' ? (
+                        <Badge variant="outline" className="mt-1">
+                          {t(`s16Social.posts.approval.${p.approvalStatus}` as StringKey)}
+                        </Badge>
+                      ) : null}
+                      {p.approvalReason && p.approvalStatus === 'rejected' ? (
+                        <span className="block text-xs text-muted-foreground">
+                          {p.approvalReason}
+                        </span>
+                      ) : null}
                       {p.lastError ? (
                         <span className="block text-xs text-muted-foreground">{p.lastError}</span>
                       ) : null}
@@ -136,6 +147,19 @@ export default async function SocialPostsPage(): Promise<JSX.Element> {
                               variant="destructive"
                               label={t('s16Social.posts.cancel')}
                             />
+                          ) : null}
+                          {(p.status === 'draft' ||
+                            p.status === 'scheduled' ||
+                            p.status === 'failed') &&
+                          (p.approvalStatus === 'none' || p.approvalStatus === 'rejected') ? (
+                            <PostActionButton
+                              id={p.id}
+                              action="submit"
+                              label={t('s16Social.posts.sendForApproval')}
+                            />
+                          ) : null}
+                          {p.externalUrl ? (
+                            <ShareBar url={p.externalUrl} title={p.body.slice(0, 80)} />
                           ) : null}
                           {p.externalUrl ? (
                             <a

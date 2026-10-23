@@ -20,4 +20,11 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'social.approve',
+    description:
+      'Approve or refuse social posts that wait for approval, and set whether approval is required',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

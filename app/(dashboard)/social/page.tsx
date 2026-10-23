@@ -133,6 +133,36 @@ export default async function SocialAccountsPage(): Promise<JSX.Element> {
           </CardContent>
         </Card>
       )}
+      {canManage && data && data.accounts.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('s16Social.posts.maxPerDay')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-sp-12">
+            {data.accounts.map((a) => (
+              <div key={a.id} className="space-y-1">
+                <p className="text-sm font-medium">{a.displayName}</p>
+                <JsonForm
+                  endpoint={`/api/social/accounts/${a.id}`}
+                  method="PATCH"
+                  emptyAsNull
+                  fixed={{ version: a.version }}
+                  submitLabel={t('s16Social.accounts.hashtagAdd')}
+                  doneText={t('s16Social.common.done')}
+                  fields={[
+                    {
+                      name: 'maxPostsPerDay',
+                      label: t('s16Social.posts.maxPerDay'),
+                      whole: true,
+                      initial: a.maxPostsPerDay === null ? '' : String(a.maxPostsPerDay),
+                    },
+                  ]}
+                />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
       <Card>
         <CardHeader>
           <CardTitle>{t('s16Social.accounts.hashtagsTitle')}</CardTitle>

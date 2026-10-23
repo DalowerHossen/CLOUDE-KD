@@ -314,7 +314,7 @@ export function PostActionButton({
   variant = 'outline',
 }: {
   id: string;
-  action: 'publish' | 'cancel';
+  action: 'publish' | 'cancel' | 'submit';
   label: string;
   variant?: 'outline' | 'destructive';
 }): JSX.Element {
@@ -329,7 +329,7 @@ export function PostActionButton({
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          ...(action === 'publish' ? { 'idempotency-key': key() } : {}),
+          ...(action === 'publish' || action === 'submit' ? { 'idempotency-key': key() } : {}),
         },
         body: JSON.stringify({}),
         cache: 'no-store',
