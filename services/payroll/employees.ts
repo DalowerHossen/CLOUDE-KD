@@ -466,6 +466,15 @@ export async function payDetails(
   return { employee: view(row), pay, bank };
 }
 
+/** The decrypted tax details of an employee, for the declaration approval only. Not exposed by any route. */
+export async function getTaxInfo(companyId: string, id: string): Promise<TaxInfo | null> {
+  const row = await rowOf(companyId, id);
+  return open(companyId, row.tax_enc, (v) => {
+    const p = taxInfo.safeParse(v);
+    return p.success ? p.data : null;
+  });
+}
+
 export interface EmployeeDocumentView {
   id: string;
   name: string;

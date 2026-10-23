@@ -12,5 +12,5 @@
 - [x] 15.7.c Tax reporting and audit pack (2026-10-23)
 - [x] 15.8.a Payroll: people and calculation (2026-10-23)
 - [x] 15.8.b Payroll: pay runs and payslips (2026-10-23)
-- [ ] 15.9 Employee self-service portal
+- [x] 15.9 Employee self-service portal (2026-10-23)
 - [ ] 15.10 HR

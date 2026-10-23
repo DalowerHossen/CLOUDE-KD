@@ -4,6 +4,7 @@
 import type { ComponentType } from 'react';
 import type { EmailTemplateDefinition } from '@/types/contracts';
 import { PayNoticeEmail } from './pay-notice';
+import { PortalLinkEmail } from './portal-link';
 
 export interface PayrollEmailTemplate {
   definition: EmailTemplateDefinition;
@@ -18,5 +19,13 @@ export const payrollEmailTemplates: readonly PayrollEmailTemplate[] = [
       variables: ['firstName', 'companyName', 'periodStart', 'periodEnd', 'paidOn'],
     },
     component: PayNoticeEmail as unknown as ComponentType<never>,
+  },
+  {
+    definition: {
+      id: 'payroll.portal-link',
+      subject: 'Your payslips',
+      variables: ['firstName', 'companyName', 'link', 'expiresAt'],
+    },
+    component: PortalLinkEmail as unknown as ComponentType<never>,
   },
 ];

@@ -7,6 +7,7 @@ import { ActionButton } from '@/app/(dashboard)/wallet/_components/action-button
 import { JsonForm } from '@/app/(dashboard)/wallet/_components/json-form';
 import { AttachmentForm } from '@/components/accounting/attachment-form';
 import { PageHeader } from '@/components/shared/page-header';
+import { listLinks, type LinkView } from '@/services/payroll/portal';
 import { ErrorState } from '@/components/shared/state-views';
 import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -40,17 +41,20 @@ export default async function EmployeePage({
   const permissions = getService('permissions');
   const canManage = await permissions.can(actor, 'payroll.employee.manage', { type: 'employee' });
   const canPayManage = await permissions.can(actor, 'payroll.pay.manage', { type: 'employee' });
+  const canPortal = await permissions.can(actor, 'payroll.portal.manage', { type: 'employee' });
   let data: {
     employee: EmployeeView;
     sensitive: SensitiveView | null;
     documents: EmployeeDocumentView[];
+    links: LinkView[];
   } | null;
   try {
     const [{ employee, sensitive }, documents] = await Promise.all([
       getEmployee(actor, id),
       listDocuments(companyId, id),
     ]);
-    data = { employee, sensitive, documents };
+    const links = canPortal ? await listLinks(companyId, id).catch(() => []) : [];
+    data = { employee, sensitive, documents, links };
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
     data = null;
@@ -346,6 +350,65 @@ export default async function EmployeePage({
                 </CardContent>
               </Card>
             </>
+          ) : null}
+          {canPortal ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('s15Payroll.links.title')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-sp-12">
+                <p className="text-sm text-muted-foreground">{t('s15Payroll.links.help')}</p>
+                {data.links.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('s15Payroll.links.none')}</p>
+                ) : (
+                  <ul className="space-y-1 text-sm">
+                    {data.links.map((l) => (
+                      <li key={l.id} className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">
+                          {t(`s15Payroll.links.states.${l.state}` as StringKey)}
+                        </Badge>
+                        {t('s15Payroll.links.expires')} {l.expiresAt.slice(0, 10)}
+                        {l.state === 'active' ? (
+                          <ActionButton
+                            endpoint={`/api/payroll/portal/links/${l.id}`}
+                            method="DELETE"
+                            label={t('s15Payroll.links.revoke')}
+                            doneText={done}
+                          />
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <JsonForm
+                  endpoint="/api/payroll/portal/links"
+                  idempotent
+                  fixed={{ employeeId: id }}
+                  submitLabel={t('s15Payroll.links.issue')}
+                  doneText={t('s15Payroll.links.issued')}
+                  fields={[
+                    {
+                      name: 'ttlDays',
+                      label: t('s15Payroll.links.ttl'),
+                      whole: true,
+                      initial: '3',
+                    },
+                    {
+                      name: 'otpRequired',
+                      label: t('s15Payroll.links.otp'),
+                      kind: 'checkbox',
+                      initial: 'true',
+                    },
+                    {
+                      name: 'sendEmail',
+                      label: t('s15Payroll.links.email'),
+                      kind: 'checkbox',
+                      initial: 'true',
+                    },
+                  ]}
+                />
+              </CardContent>
+            </Card>
           ) : null}
           <Card>
             <CardHeader>

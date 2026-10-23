@@ -165,4 +165,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 85,
   },
+  {
+    id: 'payroll-declarations',
+    labelKey: 's15Payroll.nav.declarations',
+    href: '/payroll/declarations',
+    icon: 'file-text',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 86,
+  },
 ];

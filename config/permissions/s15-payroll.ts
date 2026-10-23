@@ -65,4 +65,10 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'payroll.portal.manage',
+    description: 'Send employees their portal link, revoke links and decide tax declarations',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];
