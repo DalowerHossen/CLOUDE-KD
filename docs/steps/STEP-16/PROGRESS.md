@@ -13,5 +13,5 @@
 - [ ] 16.7 Bank feed
 - [x] 16.8 Receipt OCR (2026-10-23)
 - [x] 16.9 Multi-channel messaging (2026-10-23)
-- [ ] 16.10 Migration wizard
+- [x] 16.10 Migration wizard (2026-10-23)
 - [ ] 16.11 Cron jobs, workers and closure

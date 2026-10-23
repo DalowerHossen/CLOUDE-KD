@@ -56,4 +56,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 89,
   },
+  {
+    id: 'migration',
+    labelKey: 's16Migration.nav.migration',
+    href: '/migration',
+    icon: 'layers',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 91,
+  },
 ];
