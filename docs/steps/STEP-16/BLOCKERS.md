@@ -12,3 +12,11 @@ The `clients` and `invoices` contracts have no create or update operation, and t
 - The payment link endpoint (`POST /invoices/{id}/payment-link`, feature 2119) is not built: it needs `invoices.createPaymentLink`, which is part of R1.
 
 What unblocks it: the contract methods named in R1. Then the live branch of the five write handlers in `app/api/public/v1/**` calls them (the sandbox branch stays), and `requireSandbox` is removed.
+
+## B2 Meta Cloud API documentation cannot be reached (16.3.a, and with it 16.3.b and 16.9)
+
+Status: open. Found in: 16.3.a (2026-10-23).
+
+The rule for every external provider of this STEP (SUBSTEPS.md, "Provider documentation rule") is to read the provider's latest official documentation in the session before any adapter code, and to stop the sub-step when it cannot be reached. `developers.facebook.com` is not reachable from this environment: `WebFetch` fails with `getaddrinfo ENOTFOUND developers.facebook.com` for three pages (send messages, webhook components, get started), and `curl` through the session proxy fails with `CONNECT tunnel failed, response 403`, so the host is blocked by the environment's network policy. A web search returned only third-party summaries (it names a Graph API version of v23.0 in the official get-started page and the template and 24 hour window rules), which are not the official documentation and are not enough to write the client, the webhook payload parsing or the template submission calls.
+
+No WhatsApp code was written. What unblocks it: allow the host `developers.facebook.com` (and `graph.facebook.com` for later live tests) in the environment's network policy (documentation: `read_documentation` topic `environment.network`), then run 16.3.a again; or the owner pastes the needed pages of the official documentation into the session. The same host is needed for the Instagram, Facebook and Threads adapters of 16.4.a.
