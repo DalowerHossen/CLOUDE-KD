@@ -46,3 +46,11 @@ Status: open. Found in: 16.5 (2026-10-23).
 The plan says the order creation stops with this file while request R1 is open. The `invoices` contract has no way to make a draft, and there is no credit note contract. So a store order is taken as far as the contracts allow: it is kept once, checked for conflicts, and its client is found by e-mail or made through the clients service (`services/integration/commerce-ports.ts`, the same direct call as B4). The order then waits as "client ready" and no invoice is made. A refund that Shopify reports is recorded as an open "refund" conflict for a person; no credit note is made.
 
 What unblocks it: `invoices.createDraft` (and a credit note operation) from R1. Then `createInvoiceDraft` and `invoiceDraftsAvailable` in `commerce-ports.ts` are the only code that changes; the order service already moves a "client ready" order to "synced" when the function returns an invoice id, and the cron job `commerce-orders` then handles the orders that waited. The e-mail of the invoice to the client (features 1095 and 1106) follows from the invoice service when the draft is sent.
+
+## B8 Documentation of Plaid and Salt Edge cannot be reached (16.7)
+
+Status: open. Found in: 16.7 (2026-10-23, tested again after the owner allowed more hosts).
+
+The rule of this STEP is to read each provider's latest official documentation in the session before writing its adapter, and to stop when it cannot be reached. `plaid.com`, `api.plaid.com`, `docs.saltedge.com` and `www.saltedge.com` all fail through the session proxy with `CONNECT tunnel failed, response 403` (the hosts of Shopify and WooCommerce, tested in the same session, answered 200). So the bank feed sub-step (Plaid and Salt Edge adapters, account linking, transaction import into the STEP 15 reconciliation, smart matching suggestions) is not started.
+
+What unblocks it: allow `plaid.com`, `api.plaid.com`, `docs.saltedge.com` and `www.saltedge.com` in the environment's network settings and run 16.7 again. The plan for the sub-step stays as in SCOPE.md; the hand-over to STEP 15 goes through `services/bankfeed/ports.ts` (request R2).

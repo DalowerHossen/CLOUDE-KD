@@ -1,20 +1,20 @@
 // path: lib/auth/two-factor.ts
 // TOTP and backup code helpers. Pure functions: no database, no environment.
-import { authenticator } from 'otplib';
+import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import { BACKUP_CODE_COUNT, TOTP_PERIOD_SECONDS, TOTP_WINDOW_STEPS } from '@/config/auth-lock';
 import { randomInt } from 'node:crypto';
 import { hmacSha256Hex } from '@/lib/utils/hash';
 
-authenticator.options = { step: TOTP_PERIOD_SECONDS, window: TOTP_WINDOW_STEPS, digits: 6 };
+const TOTP_OPTIONS = { period: TOTP_PERIOD_SECONDS, digits: 6 } as const;
 
 export const ISSUER = 'KD SOLUTION IT';
 
 export function generateTotpSecret(): string {
-  return authenticator.generateSecret(20);
+  return generateSecret({ length: 20 });
 }
 
 export function buildOtpAuthUri(email: string, secret: string): string {
-  return authenticator.keyuri(email, ISSUER, secret);
+  return generateURI({ issuer: ISSUER, label: email, secret, ...TOTP_OPTIONS });
 }
 
 /** Groups a secret in blocks of four for manual entry. */
@@ -36,15 +36,21 @@ export function verifyTotp(
 ): TotpResult {
   const clean = code.replace(/\s+/g, '');
   if (!/^\d{6}$/.test(clean)) return { ok: false, step: null };
-  const delta = authenticator.checkDelta(clean, secret);
-  if (delta === null) return { ok: false, step: null };
-  const step = Math.floor(nowMs / 1000 / TOTP_PERIOD_SECONDS) + delta;
+  const result = verifySync({
+    secret,
+    token: clean,
+    ...TOTP_OPTIONS,
+    epoch: Math.floor(nowMs / 1000),
+    epochTolerance: TOTP_WINDOW_STEPS * TOTP_PERIOD_SECONDS,
+  });
+  if (!result.valid) return { ok: false, step: null };
+  const step = Math.floor(nowMs / 1000 / TOTP_PERIOD_SECONDS) + result.delta;
   if (step <= lastUsedStep) return { ok: false, step: null };
   return { ok: true, step };
 }
 
 export function currentTotp(secret: string): string {
-  return authenticator.generate(secret);
+  return generateSync({ secret, ...TOTP_OPTIONS });
 }
 
 // Letters and digits without look-alikes (no 0, O, 1, I, L).
