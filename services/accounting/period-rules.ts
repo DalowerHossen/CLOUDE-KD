@@ -168,3 +168,12 @@ export interface CheckItem {
 export function canClose(items: readonly CheckItem[]): boolean {
   return items.every((i) => i.done);
 }
+
+/** The same calendar day one year earlier (29 February becomes 28 February). */
+export function sameDayLastYear(day: string): string {
+  const y = toInt(day.slice(0, 4)) - 1;
+  const m = toInt(day.slice(5, 7));
+  const d = toInt(day.slice(8, 10));
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${String(y).padStart(4, '0')}-${pad(m)}-${pad(Math.min(d, last))}`;
+}

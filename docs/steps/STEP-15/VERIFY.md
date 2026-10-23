@@ -57,3 +57,8 @@
 
 - `npx tsc --noEmit`, `npx eslint` on the new files, `bash scripts/check-all.sh`: clean. The earlier step 15 scripts still pass.
 - Not run here (running app needed): the report API routes against PostgREST (the general ledger join, the receivables and payables aging reads of `invoices` and `supplier_bills`).
+
+## 15.4.b Accounting pages and exports (2026-10-23)
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step15-report-tables.ts` -> 9 checks passed: the trial balance table has a totals row and a balanced note; the profit and loss table lists sections, totals and the result (net income 700 on the sample); the balance sheet table has the assets, liabilities and equity blocks and the check note; the cash flow table ends with the cash at the start and the end; the ledger table gives each account an opening and a closing row and says when it was cut; the aging table lists bucket totals; the expense trend table has one column per month; a name that starts with `=` is neutralised in the CSV; the same day one year earlier (29 February becomes 28 February).
+- `npx tsc --noEmit`, `npx eslint` on the new files, `bash scripts/check-all.sh` (including the dead-link guard for every page and nav link): clean. The earlier step 15 scripts still pass (journals 11, posting 10, periods 6, reports 14).
+- Not run here (running app needed): the pages in a browser (320 px, dark mode, keyboard use), the journal editor against the API, the three export formats (the PDF and Excel builders), the signed link of a file, the step-up prompt on reopen.

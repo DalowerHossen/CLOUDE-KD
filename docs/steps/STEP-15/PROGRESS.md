@@ -4,7 +4,7 @@
 - [x] 15.2 Automated posting (2026-10-23)
 - [x] 15.3 Periods (2026-10-23)
 - [x] 15.4.a Statements and reports (2026-10-23)
-- [ ] 15.4.b Accounting pages and exports
+- [x] 15.4.b Accounting pages and exports (2026-10-23)
 - [ ] 15.5 Expenses
 - [ ] 15.6 Bank reconciliation
 - [ ] 15.7.a Fixed assets and depreciation
