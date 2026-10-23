@@ -52,6 +52,8 @@ export const MAPPING_KEYS = [
   'fx_gain_loss',
   'retained_earnings',
   'suspense',
+  'wallet_balance',
+  'chargeback_expense',
 ] as const;
 export type MappingKey = (typeof MAPPING_KEYS)[number];
 
@@ -87,6 +89,11 @@ export const BASE_CHART: readonly ChartSeed[] = [
   }),
   a('1140', 'Tax receivable', 'asset', 'current_asset', { parent: '1100', key: 'tax_receivable' }),
   a('1150', 'Prepaid expenses', 'asset', 'current_asset', { parent: '1100' }),
+  a('1170', 'Wallet balance held by the platform', 'asset', 'current_asset', {
+    parent: '1100',
+    key: 'wallet_balance',
+    description: 'Online payments settled into the company wallet and not yet paid out.',
+  }),
   a('1190', 'Suspense', 'asset', 'current_asset', {
     parent: '1100',
     key: 'suspense',
@@ -162,6 +169,10 @@ export const BASE_CHART: readonly ChartSeed[] = [
   a('6400', 'Payment processing fees', 'expense', 'operating_expense', {
     parent: '6000',
     key: 'processor_fees',
+  }),
+  a('6410', 'Chargebacks and disputes', 'expense', 'operating_expense', {
+    parent: '6000',
+    key: 'chargeback_expense',
   }),
   a('6500', 'Rent', 'expense', 'operating_expense', { parent: '6000' }),
   a('6510', 'Utilities', 'expense', 'operating_expense', { parent: '6000' }),

@@ -1,7 +1,7 @@
 # STEP 15 - Progress
 
 - [x] 15.1 Chart of accounts and journals (2026-10-23)
-- [ ] 15.2 Automated posting
+- [x] 15.2 Automated posting (2026-10-23)
 - [ ] 15.3 Periods
 - [ ] 15.4.a Statements and reports
 - [ ] 15.4.b Accounting pages and exports

@@ -11,6 +11,7 @@ import { eventHandler as s13DisputeIntakeEvent } from '@/workers/s13/dispute-int
 import { eventHandler as s14BnplRefundEvent } from '@/workers/s14/bnpl-refund.event';
 import { eventHandler as s14PlatformInvoicePaidEvent } from '@/workers/s14/platform-invoice-paid.event';
 import { eventHandler as s14SettlePaymentEvent } from '@/workers/s14/settle-payment.event';
+import { eventHandler as s15AccountingPostingEvent } from '@/workers/s15/accounting-posting.event';
 
 export const jobHandlers: JobHandlerDefinition[] = [transferImportJob];
-export const eventHandlers: EventHandlerDefinition[] = [inventoryInvoiceStockEvent, notificationsDomainEventsEvent, onboardingMilestonesEvent, s13ClientNoticesEvent, s13DisputeIntakeEvent, s14BnplRefundEvent, s14PlatformInvoicePaidEvent, s14SettlePaymentEvent];
+export const eventHandlers: EventHandlerDefinition[] = [inventoryInvoiceStockEvent, notificationsDomainEventsEvent, onboardingMilestonesEvent, s13ClientNoticesEvent, s13DisputeIntakeEvent, s14BnplRefundEvent, s14PlatformInvoicePaidEvent, s14SettlePaymentEvent, s15AccountingPostingEvent];

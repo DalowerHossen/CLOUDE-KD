@@ -3,6 +3,7 @@
 // the keys that transactions post to, and the change history. Every change is written to the history and the audit log.
 import 'server-only';
 import {
+  BASE_CHART,
   MAPPING_KEYS,
   MAX_IMPORT_BYTES,
   type CountryTemplate,
@@ -10,6 +11,7 @@ import {
   type MappingKey,
 } from '@/config/s15-accounting';
 import { getService } from '@/lib/container';
+import { toInt } from '@/lib/reports/numbers';
 import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
@@ -496,4 +498,81 @@ export async function accountHistory(companyId: string, accountId: string): Prom
     actorId: r.actor_id ? String(r.actor_id) : null,
     createdAt: String(r.created_at),
   }));
+}
+
+/** The actor accounting works as when it posts for a company without a person (domain events, jobs). */
+export function accountingActor(companyId: string): Actor {
+  return {
+    userId: '00000000-0000-0000-0000-000000000000',
+    role: 'owner',
+    subRole: null,
+    companyId,
+    email: '',
+    sessionId: 'accounting-system',
+    impersonatedBy: null,
+    authenticatedAt: new Date().toISOString(),
+    lastStepUpAt: null,
+    mfaVerified: true,
+  };
+}
+
+/**
+ * The account a kind of transaction posts to. A company that never opened accounting gets the starting chart; a company
+ * whose chart lacks the account (an older chart, or the owner removed the mapping) gets it from the base chart, with a free
+ * number if the usual number is taken.
+ */
+export async function resolveAccount(companyId: string, key: MappingKey): Promise<string> {
+  const mapped = await accountFor(companyId, key);
+  if (mapped) {
+    const a = await getAccount(companyId, mapped);
+    if (a.status === 'active' && a.allowPosting) return mapped;
+    throw new ValidationError(`The account for ${key} does not accept postings.`);
+  }
+  const admin = getAdminSupabase();
+  const actor = accountingActor(companyId);
+  const existing = await listAccounts(companyId);
+  if (existing.length === 0) {
+    await ensureChart(actor);
+    const seeded = await accountFor(companyId, key);
+    if (seeded) return seeded;
+  }
+  const withKey = (await listAccounts(companyId)).find(
+    (a) => a.systemKey === key && a.status === 'active' && a.allowPosting,
+  );
+  let id = withKey?.id ?? null;
+  if (!id) {
+    const seed = BASE_CHART.find((c) => c.key === key);
+    if (!seed) throw new ValidationError(`There is no account for ${key}.`);
+    const all = await listAccounts(companyId);
+    const taken = new Set(all.map((a) => a.code));
+    let code = seed.code;
+    for (let i = 1; taken.has(code) && i < 90; i += 1) code = String(toInt(seed.code) + i);
+    const parent = seed.parent
+      ? all.find((a) => a.code === seed.parent && a.type === seed.type)
+      : undefined;
+    const { data, error } = await admin
+      .from('accounts')
+      .insert({
+        company_id: companyId,
+        code,
+        name: seed.name,
+        description: seed.description ?? '',
+        type: seed.type,
+        subtype: seed.subtype,
+        is_contra: seed.contra ?? false,
+        parent_id: parent?.id ?? null,
+        is_system: true,
+        system_key: key,
+        created_by: actor.userId,
+      })
+      .select('id')
+      .single();
+    if (error) mapAccountingError(error);
+    id = String((data as { id: string }).id);
+  }
+  const ins = await admin
+    .from('account_mappings')
+    .insert({ company_id: companyId, mapping_key: key, account_id: id });
+  if (ins.error && ins.error.code !== '23505') throw new InternalError(ins.error);
+  return id;
 }
