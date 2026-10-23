@@ -47,4 +47,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 88,
   },
+  {
+    id: 'messaging',
+    labelKey: 's16Messaging.nav.messaging',
+    href: '/integrations/messaging',
+    icon: 'message-circle',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 89,
+  },
 ];
