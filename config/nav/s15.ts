@@ -29,4 +29,13 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 62,
   },
+  {
+    id: 'expenses',
+    labelKey: 's15Expenses.nav.expenses',
+    href: '/expenses',
+    icon: 'receipt',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 63,
+  },
 ];

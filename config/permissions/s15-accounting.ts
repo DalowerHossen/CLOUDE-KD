@@ -41,4 +41,31 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'expense.read',
+    description:
+      'See expenses (a staff member sees their own), categories, policies and expense reports',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'expense.create',
+    description:
+      'Add, change and delete own expenses and upload receipts (a staff expense waits for the owner)',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'expense.approve',
+    description: 'Approve or reject expenses, including ones that breach a policy',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'expense.manage',
+    description:
+      'Manage expense categories, policies and recurring expenses and book payments of expenses',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];
