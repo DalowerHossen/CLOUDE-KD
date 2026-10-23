@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import type { SocialProvider } from '@/config/s16-social';
 import { getService } from '@/lib/container';
 import { t, type StringKey } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
@@ -36,7 +37,7 @@ export default async function SocialPostsPage(): Promise<JSX.Element> {
     accounts: {
       id: string;
       label: string;
-      provider: 'facebook' | 'instagram' | 'threads' | 'sandbox';
+      provider: SocialProvider;
     }[];
     groups: { id: string; name: string }[];
   } | null;

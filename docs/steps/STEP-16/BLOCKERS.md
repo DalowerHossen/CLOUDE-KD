@@ -25,9 +25,9 @@ Resolution (2026-10-23): after the owner changed the network access, `curl` reac
 
 ## B3 Documentation of LinkedIn, X, Telegram and Pinterest cannot be reached (16.4.a)
 
-Status: open. Found in: 16.4.a (2026-10-23).
+Status: resolved in 16.4.a2 (2026-10-23): the owner allowed the hosts, the pages were read with `curl` and the four adapters were written (`docs/integrations/social-more.md`).
 
-The rule of this STEP is to read each provider's latest official documentation in the session before writing its adapter, and to stop when it cannot be reached. When tested with `curl` through the session proxy, `www.linkedin.com`, `developer.x.com`, `docs.x.com`, `core.telegram.org` and `developers.pinterest.com` all failed (`CONNECT tunnel failed, 403`; `learn.microsoft.com` too). Only `developers.facebook.com` (Facebook, Instagram, Threads) and `cloud.google.com` answered. So 16.4.a delivers the framework, the sandbox adapter and the Facebook, Instagram and Threads adapters; the LinkedIn, X, Telegram and Pinterest adapters are not written.
+Found in: 16.4.a (2026-10-23). The rule of this STEP is to read each provider's latest official documentation in the session before writing its adapter, and to stop when it cannot be reached. When tested with `curl` through the session proxy, `www.linkedin.com`, `developer.x.com`, `docs.x.com`, `core.telegram.org` and `developers.pinterest.com` all failed (`CONNECT tunnel failed, 403`; `learn.microsoft.com` too). Only `developers.facebook.com` (Facebook, Instagram, Threads) and `cloud.google.com` answered. So 16.4.a delivers the framework, the sandbox adapter and the Facebook, Instagram and Threads adapters; the LinkedIn, X, Telegram and Pinterest adapters are not written.
 
 What unblocks it: allow those hosts in the environment's network settings (at least `www.linkedin.com`, `learn.microsoft.com`, `developer.x.com`, `docs.x.com`, `core.telegram.org`, `developers.pinterest.com`) and run a follow-up sub-step 16.4.a2 that reads each page and adds one adapter file per network to `lib/social/adapters/` and one line to `lib/social/registry.ts`; nothing else changes.
 

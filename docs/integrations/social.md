@@ -1,6 +1,6 @@
 # Social networks - facts read for STEP 16.4.a
 
-Read on 2026-10-23 from the official Meta documentation (`https://developers.facebook.com/documentation/...<page>.md`, fetched with `curl`; the `WebFetch` tool cannot resolve the host). Only Facebook, Instagram and Threads could be read. The hosts of LinkedIn, X, Telegram and Pinterest are blocked in this environment, so no adapter exists for them (see BLOCKERS B3). Nothing here is from memory; what was not read is listed at the end.
+Read on 2026-10-23 from the official Meta documentation (`https://developers.facebook.com/documentation/...<page>.md`, fetched with `curl`; the `WebFetch` tool cannot resolve the host). Only Facebook, Instagram and Threads could be read. LinkedIn, X, Telegram and Pinterest are in `docs/integrations/social-more.md` (sub-step 16.4.a2). Nothing here is from memory; what was not read is listed at the end.
 
 ## Sources
 
@@ -38,4 +38,3 @@ Read on 2026-10-23 from the official Meta documentation (`https://developers.fac
 ## Not read (not built)
 
 - The authorization windows and code exchange of the three networks (a connection is made by pasting an access token), the token refresh call of Threads, long-lived Page token exchange, video, reels, stories, carousels, insights of Facebook Pages and Instagram posts (so their numbers are not shown), follower counts, and webhooks, comment APIs, and the maximum length of a Facebook post.
-- LinkedIn, X, Telegram and Pinterest (hosts unreachable).

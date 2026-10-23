@@ -4,7 +4,11 @@
 // picks the item with the highest priority that was posted longest ago, makes a post and counts it. A short queue is noticed
 // (once a week) so the owner can add more.
 import 'server-only';
-import { LOW_QUEUE_NOTICE_DAYS, MAX_EVERGREEN_ITEMS } from '@/config/s16-social';
+import {
+  LOW_QUEUE_NOTICE_DAYS,
+  MAX_EVERGREEN_ITEMS,
+  type SocialProvider,
+} from '@/config/s16-social';
 import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { problemsFor } from '@/lib/social/rules';
@@ -407,14 +411,11 @@ export async function runEvergreen(): Promise<{ posted: number }> {
       let usedId: string | null = null;
       for (const item of rankEvergreen(list).slice(0, 5)) {
         const pick = variantFor(item);
-        const problems = problemsFor(
-          account.provider as 'facebook' | 'instagram' | 'threads' | 'sandbox',
-          {
-            body: pick.text,
-            linkUrl: item.linkUrl,
-            imageUrl: item.imageUrl,
-          },
-        );
+        const problems = problemsFor(account.provider as SocialProvider, {
+          body: pick.text,
+          linkUrl: item.linkUrl,
+          imageUrl: item.imageUrl,
+        });
         if (problems.length > 0) continue;
         const postId = await makePost({
           companyId: plan.company_id,

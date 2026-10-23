@@ -7,6 +7,7 @@ import 'server-only';
 import {
   MAX_PUBLISH_ATTEMPTS,
   PUBLISHING_STALE_MINUTES,
+  SOCIAL_PROVIDERS,
   type SocialProvider,
 } from '@/config/s16-social';
 import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
@@ -102,7 +103,7 @@ export type ApprovalStatus = 'none' | 'pending' | 'approved' | 'rejected';
 const APPROVALS: readonly ApprovalStatus[] = ['none', 'pending', 'approved', 'rejected'];
 
 const STATES = ['draft', 'scheduled', 'publishing', 'published', 'failed', 'cancelled'] as const;
-const PROVIDERS: readonly SocialProvider[] = ['facebook', 'instagram', 'threads', 'sandbox'];
+const PROVIDERS: readonly SocialProvider[] = SOCIAL_PROVIDERS;
 
 export const toPostView = (r: Row): PostView => {
   const a = Array.isArray(r.social_accounts) ? r.social_accounts[0] : r.social_accounts;

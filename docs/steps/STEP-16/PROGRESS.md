@@ -6,7 +6,7 @@
 - [x] 16.3.a WhatsApp: configuration, templates, sending, inbound, consent (2026-10-23)
 - [x] 16.3.b WhatsApp: automation rules, campaigns, delivery reports (2026-10-23)
 - [x] 16.4.a Social: connections, adapters, composer, publishing (Facebook, Instagram, Threads, sandbox) (2026-10-23)
-- [ ] 16.4.a2 Social: LinkedIn, X, Telegram and Pinterest adapters (blocked, BLOCKERS B3)
+- [x] 16.4.a2 Social: LinkedIn, X, Telegram and Pinterest adapters (2026-10-23)
 - [x] 16.4.b Social: scheduling, rules, approval, analytics, share widgets (2026-10-23)
 - [ ] 16.5 Commerce: Shopify and WooCommerce
 - [x] 16.6 Automation tools (2026-10-23)

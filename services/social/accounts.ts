@@ -3,7 +3,11 @@
 // the Instagram account id or the Threads user id); the token is kept encrypted and never returned. The sandbox account needs
 // no token. The connection can be checked with a cheap read of the network, which also notes the name it shows.
 import 'server-only';
-import { MAX_ACCOUNTS_PER_COMPANY, type SocialProvider } from '@/config/s16-social';
+import {
+  MAX_ACCOUNTS_PER_COMPANY,
+  SOCIAL_PROVIDERS,
+  type SocialProvider,
+} from '@/config/s16-social';
 import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import { adapterFor } from '@/lib/social/registry';
 import { SocialApiError } from '@/lib/social/graph';
@@ -45,7 +49,7 @@ export interface SocialAccountView {
   version: number;
 }
 
-const PROVIDERS: readonly SocialProvider[] = ['facebook', 'instagram', 'threads', 'sandbox'];
+const PROVIDERS: readonly SocialProvider[] = SOCIAL_PROVIDERS;
 const toView = (r: Row): SocialAccountView => ({
   id: r.id,
   provider: PROVIDERS.find((p) => p === r.provider) ?? 'sandbox',

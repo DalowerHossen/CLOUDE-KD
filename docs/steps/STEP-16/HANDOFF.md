@@ -1,6 +1,6 @@
 # STEP 16 - Handoff
 
-Integrations and automation. Branch `claude/clever-goldberg-8ncdae`. Sub-steps 16.1.a, 16.1.b, 16.2, 16.3.a, 16.3.b, 16.4.a, 16.4.b, 16.6, 16.8, 16.9, 16.10 and 16.11 are done. **Not done:** 16.4.a2 (LinkedIn, X, Telegram, Pinterest), 16.5 (Shopify and WooCommerce) and 16.7 (bank feed), all waiting on documentation hosts that this environment cannot reach (BLOCKERS B3 and the notes below). Their rows in the FEATURE_LIST are therefore not implemented.
+Integrations and automation. Branch `claude/clever-goldberg-8ncdae`. Sub-steps 16.1.a, 16.1.b, 16.2, 16.3.a, 16.3.b, 16.4.a, 16.4.a2, 16.4.b, 16.6, 16.8, 16.9, 16.10 and 16.11 are done. **Not done:** 16.5 (Shopify and WooCommerce) and 16.7 (bank feed), all waiting on documentation hosts that this environment cannot reach (BLOCKERS B3 and the notes below). Their rows in the FEATURE_LIST are therefore not implemented.
 
 ## What the Integrator must do
 
@@ -15,7 +15,7 @@ Integrations and automation. Branch `claude/clever-goldberg-8ncdae`. Sub-steps 1
 | 16.1.a, 16.1.b Public API v1, keys, sandbox, OpenAPI, developer portal | D (2100-2150 range of the plan) | built; live writes blocked by R1 (sandbox keys write) |
 | 16.2 Outgoing webhooks | D (webhook part), Part 9 I | built |
 | 16.3.a, 16.3.b WhatsApp | A | built (sandbox mode until the owner goes live; Meta hosts unreachable here) |
-| 16.4.a, 16.4.b Social media (Facebook, Instagram, Threads, sandbox) | B, C | built; LinkedIn, X, Telegram, Pinterest not built (16.4.a2) |
+| 16.4.a, 16.4.a2, 16.4.b Social media (Facebook, Instagram, Threads, LinkedIn, X, Telegram, Pinterest, sandbox) | B, C | built (LinkedIn, X, Telegram, Pinterest send text and a link; Telegram and Pinterest also images; no insights for these four) |
 | 16.5 Shopify and WooCommerce | Part 3 J | **not built** |
 | 16.6 Zapier, Make, browser extension | E (2181-2202) | endpoints and extension source built; app packages, OAuth sign-in, store publishing not built |
 | 16.7 Bank feed | F | **not built** |
@@ -174,7 +174,7 @@ Outgoing webhooks (`WEBHOOK_EVENTS` in `config/s16-api.ts`, signed `X-KD-Signatu
 
 - WhatsApp Cloud API v26.0, Facebook Pages, Instagram and Threads publishing and Threads insights: read 2026-10-23 with `curl` from developers.facebook.com (`docs/integrations/whatsapp.md`, `docs/integrations/social.md`).
 - Google Cloud Vision: the official API description (discovery document revision 20260918), read 2026-10-23; the guides could not be reached (`docs/integrations/google-vision.md`).
-- Not read, because the hosts are blocked: Facebook and Instagram insights (not requested), LinkedIn, X, Telegram, Pinterest, Shopify, WooCommerce, Plaid, Salt Edge, Zapier, Make, Twilio and the export formats of the invoicing tools (presets are marked as a first guess).
+- Not read, because the hosts are blocked: Facebook and Instagram insights (not requested), Shopify, WooCommerce, Plaid, Salt Edge, Zapier, Make, Twilio and the export formats of the invoicing tools (presets are marked as a first guess).
 
 ## Environment keys
 

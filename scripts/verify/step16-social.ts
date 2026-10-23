@@ -242,11 +242,14 @@ async function main(): Promise<void> {
       assert.ok(hashtagGroupInput.safeParse({ name: 'Launch', tags: ['launch', '#new'] }).success);
       assert.ok(!hashtagGroupInput.safeParse({ name: 'Launch', tags: [] }).success);
       assert.ok(!hashtagGroupInput.safeParse({ name: 'Launch', tags: ['a b'] }).success);
-      assert.deepEqual([...SOCIAL_PROVIDERS], ['facebook', 'instagram', 'threads', 'sandbox']);
+      assert.deepEqual(
+        [...SOCIAL_PROVIDERS],
+        ['facebook', 'instagram', 'threads', 'linkedin', 'x', 'telegram', 'pinterest', 'sandbox'],
+      );
     },
   );
 
-  await check('registry: only the networks with a documented adapter exist', () => {
+  await check('registry: every network has an adapter', () => {
     for (const p of SOCIAL_PROVIDERS) assert.equal(adapterFor(p).id, p);
     assert.equal(adapterFor('facebook'), facebookAdapter);
   });

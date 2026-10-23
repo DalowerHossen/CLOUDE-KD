@@ -9,10 +9,15 @@ import {
   INSTAGRAM_HASHTAGS_MAX,
   INSTAGRAM_MENTIONS_MAX,
   MAX_TAGS_PER_GROUP,
+  PINTEREST_DESCRIPTION_MAX,
+  PINTEREST_TITLE_MAX,
   POST_BODY_MAX,
   SOCIAL_PROVIDERS,
+  TELEGRAM_CAPTION_MAX,
+  TELEGRAM_TEXT_MAX,
   THREADS_TEXT_MAX,
   THREADS_TOPIC_TAG_MAX,
+  X_TEXT_MAX,
   type SocialProvider,
 } from '@/config/s16-social';
 
@@ -36,6 +41,28 @@ const httpsUrl = z
 
 /* ---------- inputs ---------- */
 
+/** The shape of the id each network shows. The database holds the same patterns (migration S16_013). */
+export const EXTERNAL_ID: Readonly<Record<SocialProvider, RegExp>> = {
+  facebook: /^[0-9A-Za-z_.-]{1,60}$/,
+  instagram: /^[0-9A-Za-z_.-]{1,60}$/,
+  threads: /^[0-9A-Za-z_.-]{1,60}$/,
+  sandbox: /^[0-9A-Za-z_.-]{1,60}$/,
+  linkedin: /^urn:li:(organization|person):[0-9A-Za-z_-]{1,40}$/,
+  x: /^[0-9]{1,19}$/,
+  telegram: /^(-?[0-9]{1,20}|@[A-Za-z][0-9A-Za-z_]{4,31})$/,
+  pinterest: /^[0-9]{1,30}$/,
+};
+const EXTERNAL_ID_HELP: Readonly<Record<SocialProvider, string>> = {
+  facebook: 'Use the id the network shows.',
+  instagram: 'Use the id the network shows.',
+  threads: 'Use the id the network shows.',
+  sandbox: 'Use the id the network shows.',
+  linkedin: 'Use the author URN, for example urn:li:organization:5515715.',
+  x: 'Use the numeric user id of the X account.',
+  telegram: 'Use the chat id (for example -1001234567890) or @channelname.',
+  pinterest: 'Use the numeric id of the board.',
+};
+
 export const accountInput = z
   .object({
     provider: z.enum(SOCIAL_PROVIDERS),
@@ -45,10 +72,7 @@ export const accountInput = z
       .min(1)
       .max(120)
       .refine(noAngle, { message: 'Angle brackets are not allowed.' }),
-    externalId: z
-      .string()
-      .trim()
-      .regex(/^[0-9A-Za-z_.-]{1,60}$/, 'Use the id the network shows.'),
+    externalId: z.string().trim().min(1).max(60),
     accessToken: z
       .string()
       .trim()
@@ -60,6 +84,12 @@ export const accountInput = z
   })
   .strict()
   .superRefine((v, ctx) => {
+    if (!EXTERNAL_ID[v.provider].test(v.externalId))
+      ctx.addIssue({
+        code: 'custom',
+        path: ['externalId'],
+        message: EXTERNAL_ID_HELP[v.provider],
+      });
     if (v.provider !== 'sandbox' && v.accessToken === undefined)
       ctx.addIssue({ code: 'custom', path: ['accessToken'], message: 'Paste the access token.' });
     if (v.provider === 'sandbox' && v.accessToken !== undefined)
@@ -174,6 +204,36 @@ export interface PostContent {
   imageUrl: string | null;
 }
 
+/** The text with the link on a new line (X, LinkedIn and Telegram show a link as part of the text). */
+export const textWithLink = (post: PostContent): string =>
+  post.linkUrl === null
+    ? post.body
+    : post.body.trim() === ''
+      ? post.linkUrl
+      : `${post.body.trimEnd()}\n${post.linkUrl}`;
+
+/** The first line of the text, cut to the length of a Pin title. */
+export const pinTitle = (body: string): string =>
+  [...(body.trim().split('\n')[0] ?? '').trim()].slice(0, PINTEREST_TITLE_MAX).join('');
+
+/**
+ * The text of a LinkedIn post in LinkedIn's "little text" format: each reserved character is escaped with a backslash, and a
+ * hashtag is written as {hashtag|\#|tag} so that it stays a hashtag.
+ */
+export function linkedinCommentary(text: string): string {
+  const escape = (part: string): string => part.replace(/[|{}@[\]()<>#\\*_~]/g, '\\$&');
+  let out = '';
+  let last = 0;
+  for (const m of text.matchAll(HASHTAG)) {
+    const full = m[0];
+    const tag = m[1] ?? '';
+    const start = (m.index ?? 0) + full.length - tag.length - 1;
+    out += escape(text.slice(last, start)) + `{hashtag|\\#|${tag}}`;
+    last = start + tag.length + 1;
+  }
+  return out + escape(text.slice(last));
+}
+
 /** What is wrong with a post for a network (empty when it can be sent). */
 export function problemsFor(provider: SocialProvider, post: PostContent): string[] {
   const out: string[] = [];
@@ -197,6 +257,29 @@ export function problemsFor(provider: SocialProvider, post: PostContent): string
     if (post.body.trim() === '' && post.imageUrl === null)
       out.push('A Threads post needs text or an image.');
     if (post.linkUrl !== null) out.push('Put the link in the text of a Threads post.');
+  } else if (provider === 'x') {
+    const text = textWithLink(post);
+    if (text.trim() === '') out.push('Write some text or add a link.');
+    if (charCount(text) > X_TEXT_MAX)
+      out.push(
+        `An X post can have ${X_TEXT_MAX} characters at most. The link counts in full here.`,
+      );
+    if (post.imageUrl !== null) out.push('Images are not sent to X yet. Remove the image.');
+  } else if (provider === 'linkedin') {
+    if (textWithLink(post).trim() === '') out.push('Write some text or add a link.');
+    if (post.imageUrl !== null) out.push('Images are not sent to LinkedIn yet. Remove the image.');
+  } else if (provider === 'telegram') {
+    const text = textWithLink(post);
+    if (post.imageUrl === null) {
+      if (text.trim() === '') out.push('Write some text or add an image.');
+      if (charCount(text) > TELEGRAM_TEXT_MAX)
+        out.push(`A Telegram message can have ${TELEGRAM_TEXT_MAX} characters at most.`);
+    } else if (charCount(text) > TELEGRAM_CAPTION_MAX)
+      out.push(`A Telegram photo caption can have ${TELEGRAM_CAPTION_MAX} characters at most.`);
+  } else if (provider === 'pinterest') {
+    if (post.imageUrl === null) out.push('A Pin needs an image.');
+    if (charCount(post.body.trim()) > PINTEREST_DESCRIPTION_MAX)
+      out.push(`A Pin description can have ${PINTEREST_DESCRIPTION_MAX} characters at most.`);
   } else if (provider === 'facebook') {
     if (post.body.trim() === '' && post.imageUrl === null && post.linkUrl === null)
       out.push('Write some text, add an image or a link.');
