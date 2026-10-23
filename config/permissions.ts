@@ -35,6 +35,7 @@ import { permissions as s15Accounting } from './permissions/s15-accounting';
 import { permissions as s15Hr } from './permissions/s15-hr';
 import { permissions as s15Payroll } from './permissions/s15-payroll';
 import { permissions as s16Api } from './permissions/s16-api';
+import { permissions as s16Social } from './permissions/s16-social';
 import { permissions as s16Whatsapp } from './permissions/s16-whatsapp';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Credits, ...s09Dunning, ...s09Estimates, ...s09Invoices, ...s09Projects, ...s09Recurring, ...s09Reports, ...s09Tax, ...s10Payments, ...s10Processors, ...s13Portal, ...s14Payouts, ...s15Accounting, ...s15Hr, ...s15Payroll, ...s16Api, ...s16Whatsapp];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Credits, ...s09Dunning, ...s09Estimates, ...s09Invoices, ...s09Projects, ...s09Recurring, ...s09Reports, ...s09Tax, ...s10Payments, ...s10Processors, ...s13Portal, ...s14Payouts, ...s15Accounting, ...s15Hr, ...s15Payroll, ...s16Api, ...s16Social, ...s16Whatsapp];

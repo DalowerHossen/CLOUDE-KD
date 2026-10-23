@@ -1,0 +1,33 @@
+// path: config/s16-social.ts
+// Social media constants (STEP 16.4). Facts are from docs/integrations/social.md (read 2026-10-23).
+export const FACEBOOK_GRAPH_URL = 'https://graph.facebook.com';
+export const FACEBOOK_API_VERSION = 'v26.0';
+export const THREADS_GRAPH_URL = 'https://graph.threads.com/v1.0';
+export const SOCIAL_TIMEOUT_MS = 20_000;
+
+export const SOCIAL_PROVIDERS = ['facebook', 'instagram', 'threads', 'sandbox'] as const;
+export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number];
+
+export const POST_BODY_MAX = 5000;
+export const INSTAGRAM_CAPTION_MAX = 2200;
+export const INSTAGRAM_HASHTAGS_MAX = 30;
+export const INSTAGRAM_MENTIONS_MAX = 20;
+export const THREADS_TEXT_MAX = 500;
+export const THREADS_TOPIC_TAG_MAX = 50;
+/** Meta recommends waiting about 30 seconds between creating a Threads container and publishing it. */
+export const THREADS_PUBLISH_DELAY_SECONDS = 30;
+/** Posts an account may publish in a moving 24 hours. Instagram: the pages read say 100 and 50; the lower figure is used. */
+export const DAILY_POST_LIMITS: Readonly<Record<SocialProvider, number | null>> = {
+  facebook: null,
+  instagram: 50,
+  threads: 250,
+  sandbox: null,
+};
+export const IG_STATUS_POLLS = 5;
+export const IG_STATUS_POLL_MS = 2000;
+export const MAX_ACCOUNTS_PER_COMPANY = 20;
+export const MAX_HASHTAG_GROUPS = 50;
+export const MAX_TAGS_PER_GROUP = 30;
+export const PUBLISHING_STALE_MINUTES = 30;
+export const MAX_PUBLISH_ATTEMPTS = 3;
+export const SOCIAL_STEP_UP_SECONDS = 300;

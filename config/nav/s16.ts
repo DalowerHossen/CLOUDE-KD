@@ -20,4 +20,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 85,
   },
+  {
+    id: 'social',
+    labelKey: 's16Social.nav.social',
+    href: '/social',
+    icon: 'share',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 86,
+  },
 ];
