@@ -27,7 +27,8 @@ import { strings as s15Expenses } from './en/s15-expenses';
 import { strings as s15Hr } from './en/s15-hr';
 import { strings as s15Payroll } from './en/s15-payroll';
 import { strings as s16Developers } from './en/s16-developers';
+import { strings as s16Whatsapp } from './en/s16-whatsapp';
 
-export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Batches, s09Credits, s09Dashboard, s09Dunning, s09Estimates, s09Invoicing, s09Projects, s09Recurring, s09Reports, s10Payments, s10Processors, s13Portal, s14Wallet, s15Accounting, s15Expenses, s15Hr, s15Payroll, s16Developers } as const;
+export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Batches, s09Credits, s09Dashboard, s09Dunning, s09Estimates, s09Invoicing, s09Projects, s09Recurring, s09Reports, s10Payments, s10Processors, s13Portal, s14Wallet, s15Accounting, s15Expenses, s15Hr, s15Payroll, s16Developers, s16Whatsapp } as const;
 
 export type Strings = typeof en;

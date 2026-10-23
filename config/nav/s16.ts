@@ -11,4 +11,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 90,
   },
+  {
+    id: 'whatsapp',
+    labelKey: 's16Whatsapp.nav.whatsapp',
+    href: '/whatsapp',
+    icon: 'message-circle',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 85,
+  },
 ];
