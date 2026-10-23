@@ -20,6 +20,8 @@ export interface FormFieldSpec {
   required?: boolean;
   /** Sent as a number (whole) instead of text. Empty is left out (or sent as null with `emptyAsNull`). */
   whole?: boolean;
+  /** Text separated by semicolons is sent as a list. */
+  list?: boolean;
 }
 
 interface JsonFormProps {
@@ -65,7 +67,15 @@ export function JsonForm(props: JsonFormProps): JSX.Element {
       if (f.kind === 'checkbox') body[f.name] = raw === 'true';
       else if (raw === '') {
         if (props.emptyAsNull) body[f.name] = null;
-      } else body[f.name] = f.whole ? toInt(raw, 0) : raw;
+      } else
+        body[f.name] = f.whole
+          ? toInt(raw, 0)
+          : f.list
+            ? raw
+                .split(';')
+                .map((x) => x.trim())
+                .filter(Boolean)
+            : raw;
     }
     let endpoint = props.endpoint;
     if (props.pathField) {

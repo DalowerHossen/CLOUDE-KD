@@ -90,4 +90,16 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'client_subscription.read',
+    description: 'See the recurring plans and the subscriptions of the clients of the company',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'client_subscription.manage',
+    description: 'Make recurring plans and start, pause, change and cancel client subscriptions',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];
