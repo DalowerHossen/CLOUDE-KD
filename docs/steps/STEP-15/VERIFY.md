@@ -34,3 +34,26 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step15-periods.ts` -> 6 checks passed: the fiscal year of a date for January, April, July and December years and its label; the closing entry (profit, loss, break even, contra revenue closed by a credit, balance sheet and zero accounts left alone, balanced); recurring dates, catch-up and end date; strict inputs; the checklist rule.
 - `npx tsc --noEmit`, `npx eslint` on the new files, `bash scripts/check-all.sh`: clean. The earlier `step15-journals` and `step15-posting` scripts still pass.
 - Not run here (running app needed): the period and year API routes, the step-up on reopen, the year-end close against a seeded ledger, the daily recurring job, the next-open-period policy on a real event.
+
+## 15.4.a Statements and reports (2026-10-23)
+- `scripts/db-apply.sh --clean`: `S15_004_report_views` applies and re-applies cleanly; `sql/assertions/s15_004_report_views.sql` passes (`is_cash` defaults to false; drafts and closing entries are left out of the balances; closing entries can be included; a date range limits the sums; another company is not mixed in; the monthly function groups by month and leaves closing entries out).
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step15-reports.ts` -> 14 checks passed on one seeded ledger (opening capital 10,000; an invoice of 1,000 plus 100 tax; a payment of 600; rent 300 paid and 200 owed; equipment 2,000; depreciation 100; a loan 500), each both before and after the year-end closing entry:
+
+| Report | Expected |
+|---|---|
+| Trial balance | debit 11,900 = credit 11,900; the accumulated depreciation shows in the credit column |
+| Profit and loss (Q4) | revenue 1,000; operating expenses 600; net income 400; net margin 40.00 percent |
+| Balance sheet | assets 11,200; liabilities 800; equity 10,400; balanced; current earnings 400 (0 after closing); fixed assets net of depreciation 1,900 |
+| Cash flow | opening cash 10,000; operating 300; investing -2,000; financing 500; net change -1,200; closing 8,800; ties out |
+| Cash flow with a dividend booked to retained earnings | financing shows "Other equity movements" -300; still ties out |
+| Comparison | revenue 1,000 against 800: change 200, 25.00 percent; a line in one period only is shown |
+| Monthly trend | Oct revenue 1,000; Nov expenses 300; Dec 0 |
+| Register | running balances 10,100 / 10,700 / 10,400; a contra asset grows with credits |
+| Aging at 31 Dec | current 50; 1-30 days 100; 91-120 days 200; over 120 days 400; total 750; a zero amount is left out |
+| Cash balances | 8,800 |
+| Tax summary | collected 100; paid 0; net payable 100 |
+| Ratios | current 31.00; quick 31.00; debt to equity 0.08; working capital 9,000; gross margin 100.00; net margin 40.00; return on equity 3.85; no division by zero |
+| Expenses | total 600; rent 83.33 percent, depreciation 16.67 percent; trend by month |
+
+- `npx tsc --noEmit`, `npx eslint` on the new files, `bash scripts/check-all.sh`: clean. The earlier step 15 scripts still pass.
+- Not run here (running app needed): the report API routes against PostgREST (the general ledger join, the receivables and payables aging reads of `invoices` and `supplier_bills`).

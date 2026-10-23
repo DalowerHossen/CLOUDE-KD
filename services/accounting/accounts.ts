@@ -33,6 +33,7 @@ export interface AccountView {
   type: string;
   subtype: string;
   isContra: boolean;
+  isCash: boolean;
   normalSide: 'debit' | 'credit';
   parentId: string | null;
   status: 'active' | 'inactive';
@@ -43,7 +44,7 @@ export interface AccountView {
 }
 
 const COLUMNS =
-  'id, code, name, description, type, subtype, is_contra, normal_side, parent_id, status, allow_posting, is_system, system_key, version';
+  'id, code, name, description, type, subtype, is_contra, is_cash, normal_side, parent_id, status, allow_posting, is_system, system_key, version';
 
 interface Row {
   id: string;
@@ -53,6 +54,7 @@ interface Row {
   type: string;
   subtype: string;
   is_contra: boolean;
+  is_cash: boolean;
   normal_side: string;
   parent_id: string | null;
   status: string;
@@ -70,6 +72,7 @@ const view = (r: Row): AccountView => ({
   type: r.type,
   subtype: r.subtype,
   isContra: r.is_contra,
+  isCash: r.is_cash,
   normalSide: r.normal_side === 'credit' ? 'credit' : 'debit',
   parentId: r.parent_id,
   status: r.status === 'inactive' ? 'inactive' : 'active',
@@ -196,6 +199,7 @@ export async function ensureChart(
         type: s.type,
         subtype: s.subtype,
         is_contra: s.contra ?? false,
+        is_cash: s.cash ?? false,
         parent_id: s.parent ? (ids.get(s.parent) ?? null) : null,
         allow_posting: !s.group,
         is_system: s.key !== undefined,
@@ -244,6 +248,7 @@ export async function createAccount(actor: Actor, input: unknown): Promise<Accou
       type: d.type,
       subtype: d.subtype,
       is_contra: d.isContra,
+      is_cash: d.isCash,
       parent_id: d.parentId,
       allow_posting: d.allowPosting,
       created_by: actor.userId,
@@ -275,6 +280,7 @@ export async function updateAccount(
   if (d.subtype !== undefined) patch.subtype = d.subtype;
   if (d.parentId !== undefined) patch.parent_id = d.parentId;
   if (d.allowPosting !== undefined) patch.allow_posting = d.allowPosting;
+  if (d.isCash !== undefined) patch.is_cash = d.isCash;
   if (d.status !== undefined) patch.status = d.status;
   if (Object.keys(patch).length === 0) return before;
   const { data, error } = await getAdminSupabase()
@@ -560,6 +566,7 @@ export async function resolveAccount(companyId: string, key: MappingKey): Promis
         type: seed.type,
         subtype: seed.subtype,
         is_contra: seed.contra ?? false,
+        is_cash: seed.cash ?? false,
         parent_id: parent?.id ?? null,
         is_system: true,
         system_key: key,

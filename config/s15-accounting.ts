@@ -65,6 +65,8 @@ export interface ChartSeed {
   parent?: string;
   group?: boolean;
   contra?: boolean;
+  /** A cash or bank account (the cash flow statement and the cash report use these). */
+  cash?: boolean;
   key?: MappingKey;
   description?: string;
 }
@@ -81,8 +83,8 @@ const a = (
 export const BASE_CHART: readonly ChartSeed[] = [
   a('1000', 'Assets', 'asset', 'current_asset', { group: true }),
   a('1100', 'Current assets', 'asset', 'current_asset', { group: true, parent: '1000' }),
-  a('1110', 'Bank', 'asset', 'current_asset', { parent: '1100', key: 'bank' }),
-  a('1120', 'Cash on hand', 'asset', 'current_asset', { parent: '1100' }),
+  a('1110', 'Bank', 'asset', 'current_asset', { parent: '1100', key: 'bank', cash: true }),
+  a('1120', 'Cash on hand', 'asset', 'current_asset', { parent: '1100', cash: true }),
   a('1130', 'Accounts receivable', 'asset', 'current_asset', {
     parent: '1100',
     key: 'accounts_receivable',
@@ -92,6 +94,7 @@ export const BASE_CHART: readonly ChartSeed[] = [
   a('1170', 'Wallet balance held by the platform', 'asset', 'current_asset', {
     parent: '1100',
     key: 'wallet_balance',
+    cash: true,
     description: 'Online payments settled into the company wallet and not yet paid out.',
   }),
   a('1190', 'Suspense', 'asset', 'current_asset', {
@@ -266,3 +269,126 @@ export const ATTACHMENT_TYPES: readonly string[] = [
 ];
 /** A journal that a staff member posts waits for the owner. */
 export const JOURNAL_APPROVAL_ACTION = 'journal.post';
+
+export const REPORT_KEYS = [
+  'trial_balance',
+  'general_ledger',
+  'account_register',
+  'profit_loss',
+  'profit_loss_trend',
+  'balance_sheet',
+  'cash_flow',
+  'ar_aging',
+  'ap_aging',
+  'cash_balances',
+  'tax_summary',
+  'ratios',
+  'expense_summary',
+  'expense_by_account',
+  'expense_trend',
+] as const;
+export type ReportKey = (typeof REPORT_KEYS)[number];
+
+export interface ReportInfo {
+  key: ReportKey;
+  title: string;
+  description: string;
+  /** What the report needs: a period (from and to), a date (as of), or an account. */
+  needs: 'period' | 'date' | 'account';
+}
+
+export const REPORT_CATALOG: readonly ReportInfo[] = [
+  {
+    key: 'profit_loss',
+    title: 'Profit and loss',
+    description:
+      'Revenue, costs and the result of a period, with a comparison and drill-down to the journal.',
+    needs: 'period',
+  },
+  {
+    key: 'profit_loss_trend',
+    title: 'Profit and loss by month',
+    description: 'Revenue, expenses and result for each month.',
+    needs: 'period',
+  },
+  {
+    key: 'balance_sheet',
+    title: 'Balance sheet',
+    description:
+      'Assets, liabilities and equity on a date, with the check that assets equal liabilities plus equity.',
+    needs: 'date',
+  },
+  {
+    key: 'cash_flow',
+    title: 'Cash flow statement',
+    description:
+      'Where the cash came from and went, by operating, investing and financing activities.',
+    needs: 'period',
+  },
+  {
+    key: 'trial_balance',
+    title: 'Trial balance',
+    description: 'Every account with its debit or credit balance on a date.',
+    needs: 'date',
+  },
+  {
+    key: 'general_ledger',
+    title: 'General ledger',
+    description: 'Every posted line of every account in a period, with running balances.',
+    needs: 'period',
+  },
+  {
+    key: 'account_register',
+    title: 'Account register',
+    description: 'One account with the running balance after each line.',
+    needs: 'account',
+  },
+  {
+    key: 'ar_aging',
+    title: 'Receivables aging',
+    description: 'Unpaid invoices by days past due.',
+    needs: 'date',
+  },
+  {
+    key: 'ap_aging',
+    title: 'Payables aging',
+    description: 'Unpaid supplier bills by days past due.',
+    needs: 'date',
+  },
+  {
+    key: 'cash_balances',
+    title: 'Cash balances',
+    description: 'The balance of every cash and bank account.',
+    needs: 'date',
+  },
+  {
+    key: 'tax_summary',
+    title: 'Tax summary',
+    description: 'Tax collected on sales against tax paid on purchases, and the net payable.',
+    needs: 'period',
+  },
+  {
+    key: 'ratios',
+    title: 'Financial ratios',
+    description: 'Current ratio, quick ratio, debt to equity, margins and return on equity.',
+    needs: 'period',
+  },
+  {
+    key: 'expense_summary',
+    title: 'Expense summary',
+    description: 'All expenses of a period, biggest first, with their share.',
+    needs: 'period',
+  },
+  {
+    key: 'expense_by_account',
+    title: 'Expenses by category',
+    description: 'Expenses grouped by account.',
+    needs: 'period',
+  },
+  {
+    key: 'expense_trend',
+    title: 'Expense trend',
+    description: 'Each expense account by month.',
+    needs: 'period',
+  },
+];

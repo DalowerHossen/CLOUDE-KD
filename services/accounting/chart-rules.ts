@@ -41,6 +41,7 @@ export const accountInput = z
     isContra: z.boolean().default(false),
     parentId: z.string().uuid().nullable().default(null),
     allowPosting: z.boolean().default(true),
+    isCash: z.boolean().default(false),
   })
   .strict()
   .refine((v) => SUBTYPES_BY_TYPE[v.type].includes(v.subtype), {
@@ -58,6 +59,7 @@ export const accountUpdate = z
     subtype: z.enum(subtypeValues).optional(),
     parentId: z.string().uuid().nullable().optional(),
     allowPosting: z.boolean().optional(),
+    isCash: z.boolean().optional(),
     status: z.enum(['active', 'inactive']).optional(),
   })
   .strict();
