@@ -100,7 +100,7 @@ check('every $ref in the document resolves', () => {
 check('payments are read only and every write endpoint is idempotent or versioned', () => {
   assert.ok(!ENDPOINTS.some((e) => e.path.startsWith('/payments') && e.method !== 'get'));
   for (const e of ENDPOINTS.filter((x) => x.method === 'post'))
-    assert.ok(e.idempotent, e.operationId);
+    assert.ok(e.idempotent || e.returnsSecret, e.operationId);
   for (const e of ENDPOINTS.filter((x) => x.method === 'patch'))
     assert.ok(e.body?.shape && 'version' in e.body.shape, e.operationId);
   const post = doc.paths['/clients']?.post as { parameters: { name: string }[] } | undefined;
@@ -125,7 +125,7 @@ check('every route file is in the registry and every registry entry has a route'
         const text = fs.readFileSync(full, 'utf8');
         const rel = '/' + path.relative(root, path.dirname(full)).split(path.sep).join('/');
         const apiPath = rel.replace(/\[id\]/g, '{id}');
-        for (const m of text.matchAll(/export const (GET|POST|PATCH) =/g))
+        for (const m of text.matchAll(/export const (GET|POST|PATCH|DELETE) =/g))
           found.push(`${(m[1] as string).toLowerCase()} ${apiPath === '/' ? '' : apiPath}`);
       }
     }

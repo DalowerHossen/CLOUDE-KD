@@ -1,7 +1,6 @@
 // path: lib/integrations/public-registry.ts
 // Every endpoint of the public API v1 in one list. The OpenAPI document is built from it, the developer documentation page
 // shows it, and the check script compares it with the route files so a route cannot exist without being described.
-import type { z } from 'zod';
 import {
   clientCreate,
   clientOut,
@@ -22,9 +21,21 @@ import {
   productsQuery,
   statusOut,
 } from './public-schemas';
+import {
+  hookInput,
+  hookOut,
+  hookParams,
+  noteInput,
+  noteOut,
+  pollQuery,
+  summaryOut,
+  TRIGGERS,
+  triggerItemOut,
+} from './automation-rules';
+import { z } from 'zod';
 
 export interface EndpointSpec {
-  method: 'get' | 'post' | 'patch';
+  method: 'get' | 'post' | 'patch' | 'delete';
   /** Path below `/api/public/v1`, with `{id}` for the id. */
   path: string;
   operationId: string;
@@ -43,6 +54,8 @@ export interface EndpointSpec {
   createsRecord?: boolean;
   /** Works on the data of a sandbox key only; a live key gets a clear 501 until the owning STEPs offer write operations (R1). */
   sandboxOnly?: boolean;
+  /** The answer holds a secret that is shown once, so the call is deliberately not idempotent (a stored replay would keep the secret). */
+  returnsSecret?: boolean;
 }
 
 const read = (
@@ -181,5 +194,67 @@ export const ENDPOINTS: readonly EndpointSpec[] = [
     scope: null,
     response: statusOut,
     responseName: 'Status',
+  },
+  ...TRIGGERS.map((t): EndpointSpec => ({
+    method: 'get',
+    path: `/automation/triggers/${t.name}`,
+    operationId: `poll_${t.name.replace(/-/g, '_')}`,
+    summary: `Poll the trigger "${t.title}": the latest events, newest first (for Zapier and Make)`,
+    tag: 'Automation',
+    scope: t.scope,
+    query: pollQuery,
+    response: triggerItemOut,
+    responseName: 'TriggerItem',
+    list: true,
+  })),
+  {
+    method: 'post',
+    path: '/automation/hooks',
+    operationId: 'subscribe_hook',
+    summary: 'Subscribe a Zapier or Make hook URL to a trigger (live keys only)',
+    tag: 'Automation',
+    scope: 'write:webhooks',
+    body: hookInput,
+    bodyName: 'HookCreate',
+    response: hookOut,
+    responseName: 'Hook',
+    createsRecord: true,
+    returnsSecret: true,
+  },
+  {
+    method: 'delete',
+    path: '/automation/hooks/{id}',
+    operationId: 'unsubscribe_hook',
+    summary: 'Remove a hook made by Zapier or Make',
+    tag: 'Automation',
+    scope: 'write:webhooks',
+    params: hookParams,
+    response: z.object({ ok: z.literal(true) }),
+    responseName: 'Done',
+  },
+  {
+    method: 'post',
+    path: '/automation/actions/record-payment-note',
+    operationId: 'record_payment_note',
+    summary: 'Add a note to a payment (sandbox keys only for now)',
+    tag: 'Automation',
+    scope: 'write:invoices',
+    body: noteInput,
+    bodyName: 'PaymentNote',
+    response: noteOut,
+    responseName: 'PaymentNoteResult',
+    idempotent: true,
+    sandboxOnly: true,
+  },
+  {
+    method: 'get',
+    path: '/automation/summary',
+    operationId: 'get_summary',
+    summary:
+      'Invoice counts and the amount still owed, from the latest 100 invoices (used by the browser extension)',
+    tag: 'Automation',
+    scope: 'read:invoices',
+    response: summaryOut,
+    responseName: 'Summary',
   },
 ];

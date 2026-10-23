@@ -51,3 +51,10 @@
 - `npx tsc --noEmit` (larger heap), full `eslint`, `bash scripts/check-all.sh`, earlier `step16-*` scripts: clean.
 - Not run here: the services against the database (claiming, approval through the approval service, schedule generation, the evergreen cron, statistics refresh), the routes and pages with a session, the click route over HTTP, and every call to a network (the Meta Graph hosts are blocked here and no accounts exist), including the Threads insights call against the real API.
 
+## 16.6 Automation tools (2026-10-23)
+
+- No migration, no new SQL assertions (hook subscriptions reuse `webhook_endpoints`, tested in 16.2).
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-automation.ts` -> 7 checks passed: every trigger has a real webhook event, a real read scope and a registry entry; polling is newest first, honours `since` and `limit`, orders ties by id and returns the same ids on every poll; hook input is strict and refuses http, loopback, metadata-address and `localhost` targets; payment note input is strict and plain text; the summary counts by state, leaves void invoices out and adds money exactly; the extension manifest (version 3, `storage` only, one host, strict policy, https platform address only); the extension build writes its files and the popup has no `eval`, no `innerHTML`, no other address, and uses `chrome.storage.local` only.
+- `step16-public-api.ts` was updated and passes: the registry and the route files still match (now with DELETE and the `returnsSecret` rule for the hook subscription).
+- `npx tsc --noEmit` (larger heap), full `eslint`, `bash scripts/check-all.sh`, earlier `step16-*` scripts: see the commit.
+- Not run here: the services against the database (polling live tables, hook creation through the key, sandbox notes), the routes with a real key, the page, loading the extension in a browser, and the real Zapier and Make apps (neither tool was available).

@@ -9,7 +9,7 @@
 - [ ] 16.4.a2 Social: LinkedIn, X, Telegram and Pinterest adapters (blocked, BLOCKERS B3)
 - [x] 16.4.b Social: scheduling, rules, approval, analytics, share widgets (2026-10-23)
 - [ ] 16.5 Commerce: Shopify and WooCommerce
-- [ ] 16.6 Automation tools
+- [x] 16.6 Automation tools (2026-10-23)
 - [ ] 16.7 Bank feed
 - [ ] 16.8 Receipt OCR
 - [ ] 16.9 Multi-channel messaging

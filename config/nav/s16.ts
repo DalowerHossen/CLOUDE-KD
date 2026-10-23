@@ -29,4 +29,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 86,
   },
+  {
+    id: 'automation',
+    labelKey: 's16Automation.nav.automation',
+    href: '/integrations/automation',
+    icon: 'plug',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 87,
+  },
 ];
