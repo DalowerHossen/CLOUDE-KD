@@ -68,4 +68,11 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'accounting.reconcile',
+    description:
+      'Import bank statements, match bank lines to the books, book bank fees and complete bank reconciliations',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

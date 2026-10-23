@@ -38,4 +38,13 @@ export const nav: NavItem[] = [
     roles: ['owner', 'staff'],
     order: 63,
   },
+  {
+    id: 'accounting-reconciliation',
+    labelKey: 's15Accounting.nav.reconciliation',
+    href: '/accounting/reconciliation',
+    icon: 'check-square',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 64,
+  },
 ];
