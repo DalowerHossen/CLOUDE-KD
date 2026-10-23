@@ -1,0 +1,8 @@
+# STEP 16 - Verification record
+
+## 16.1.a Public API: keys, versioning, limits, sandbox (2026-10-23)
+
+- `scripts/db-apply.sh --clean`: `S16_001_api_keys` applies and re-applies cleanly; `sql/assertions/s16_001_api_keys.sql` passes (RLS on the four tables; one key per hash; a key needs a scope; a sandbox key needs the test prefix; limit bounds; the hash does not change; a revoked key stays revoked; a replaced key of another company refused; the minute counter counts 1, 2 and starts again in the next minute; the day counter counts requests and errors; the sandbox resource list and the document shape).
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-api-keys.ts` -> 12 checks passed: scope rules (403 rule, write includes read, payments read only); key format and hash; masked text; Authorization header shapes; key state; rotation overlap; the rate window and `X-RateLimit-*` headers (limit 120, remaining 115, reset at the next minute, retry after 40 seconds); the usage anomaly rule; the data source rule for sandbox; strict inputs; the wrapper answering 401 for a missing or bad key, 429 on repeated failures and one `token_abuse` event (fake security, idempotency and audit services).
+- `npx tsc --noEmit` (larger heap), `npm run lint`, `bash scripts/check-all.sh`: clean.
+- Not run here (running app needed): a call with a real key through the wrapper (key lookup and the minute and day counters go to the database through PostgREST), the key routes with a real session and step-up, the sandbox seed, the audit entries. The key routes are not exercised until the developer page (16.1.b) or an HTTP client calls them.
