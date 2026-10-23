@@ -9,7 +9,7 @@
 - [x] 15.6 Bank reconciliation (2026-10-23)
 - [x] 15.7.a Fixed assets and depreciation (2026-10-23)
 - [x] 15.7.b Budgets, multi-entity, forecast and BI (2026-10-23)
-- [ ] 15.7.c Tax reporting and audit pack
+- [x] 15.7.c Tax reporting and audit pack (2026-10-23)
 - [ ] 15.8.a Payroll: people and calculation
 - [ ] 15.8.b Payroll: pay runs and payslips
 - [ ] 15.9 Employee self-service portal

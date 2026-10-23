@@ -82,20 +82,18 @@ async function ingest(
   const fresh = txns.map((t, i) => ({ t, key: keys[i] ?? '' })).filter((x) => !have.has(x.key));
   const inserted: BankTxnView[] = [];
   for (let i = 0; i < fresh.length; i += 200) {
-    const batch = fresh
-      .slice(i, i + 200)
-      .map(({ t, key }) => ({
-        company_id: companyId,
-        bank_account_id: bankAccountId,
-        import_id: importId,
-        txn_date: t.date,
-        description: t.description,
-        reference: t.reference,
-        external_id: t.externalId,
-        amount: t.amount,
-        balance_after: t.balance,
-        dedupe_hash: key,
-      }));
+    const batch = fresh.slice(i, i + 200).map(({ t, key }) => ({
+      company_id: companyId,
+      bank_account_id: bankAccountId,
+      import_id: importId,
+      txn_date: t.date,
+      description: t.description,
+      reference: t.reference,
+      external_id: t.externalId,
+      amount: t.amount,
+      balance_after: t.balance,
+      dedupe_hash: key,
+    }));
     const { data, error } = await admin
       .from('bank_transactions')
       .insert(batch)

@@ -134,15 +134,13 @@ export async function logClientSub(
   detail: Record<string, unknown>,
   actorId: string | null,
 ): Promise<void> {
-  const { error } = await getAdminSupabase()
-    .from('client_subscription_events')
-    .insert({
-      company_id: sub.company_id,
-      subscription_id: sub.id,
-      event,
-      detail,
-      actor_id: actorId,
-    });
+  const { error } = await getAdminSupabase().from('client_subscription_events').insert({
+    company_id: sub.company_id,
+    subscription_id: sub.id,
+    event,
+    detail,
+    actor_id: actorId,
+  });
   if (error) throw new InternalError(error);
 }
 

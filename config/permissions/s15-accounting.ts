@@ -69,6 +69,19 @@ export const permissions: PermissionDefinition[] = [
     approvalLevel: 'L0',
   },
   {
+    action: 'accounting.tax.manage',
+    description: 'Record tax payments and deadlines and set the tax provision rate and reminders',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'accounting.audit.export',
+    description:
+      'Make the audit pack for an external auditor (needs a fresh identity check; audited)',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
     action: 'expense.read',
     description:
       'See expenses (a staff member sees their own), categories, policies and expense reports',
