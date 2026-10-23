@@ -6,4 +6,6 @@ export const approvalRules: ApprovalRuleDefinition[] = [
   { action: 'journal.post', level: 'L1', slaHours: 48 },
   // A staff expense that no policy approves by itself waits for the owner.
   { action: 'expense.approve', level: 'L1', slaHours: 72 },
+  // A budget that a staff member submitted waits for the owner.
+  { action: 'budget.approve', level: 'L1', slaHours: 72 },
 ];

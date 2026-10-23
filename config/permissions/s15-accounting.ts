@@ -49,6 +49,26 @@ export const permissions: PermissionDefinition[] = [
     approvalLevel: 'L0',
   },
   {
+    action: 'accounting.budget.edit',
+    description:
+      'Make and change draft budgets and submit them (a submitted budget waits for the owner)',
+    defaultRoles: ['owner', 'staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'accounting.budget.manage',
+    description: 'Approve, lock and revise budgets and set the cash forecast warning level',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'accounting.entity.manage',
+    description:
+      'Group the companies you own, set intercompany pairs and read consolidated statements',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
     action: 'expense.read',
     description:
       'See expenses (a staff member sees their own), categories, policies and expense reports',

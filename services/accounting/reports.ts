@@ -40,7 +40,7 @@ import {
   type LedgerLine,
 } from './report-rules';
 
-async function metas(companyId: string): Promise<AccountMeta[]> {
+export async function metas(companyId: string): Promise<AccountMeta[]> {
   return (await listAccounts(companyId)).map((a) => ({
     id: a.id,
     code: a.code,
@@ -53,7 +53,7 @@ async function metas(companyId: string): Promise<AccountMeta[]> {
   }));
 }
 
-async function balances(
+export async function balances(
   companyId: string,
   from: string | null,
   to: string | null,
@@ -75,7 +75,7 @@ async function balances(
   }));
 }
 
-async function monthly(
+export async function monthly(
   companyId: string,
   from: string,
   to: string,
