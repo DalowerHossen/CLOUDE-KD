@@ -54,11 +54,12 @@ export interface AccountRow {
   status: string;
   last_checked_at: string | null;
   last_error: string | null;
+  daily_limit: number;
   version: number;
 }
 
 export const ACCOUNT_COLUMNS =
-  'id, company_id, waba_id, phone_number_id, display_phone, verified_name, quality_rating, access_token_enc, access_token_last4, app_secret_enc, webhook_key, verify_token_hash, sandbox, status, last_checked_at, last_error, version';
+  'id, company_id, waba_id, phone_number_id, display_phone, verified_name, quality_rating, access_token_enc, access_token_last4, app_secret_enc, webhook_key, verify_token_hash, sandbox, status, last_checked_at, last_error, daily_limit, version';
 
 export async function accountRow(companyId: string): Promise<AccountRow | null> {
   const { data, error } = await getAdminSupabase()

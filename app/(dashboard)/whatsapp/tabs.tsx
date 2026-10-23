@@ -8,6 +8,8 @@ const TABS: readonly (readonly [string, StringKey])[] = [
   ['/whatsapp/templates', 's16Whatsapp.tabs.templates'],
   ['/whatsapp/messages', 's16Whatsapp.tabs.messages'],
   ['/whatsapp/contacts', 's16Whatsapp.tabs.contacts'],
+  ['/whatsapp/rules', 's16Whatsapp.tabs.rules'],
+  ['/whatsapp/campaigns', 's16Whatsapp.tabs.campaigns'],
 ];
 
 /** The links between the four WhatsApp pages. */

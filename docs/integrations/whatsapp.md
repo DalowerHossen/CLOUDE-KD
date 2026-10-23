@@ -37,3 +37,9 @@ Read on 2026-10-23 from the official Meta documentation (pages fetched as markdo
 - Template editing (`POST /{TEMPLATE_ID}`), the template library, header media handles (resumable upload), buttons beyond what is listed.
 - The Application Subscriptions API (the owner subscribes to the `messages` and `message_template_status_update` fields in the Meta App Dashboard).
 - Embedded Signup, phone number registration, calling, groups, flows, interactive messages.
+
+## Added for 16.3.b (read on 2026-10-23, `messaging-limits.md`)
+
+- The messaging limit is the most unique WhatsApp user phone numbers the business can deliver messages to, outside a customer service window, within a moving 24 hours. It is set per business portfolio and shared by all its phone numbers. A new portfolio starts at 250; it can rise to 2,000 (verify the business, have a partner verify it, or send 2,000 delivered template messages to unique numbers in 30 days with high quality templates), then 10,000, 100,000 and unlimited by automatic scaling (at least half the limit used in 7 days with high quality messages; the increase happens within 6 hours).
+- Read it with `GET /{version}/{phone-number-id}?fields=whatsapp_business_manager_messaging_limit`; the page shows the answer `{ "whatsapp_business_manager_messaging_limit": "TIER_250", "id": "..." }`. The older `messaging_limit_tier` field is deprecated. Only the `TIER_250` text is shown in the page; other tier texts are read by the pattern `TIER_<number>[K]` and `TIER_UNLIMITED` and anything else leaves the stored limit unchanged.
+- Opt-in (`getting-opt-in.md`): businesses must obtain opt-in before messaging people on WhatsApp; the method is the business's choice (SMS, website, phone, on paper) as long as it states the business name and that the person opts in; provide clear ways to opt out and honour them.

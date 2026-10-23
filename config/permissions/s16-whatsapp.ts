@@ -28,4 +28,11 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'whatsapp.campaigns.manage',
+    description:
+      'Make, start, pause, cancel and repeat WhatsApp campaigns (starting needs a fresh identity check)',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

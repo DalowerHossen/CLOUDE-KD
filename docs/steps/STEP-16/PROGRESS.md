@@ -4,7 +4,7 @@
 - [x] 16.1.b Public API: resources, OpenAPI, developer portal (2026-10-23)
 - [x] 16.2 Outgoing webhooks (2026-10-23)
 - [x] 16.3.a WhatsApp: configuration, templates, sending, inbound, consent (2026-10-23)
-- [ ] 16.3.b WhatsApp: automation rules, campaigns, delivery reports
+- [x] 16.3.b WhatsApp: automation rules, campaigns, delivery reports (2026-10-23)
 - [ ] 16.4.a Social: connections, adapters, composer
 - [ ] 16.4.b Social: scheduling, rules, approval, analytics, share widgets
 - [ ] 16.5 Commerce: Shopify and WooCommerce

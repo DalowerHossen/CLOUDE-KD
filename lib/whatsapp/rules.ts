@@ -77,6 +77,7 @@ export const accountUpdate = z
     appSecret: secretText(16, 128).optional(),
     sandbox: z.boolean().optional(),
     status: z.enum(['active', 'paused']).optional(),
+    dailyLimit: z.number().int().min(1).max(1_000_000).optional(),
   })
   .strict();
 

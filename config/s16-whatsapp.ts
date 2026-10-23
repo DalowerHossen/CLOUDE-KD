@@ -38,3 +38,39 @@ export const WHATSAPP_ERROR_TEXT: Readonly<Record<number, string>> = {
   131000: 'WhatsApp had an unknown problem. Try again.',
   131021: 'The sender and the recipient are the same number.',
 };
+
+/* ---------- automation (16.3.b) ---------- */
+
+/** Events a rule can start on. Their payloads carry an invoice id or a client id (checked in services/invoice, payment and client). */
+export const RULE_EVENTS = [
+  'invoice.sent',
+  'invoice.paid',
+  'invoice.overdue',
+  'payment.captured',
+  'payment.failed',
+  'payment.refunded',
+  'client.created',
+] as const;
+export type RuleEvent = (typeof RULE_EVENTS)[number];
+
+/** Events whose message is a payment reminder: a client who asked for no reminders does not get it. */
+export const REMINDER_EVENTS: readonly string[] = ['invoice.overdue'];
+
+export const CLIENT_TOKENS = ['client.name', 'client.contact_name'] as const;
+export const INVOICE_TOKENS = [
+  'invoice.number',
+  'invoice.total',
+  'invoice.amount_due',
+  'invoice.due_date',
+] as const;
+export const PAYMENT_TOKENS = ['payment.amount'] as const;
+
+export const RULE_RUN_BATCH = 25;
+export const RULE_MAX_DELAY_MINUTES = 10_080;
+export const RULE_PROCESSING_STALE_MINUTES = 10;
+export const CAMPAIGN_TICK_BATCH = 20;
+export const CAMPAIGN_MAX_AUDIENCE = 5000;
+export const CAMPAIGN_MAX_RUNNING = 10;
+export const CAMPAIGN_TIER_FALLBACK = 250;
+/** Error codes that retrying cannot fix (the number is not on WhatsApp, sender equals recipient). */
+export const PERMANENT_ERROR_CODES: readonly number[] = [131026, 131021];

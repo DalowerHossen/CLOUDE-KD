@@ -7,8 +7,9 @@ import 'server-only';
 import { randomBase62 } from '@/lib/integrations/api-key-rules';
 import { siteUrl } from '@/lib/cms/site-url';
 import { ConflictError, InternalError, ValidationError } from '@/lib/errors';
+import { parseMessagingLimit } from '@/lib/whatsapp/automation-rules';
 import { accountInput, accountUpdate } from '@/lib/whatsapp/rules';
-import { phoneHealth, WhatsAppApiError } from '@/lib/whatsapp/client';
+import { messagingLimit, phoneHealth, WhatsAppApiError } from '@/lib/whatsapp/client';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { sha256Hex } from '@/lib/utils/hash';
 import type { Actor } from '@/types/contracts';
@@ -38,6 +39,7 @@ export interface AccountView {
   webhookUrl: string;
   lastCheckedAt: string | null;
   lastError: string | null;
+  dailyLimit: number;
   version: number;
 }
 
@@ -54,6 +56,7 @@ const toView = (r: AccountRow): AccountView => ({
   webhookUrl: `${siteUrl()}/api/webhooks/whatsapp/${r.webhook_key}`,
   lastCheckedAt: r.last_checked_at,
   lastError: r.last_error,
+  dailyLimit: r.daily_limit,
   version: r.version,
 });
 
@@ -117,6 +120,7 @@ export async function updateAccount(actor: Actor, input: unknown): Promise<Accou
   if (d.appSecret !== undefined) patch.app_secret_enc = await seal(companyId, d.appSecret);
   if (d.sandbox !== undefined) patch.sandbox = d.sandbox;
   if (d.status !== undefined) patch.status = d.status;
+  if (d.dailyLimit !== undefined) patch.daily_limit = d.dailyLimit;
   const { data, error } = await getAdminSupabase()
     .from('whatsapp_accounts')
     .update(patch)
@@ -183,6 +187,14 @@ export async function checkHealth(actor: Actor): Promise<HealthResult> {
       patch.verified_name = health.verifiedName;
       patch.display_phone = health.displayPhone;
       patch.quality_rating = health.quality;
+      // The limit of the business portfolio, when Meta returns it in a form we understand; otherwise the stored limit stays.
+      try {
+        const tier = await messagingLimit(await credentialsOf(row));
+        const parsed = tier === null ? null : parseMessagingLimit(tier);
+        if (parsed !== null) patch.daily_limit = parsed;
+      } catch {
+        message = 'The connection works, but the messaging limit could not be read.';
+      }
     }
   } catch (error) {
     ok = false;

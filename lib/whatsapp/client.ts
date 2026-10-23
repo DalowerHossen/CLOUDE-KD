@@ -189,3 +189,21 @@ export async function phoneHealth(
   }
   return { found: false, verifiedName: '', displayPhone: '', quality: 'NA' };
 }
+
+/** The messaging limit text of the phone number (for example "TIER_250"), read with the field named in the messaging limits page. */
+export async function messagingLimit(
+  creds: Credentials,
+  fetcher: Fetcher = defaultFetch,
+): Promise<string | null> {
+  const json = obj(
+    await call(
+      creds,
+      'GET',
+      `${creds.phoneNumberId}?fields=whatsapp_business_manager_messaging_limit`,
+      undefined,
+      fetcher,
+    ),
+  );
+  const v = json.whatsapp_business_manager_messaging_limit;
+  return typeof v === 'string' ? v : null;
+}
