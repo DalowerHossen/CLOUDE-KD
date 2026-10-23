@@ -83,4 +83,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin'],
     order: 525,
   },
+  {
+    id: 'admin-coupons',
+    labelKey: 's14Wallet.nav.adminCoupons',
+    href: '/admin/coupons',
+    icon: 'credit-card',
+    group: 'admin',
+    roles: ['super_admin'],
+    order: 526,
+  },
 ];

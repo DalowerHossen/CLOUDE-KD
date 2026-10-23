@@ -84,4 +84,10 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'coupon.manage',
+    description: 'Create, change, switch off and delete coupons and read the coupon reports',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
 ];

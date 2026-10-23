@@ -147,6 +147,8 @@ export interface NewInvoice {
   /** Makes a retry create the invoice once. */
   idempotencyKey: string;
   createdBy: string | null;
+  /** A coupon discount: a negative line is added and the invoice remembers which redemption it came from. */
+  discount?: { redemptionId: string; label: string; amount: Money } | null;
 }
 
 export async function findByKey(companyId: string, key: string): Promise<Row | null> {
@@ -162,7 +164,7 @@ export async function findByKey(companyId: string, key: string): Promise<Row | n
 
 /** Makes an invoice with its lines and tax and tells the owners. A second call with the same key returns the first invoice. */
 export async function createPlatformInvoice(input: NewInvoice): Promise<PlatformInvoiceView> {
-  if (input.items.length === 0 || input.items.length > 50)
+  if (input.items.length === 0 || input.items.length > 49)
     throw new ValidationError('An invoice needs between 1 and 50 lines.');
   const prior = await findByKey(input.companyId, input.idempotencyKey);
   if (prior) return (await hydrate([prior]))[0] as PlatformInvoiceView;
@@ -178,7 +180,18 @@ export async function createPlatformInvoice(input: NewInvoice): Promise<Platform
   const country = company.data.country_code ? String(company.data.country_code).trim() : null;
   const billing = await loadBilling();
   const taxPercent = taxPercentFor(country, billing.taxPercentByCountry, billing.defaultTaxPercent);
-  const lines = input.items.map((i) => ({ ...i, amount: i.unitAmount.mul(String(i.quantity)) }));
+  const items =
+    input.discount && input.discount.amount.isPositive()
+      ? [
+          ...input.items,
+          {
+            description: input.discount.label,
+            quantity: 1,
+            unitAmount: input.discount.amount.negate(),
+          },
+        ]
+      : input.items;
+  const lines = items.map((i) => ({ ...i, amount: i.unitAmount.mul(String(i.quantity)) }));
   const totals = withTax(Money.sum(lines.map((l) => l.amount)), taxPercent);
   const number = await admin.rpc('kd_platform_invoice_number', {
     p_year: new Date().getUTCFullYear(),
@@ -203,6 +216,12 @@ export async function createPlatformInvoice(input: NewInvoice): Promise<Platform
       due_at: input.dueAt.toISOString(),
       idempotency_key: input.idempotencyKey,
       created_by: input.createdBy,
+      ...(input.discount && input.discount.amount.isPositive()
+        ? {
+            coupon_redemption_id: input.discount.redemptionId,
+            discount_amount: input.discount.amount.toDbString(),
+          }
+        : {}),
     })
     .select(COLUMNS)
     .single();

@@ -230,6 +230,9 @@ export default async function BillingPage(): Promise<JSX.Element> {
                         { value: 'year', label: t('s14Wallet.billing.yearly') },
                       ],
                     },
+                    ...(active
+                      ? []
+                      : [{ name: 'couponCode', label: t('s14Wallet.coupons.codeLabel') }]),
                   ]}
                 />
               </CardContent>

@@ -33,6 +33,12 @@ import { getAdminSupabase } from '@/lib/supabase/admin';
 import { usedNow } from '@/services/entitlement/usage';
 import { changeCompanyPlan, impactOf } from '@/services/plan/migrate';
 import { getPlanBySlug, type PlanView } from '@/services/plan/plans';
+import {
+  discountForNextInvoice,
+  linkRedemption,
+  redeemCoupon,
+  type RedeemedCoupon,
+} from '@/services/coupon/redeem';
 import { mailOwners } from '@/services/wallet/owner-mail';
 import type { Impact } from '@/lib/payment/plan-rules';
 import type { Actor } from '@/types/contracts';
@@ -240,6 +246,8 @@ export interface SubscribeInput {
   interval: Interval;
   /** The idempotency key of the request: a retry makes one invoice. */
   requestKey: string;
+  /** A coupon code typed at checkout (subscribe only). */
+  couponCode?: string;
 }
 
 export interface SubscribeResult {
@@ -272,7 +280,14 @@ export async function subscribe(actor: Actor, input: SubscribeInput): Promise<Su
   }
   const now = new Date();
   const amount = await amountFor(companyId, plan, input.interval);
-  const canTrial = plan.trialDays > 0 && !(sub?.trial_used ?? false) && amount.isPositive();
+  // A coupon is used only for a plan that costs something; a refused code stops the checkout with a plain message.
+  const coupon: RedeemedCoupon | null =
+    input.couponCode && amount.isPositive()
+      ? await redeemCoupon(companyId, input.couponCode, plan.slug)
+      : null;
+  const planTrial = plan.trialDays > 0 && !(sub?.trial_used ?? false) ? plan.trialDays : 0;
+  const trialDays = planTrial + (coupon?.kind === 'free_trial' ? (coupon.trialDays ?? 0) : 0);
+  const canTrial = trialDays > 0 && amount.isPositive();
   const periodEnd = addInterval(now, input.interval);
 
   if (!amount.isPositive()) {
@@ -307,7 +322,7 @@ export async function subscribe(actor: Actor, input: SubscribeInput): Promise<Su
     return { subscription: toSubView(sub), invoice: null, message: 'Your plan is active.' };
   }
 
-  const trialEnd = canTrial ? addDaysTo(now, plan.trialDays) : null;
+  const trialEnd = canTrial ? addDaysTo(now, trialDays) : null;
   const firstStart = trialEnd ?? now;
   const firstEnd = addInterval(firstStart, input.interval);
   const values = {
@@ -332,6 +347,8 @@ export async function subscribe(actor: Actor, input: SubscribeInput): Promise<Su
   if (sub) await voidOpenInvoices(sub.id);
   sub = sub ? await patchSub(sub, values) : await insertSub(companyId, values);
   if (trialEnd) await changeCompanyPlan(companyId, plan.slug, actor.userId, 'Trial started');
+  if (coupon) await linkRedemption(coupon.redemptionId, sub.id);
+  const discount = coupon ? await discountForNextInvoice(sub.id, amount) : null;
   const invoice = await createPlatformInvoice({
     companyId,
     subscriptionId: sub.id,
@@ -343,11 +360,17 @@ export async function subscribe(actor: Actor, input: SubscribeInput): Promise<Su
     dueAt: trialEnd ?? addDaysTo(now, 7),
     idempotencyKey: `first:${input.requestKey}`.slice(0, 160),
     createdBy: actor.userId,
+    discount,
   });
   await logEvent(
     sub,
     trialEnd ? 'trial_started' : 'subscribed',
-    { plan: plan.slug, interval: input.interval, invoice: invoice.number },
+    {
+      plan: plan.slug,
+      interval: input.interval,
+      invoice: invoice.number,
+      coupon: coupon?.code ?? null,
+    },
     actor.userId,
   );
   await publish('subscription.created', sub, { trial: Boolean(trialEnd) });
@@ -791,6 +814,7 @@ async function ensureRenewalInvoice(sub: SubRow): Promise<PlatformInvoiceView | 
   if (!plan) return null;
   const amount = await amountFor(sub.company_id, plan, interval);
   if (!amount.isPositive()) return null;
+  const discount = await discountForNextInvoice(sub.id, amount);
   return createPlatformInvoice({
     companyId: sub.company_id,
     subscriptionId: sub.id,
@@ -802,6 +826,7 @@ async function ensureRenewalInvoice(sub: SubRow): Promise<PlatformInvoiceView | 
     dueAt: end,
     idempotencyKey: `renew:${sub.id}:${end.toISOString().slice(0, 10)}`,
     createdBy: null,
+    discount,
   });
 }
 
