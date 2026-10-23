@@ -1,7 +1,7 @@
 # STEP 16 - Progress
 
 - [x] 16.1.a Public API: keys, versioning, limits, sandbox (2026-10-23)
-- [ ] 16.1.b Public API: resources, OpenAPI, developer portal
+- [x] 16.1.b Public API: resources, OpenAPI, developer portal (2026-10-23)
 - [ ] 16.2 Outgoing webhooks
 - [ ] 16.3.a WhatsApp: configuration, templates, sending, inbound, consent
 - [ ] 16.3.b WhatsApp: automation rules, campaigns, delivery reports

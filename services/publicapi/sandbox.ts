@@ -11,20 +11,23 @@ export type SandboxDoc = Record<string, unknown>;
 export interface SandboxRecord {
   id: string;
   createdAt: string;
+  updatedAt: string;
   version: number;
   doc: SandboxDoc;
 }
 
-const COLUMNS = 'id, created_at, version, doc';
+const COLUMNS = 'id, created_at, updated_at, version, doc';
 
 const toRecord = (r: {
   id: unknown;
   created_at: unknown;
+  updated_at: unknown;
   version: unknown;
   doc: unknown;
 }): SandboxRecord => ({
   id: String(r.id),
   createdAt: String(r.created_at),
+  updatedAt: String(r.updated_at),
   version: Number(r.version),
   doc: (r.doc ?? {}) as SandboxDoc,
 });
@@ -43,6 +46,36 @@ async function insertOne(
   return toRecord(data as never);
 }
 
+const ADDRESS = { line1: '', line2: '', city: '', region: '', postal_code: '', country: null };
+
+const demoClient = (name: string, email: string, country: string): SandboxDoc => ({
+  kind: 'company',
+  name,
+  contact_name: '',
+  email,
+  phone: '',
+  website: '',
+  tax_id: '',
+  currency: 'USD',
+  payment_terms_days: 30,
+  tags: [],
+  status: 'active',
+  billing_address: { ...ADDRESS, country },
+});
+
+const demoProduct = (name: string, sku: string, price: string): SandboxDoc => ({
+  kind: 'service',
+  name,
+  description: '',
+  sku,
+  barcode: null,
+  unit: 'unit',
+  unit_price: price,
+  tax_category: 'standard',
+  tax_rate: '0',
+  status: 'active',
+});
+
 /** Adds the demo set when the company has no sandbox record yet. */
 export async function seedSandbox(companyId: string): Promise<void> {
   const { count, error } = await getAdminSupabase()
@@ -52,73 +85,99 @@ export async function seedSandbox(companyId: string): Promise<void> {
     .is('deleted_at', null);
   if (error) throw new InternalError(error);
   if ((count ?? 0) > 0) return;
-  const ada = await insertOne(companyId, 'clients', {
-    name: 'Ada Example',
-    email: 'ada@example.test',
-    country: 'US',
+  const ada = await insertOne(
+    companyId,
+    'clients',
+    demoClient('Ada Example', 'ada@example.test', 'US'),
+  );
+  const bo = await insertOne(
+    companyId,
+    'clients',
+    demoClient('Bo Sample', 'bo@example.test', 'GB'),
+  );
+  await insertOne(companyId, 'products', demoProduct('Consulting hour', 'CONS-1', '100.0000'));
+  await insertOne(companyId, 'products', demoProduct('Support plan', 'SUP-1', '49.0000'));
+  const line = (description: string, price: string): SandboxDoc => ({
+    position: 1,
+    sku: '',
+    description,
+    quantity: '1.0000',
+    unit: 'unit',
+    unit_price: price,
+    tax: '0.0000',
+    line_total: price,
   });
-  const bo = await insertOne(companyId, 'clients', {
-    name: 'Bo Sample',
-    email: 'bo@example.test',
-    country: 'GB',
-  });
-  await insertOne(companyId, 'products', {
-    name: 'Consulting hour',
-    sku: 'CONS-1',
-    price: '100.0000',
-  });
-  await insertOne(companyId, 'products', { name: 'Support plan', sku: 'SUP-1', price: '49.0000' });
   const inv1 = await insertOne(companyId, 'invoices', {
     number: 'SBX-0001',
-    clientId: ada.id,
+    kind: 'invoice',
     status: 'sent',
+    client_id: ada.id,
+    issue_date: '2026-01-05',
+    due_date: '2026-02-04',
     currency: 'USD',
+    subtotal: '250.0000',
+    tax_total: '0.0000',
     total: '250.0000',
-    amountDue: '250.0000',
-    issueDate: '2026-01-05',
-    dueDate: '2026-02-04',
+    amount_paid: '50.0000',
+    amount_due: '200.0000',
+    sent_at: '2026-01-05T09:00:00.000Z',
+    paid_at: null,
+    items: [line('Consulting', '250.0000')],
   });
   await insertOne(companyId, 'invoices', {
     number: 'SBX-0002',
-    clientId: bo.id,
+    kind: 'invoice',
     status: 'paid',
+    client_id: bo.id,
+    issue_date: '2026-01-10',
+    due_date: '2026-02-09',
     currency: 'USD',
+    subtotal: '49.0000',
+    tax_total: '0.0000',
     total: '49.0000',
-    amountDue: '0.0000',
-    issueDate: '2026-01-10',
-    dueDate: '2026-02-09',
+    amount_paid: '49.0000',
+    amount_due: '0.0000',
+    sent_at: '2026-01-10T09:00:00.000Z',
+    paid_at: '2026-01-12T09:00:00.000Z',
+    items: [line('Support plan', '49.0000')],
   });
   await insertOne(companyId, 'estimates', {
     number: 'SBX-E-0001',
-    clientId: ada.id,
     status: 'sent',
+    client_id: ada.id,
     currency: 'USD',
+    subtotal: '900.0000',
+    tax_total: '0.0000',
     total: '900.0000',
+    valid_until: '2026-03-01',
+    sent_at: '2026-01-15T09:00:00.000Z',
   });
   await insertOne(companyId, 'payments', {
-    invoiceId: inv1.id,
+    invoice_id: inv1.id,
+    client_id: ada.id,
+    status: 'captured',
     amount: '50.0000',
     currency: 'USD',
-    status: 'captured',
-    method: 'sandbox',
+    captured_amount: '50.0000',
+    refunded_amount: '0.0000',
+    payment_method: 'sandbox',
+    captured_at: '2026-01-06T09:00:00.000Z',
   });
 }
 
-export async function listSandbox(
+/** Every live sandbox record of one resource (the sandbox set is small; filtering and paging happen in memory). */
+export async function allSandbox(
   companyId: string,
   resource: SandboxResource,
-  page: { limit: number; afterId: string | null },
 ): Promise<SandboxRecord[]> {
-  let q = getAdminSupabase()
+  const { data, error } = await getAdminSupabase()
     .from('api_sandbox_records')
     .select(COLUMNS)
     .eq('company_id', companyId)
     .eq('resource', resource)
     .is('deleted_at', null)
     .order('id', { ascending: true })
-    .limit(page.limit);
-  if (page.afterId) q = q.gt('id', page.afterId);
-  const { data, error } = await q;
+    .limit(2000);
   if (error) throw new InternalError(error);
   return (data ?? []).map((r) => toRecord(r as never));
 }
