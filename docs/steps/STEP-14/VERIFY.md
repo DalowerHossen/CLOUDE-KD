@@ -61,3 +61,8 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step14-bnpl.ts` -> 5 checks passed: settings input and the form adapter, every eligibility rule, offers (parts add up to the invoice, the client pays nothing extra, the fee is the seller's, tiny parts are not offered), late parts after the grace days and the plan outcome (active, defaulted, completed).
 - `npx tsc --noEmit`, `npm run lint`, `bash scripts/check-all.sh`: clean.
 - Not run here (running app needed): accepting an offer against a real invoice (`savePlan` through the service), the daily plan check against real payments, `/wallet/bnpl` and `/admin/bnpl`.
+
+## 14.10 Revenue reports and STEP closure (2026-10-23)
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step14-analytics.ts` -> 4 checks passed: months and percents, cohort retention, net revenue retention, health score and its reasons.
+- Whole STEP: `scripts/db-apply.sh --clean` applies S14_001 to S14_009 and every assertion in `sql/assertions/s14_*.sql` passes; the logic scripts `scripts/verify/step14-*.ts` pass; `bash scripts/verify/step14-*.sh` (parallel ledger, coupon and billing-claim checks) pass on throw-away databases; `npx tsc --noEmit`, `npm run lint` and `bash scripts/check-all.sh` are clean.
+- Not run here (running app needed): `/admin/revenue` and `/api/subscriptions/analytics` against real data; see HANDOFF.md for the full list.

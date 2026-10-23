@@ -11,4 +11,4 @@
 - [x] 14.8.a Client subscriptions: plans and schedules (2026-10-23)
 - [x] 14.8.b Client subscriptions: recurring runs (2026-10-23)
 - [x] 14.9 BNPL framework (2026-10-23)
-- [ ] 14.10 Revenue analytics and closure
+- [x] 14.10 Revenue analytics and closure (2026-10-23)

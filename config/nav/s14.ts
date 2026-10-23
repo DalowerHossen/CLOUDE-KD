@@ -119,4 +119,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin'],
     order: 527,
   },
+  {
+    id: 'admin-revenue',
+    labelKey: 's14Wallet.nav.adminRevenue',
+    href: '/admin/revenue',
+    icon: 'credit-card',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 528,
+  },
 ];
