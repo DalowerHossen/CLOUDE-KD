@@ -14,4 +14,17 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'integrations.webhook.read',
+    description: 'See webhook endpoints (never the secret) and their delivery log',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'integrations.webhook.manage',
+    description:
+      'Add, change, test and remove webhook endpoints, rotate their secret and send events again',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

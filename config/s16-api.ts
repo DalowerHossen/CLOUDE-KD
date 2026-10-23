@@ -45,3 +45,55 @@ export const WRITABLE_RESOURCES: readonly ApiResource[] = [
   'estimates',
   'webhooks',
 ];
+
+/* ---------- outgoing webhooks (16.2) ---------- */
+
+/** The events a webhook endpoint can subscribe to. Security, sign-in, KYC, file and payroll events never leave the platform. */
+export const WEBHOOK_EVENTS = [
+  'invoice.created',
+  'invoice.sent',
+  'invoice.viewed',
+  'invoice.paid',
+  'invoice.partially_paid',
+  'invoice.voided',
+  'invoice.overdue',
+  'estimate.sent',
+  'estimate.approved',
+  'estimate.rejected',
+  'payment.authorized',
+  'payment.captured',
+  'payment.failed',
+  'payment.pending_review',
+  'payment.voided',
+  'payment.refunded',
+  'dispute.opened',
+  'dispute.evidence_submitted',
+  'dispute.won',
+  'dispute.lost',
+  'payout.requested',
+  'payout.approved',
+  'payout.paid',
+  'payout.failed',
+  'client.created',
+  'client.updated',
+  'subscription.created',
+  'subscription.renewed',
+  'subscription.cancelled',
+] as const;
+export type WebhookEventName = (typeof WEBHOOK_EVENTS)[number];
+
+export const WEBHOOK_MAX_ENDPOINTS = 20;
+export const WEBHOOK_SECRET_PREFIX = 'whsec_';
+export const WEBHOOK_SECRET_RANDOM_LENGTH = 40;
+export const WEBHOOK_SECRET_OVERLAP_HOURS = 24;
+export const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 300;
+/** Delay (seconds) before attempt 2, 3, ... after a failed attempt. There are at most `WEBHOOK_MAX_ATTEMPTS` attempts. */
+export const WEBHOOK_RETRY_SECONDS: readonly number[] = [60, 300, 1800, 7200, 21_600, 43_200, 86_400];
+export const WEBHOOK_MAX_ATTEMPTS = WEBHOOK_RETRY_SECONDS.length + 1;
+/** An endpoint is switched off after this many failed attempts in a row. */
+export const WEBHOOK_DISABLE_AFTER_FAILURES = 10;
+export const WEBHOOK_TIMEOUT_MS = 10_000;
+export const WEBHOOK_RESPONSE_CLIP = 2000;
+export const WEBHOOK_BATCH = 25;
+export const WEBHOOK_LOCK_SECONDS = 60;
+export const WEBHOOK_MAX_URL_LENGTH = 2000;

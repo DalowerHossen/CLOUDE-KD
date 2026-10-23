@@ -3,6 +3,7 @@
 
 import type { EventHandlerDefinition, JobHandlerDefinition } from './handler-types';
 import { jobHandler as transferImportJob } from '@/workers/transfer/import.job';
+import { eventHandler as integrationsWebhookFanoutEvent } from '@/workers/integrations/webhook-fanout.event';
 import { eventHandler as inventoryInvoiceStockEvent } from '@/workers/inventory/invoice-stock.event';
 import { eventHandler as notificationsDomainEventsEvent } from '@/workers/notifications/domain-events.event';
 import { eventHandler as onboardingMilestonesEvent } from '@/workers/onboarding/milestones.event';
@@ -14,4 +15,4 @@ import { eventHandler as s14SettlePaymentEvent } from '@/workers/s14/settle-paym
 import { eventHandler as s15AccountingPostingEvent } from '@/workers/s15/accounting-posting.event';
 
 export const jobHandlers: JobHandlerDefinition[] = [transferImportJob];
-export const eventHandlers: EventHandlerDefinition[] = [inventoryInvoiceStockEvent, notificationsDomainEventsEvent, onboardingMilestonesEvent, s13ClientNoticesEvent, s13DisputeIntakeEvent, s14BnplRefundEvent, s14PlatformInvoicePaidEvent, s14SettlePaymentEvent, s15AccountingPostingEvent];
+export const eventHandlers: EventHandlerDefinition[] = [integrationsWebhookFanoutEvent, inventoryInvoiceStockEvent, notificationsDomainEventsEvent, onboardingMilestonesEvent, s13ClientNoticesEvent, s13DisputeIntakeEvent, s14BnplRefundEvent, s14PlatformInvoicePaidEvent, s14SettlePaymentEvent, s15AccountingPostingEvent];

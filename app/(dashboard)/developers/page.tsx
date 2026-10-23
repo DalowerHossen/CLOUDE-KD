@@ -51,6 +51,11 @@ export default async function DevelopersPage(): Promise<JSX.Element> {
               </Link>
             </Button>
             <Button asChild variant="outline">
+              <Link href="/developers/webhooks" prefetch={false}>
+                {t('s16Developers.webhooks.link')}
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
               <a href="/api/public/v1/openapi.json">{t('s16Developers.keys.openapiLink')}</a>
             </Button>
           </>
