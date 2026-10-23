@@ -13,5 +13,6 @@ import { approvalRules as s09Invoices } from './approval/s09-invoices';
 import { approvalRules as s10Refunds } from './approval/s10-refunds';
 import { approvalRules as s13Portal } from './approval/s13-portal';
 import { approvalRules as s14Wallet } from './approval/s14-wallet';
+import { approvalRules as s15Accounting } from './approval/s15-accounting';
 
-export const approvalRules: ApprovalRuleDefinition[] = [...s02Core, ...s06Cms, ...s07Admin, ...s07Kyc, ...s07Lifecycle, ...s08Clients, ...s08Purchasing, ...s09Invoices, ...s10Refunds, ...s13Portal, ...s14Wallet];
+export const approvalRules: ApprovalRuleDefinition[] = [...s02Core, ...s06Cms, ...s07Admin, ...s07Kyc, ...s07Lifecycle, ...s08Clients, ...s08Purchasing, ...s09Invoices, ...s10Refunds, ...s13Portal, ...s14Wallet, ...s15Accounting];
