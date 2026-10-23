@@ -114,9 +114,19 @@ async function main(): Promise<void> {
       profile: 'payment',
       processorOrigins: ['https://js.processor.example', 'http://insecure.example'],
     });
-    assert.ok(csp.includes('https://js.processor.example'));
-    assert.equal(csp.includes('insecure.example'), false);
-    assert.equal(csp.includes('challenges.cloudflare.com'), false);
+    const sources = new Set(csp.split(/[\s;]+/));
+    const hosts = new Set(
+      [...sources].flatMap((token) => {
+        try {
+          return [new URL(token).host];
+        } catch {
+          return [];
+        }
+      }),
+    );
+    assert.ok(sources.has('https://js.processor.example'));
+    assert.equal(hosts.has('insecure.example'), false);
+    assert.equal(hosts.has('challenges.cloudflare.com'), false);
     assert.equal(profileForPath('/pay/abc'), 'payment');
     assert.equal(profileForPath('/dashboard'), 'default');
     assert.ok(buildTrustedTypesPolicy().includes("require-trusted-types-for 'script'"));
@@ -331,7 +341,10 @@ async function main(): Promise<void> {
     for (const bad of ['<script', 'onclick', 'javascript:', 'onerror', '<iframe', '<img'])
       assert.equal(clean.includes(bad), false, bad);
     assert.equal(stripHtml('<p>a<b>b</b></p>'), 'ab');
-    assert.ok(sanitizeHtml('<a href="https://example.com">ok</a>').includes('https://example.com'));
+    assert.equal(
+      /href="([^"]*)"/.exec(sanitizeHtml('<a href="https://example.com">ok</a>'))?.[1],
+      'https://example.com',
+    );
   });
 
   await check('csrf: signed token, origin check, exemptions', async () => {
