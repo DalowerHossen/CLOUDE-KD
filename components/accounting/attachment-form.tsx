@@ -17,7 +17,14 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 /** Adds a file (PDF, PNG, JPEG or CSV up to 8 MB) to a journal entry. */
-export function AttachmentForm({ entryId }: { entryId: string }): JSX.Element {
+export function AttachmentForm({
+  entryId,
+  endpoint,
+}: {
+  entryId?: string;
+  /** Another upload route (for example the documents of an asset); the default is the attachments of the journal entry. */
+  endpoint?: string;
+}): JSX.Element {
   const router = useRouter();
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   async function pick(file: File | undefined): Promise<void> {
@@ -29,12 +36,15 @@ export function AttachmentForm({ entryId }: { entryId: string }): JSX.Element {
     }
     try {
       const dataBase64 = toBase64(new Uint8Array(await file.arrayBuffer()));
-      const response = await fetch(`/api/accounting/journals/${entryId}/attachments`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: file.name, mimeType: file.type, dataBase64 }),
-        cache: 'no-store',
-      });
+      const response = await fetch(
+        endpoint ?? `/api/accounting/journals/${entryId ?? ''}/attachments`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: file.name, mimeType: file.type, dataBase64 }),
+          cache: 'no-store',
+        },
+      );
       const json = (await response.json().catch(() => null)) as {
         error?: { message?: string };
       } | null;

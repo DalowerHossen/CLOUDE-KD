@@ -42,6 +42,13 @@ export const permissions: PermissionDefinition[] = [
     approvalLevel: 'L0',
   },
   {
+    action: 'accounting.asset.manage',
+    description:
+      'Add, change, import and dispose of fixed assets, set the asset categories and run depreciation',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
     action: 'expense.read',
     description:
       'See expenses (a staff member sees their own), categories, policies and expense reports',

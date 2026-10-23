@@ -54,6 +54,7 @@ export const MAPPING_KEYS = [
   'suspense',
   'wallet_balance',
   'chargeback_expense',
+  'disposal_gain_loss',
 ] as const;
 export type MappingKey = (typeof MAPPING_KEYS)[number];
 
@@ -185,6 +186,11 @@ export const BASE_CHART: readonly ChartSeed[] = [
   a('6550', 'Office supplies', 'expense', 'operating_expense', { parent: '6000' }),
   a('6560', 'Professional fees', 'expense', 'operating_expense', { parent: '6000' }),
   a('7000', 'Other expenses', 'expense', 'other_expense', { group: true }),
+  a('7200', 'Gain or loss on asset disposal', 'expense', 'other_expense', {
+    parent: '7000',
+    key: 'disposal_gain_loss',
+    description: 'A gain is a credit, a loss a debit.',
+  }),
   a('7100', 'Foreign exchange gain or loss', 'expense', 'other_expense', {
     parent: '7000',
     key: 'fx_gain_loss',

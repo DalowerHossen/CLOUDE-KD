@@ -39,6 +39,15 @@ export const nav: NavItem[] = [
     order: 63,
   },
   {
+    id: 'accounting-assets',
+    labelKey: 's15Accounting.assets.nav',
+    href: '/accounting/assets',
+    icon: 'package',
+    group: 'dashboard',
+    roles: ['owner', 'staff'],
+    order: 65,
+  },
+  {
     id: 'accounting-reconciliation',
     labelKey: 's15Accounting.nav.reconciliation',
     href: '/accounting/reconciliation',

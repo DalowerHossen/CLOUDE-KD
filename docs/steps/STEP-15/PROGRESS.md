@@ -7,7 +7,7 @@
 - [x] 15.4.b Accounting pages and exports (2026-10-23)
 - [x] 15.5 Expenses (2026-10-23)
 - [x] 15.6 Bank reconciliation (2026-10-23)
-- [ ] 15.7.a Fixed assets and depreciation
+- [x] 15.7.a Fixed assets and depreciation (2026-10-23)
 - [ ] 15.7.b Budgets, multi-entity, forecast and BI
 - [ ] 15.7.c Tax reporting and audit pack
 - [ ] 15.8.a Payroll: people and calculation

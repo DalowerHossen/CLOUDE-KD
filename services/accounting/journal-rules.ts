@@ -20,9 +20,13 @@ const amount = z.string().regex(/^\d{1,14}(\.\d{1,4})?$/, 'Enter an amount like 
 export const dayText = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-10-31.')
-  .refine((v) => new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, {
-    message: 'The date does not exist.',
-  });
+  .refine(
+    (v) => {
+      const at = new Date(`${v}T00:00:00Z`);
+      return !Number.isNaN(at.getTime()) && at.toISOString().slice(0, 10) === v;
+    },
+    { message: 'The date does not exist.' },
+  );
 
 /** True for a valid amount above zero; false for zero or for text that is not an amount (the field check reports that). */
 function amountOf(text: string): Money {
