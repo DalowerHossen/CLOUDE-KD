@@ -38,11 +38,24 @@ export const defaultTransport: Transport = (url, options) =>
 
 const text = (v: unknown): string => (typeof v === 'string' ? v : '');
 
-/** The words a store gives for a failure (WooCommerce and WordPress: message; Shopify: errors). */
+/**
+ * The words a service gives for a failure: WooCommerce and WordPress (message), Shopify (errors), Plaid (error_code and
+ * error_message), Salt Edge (error.class and error.message).
+ */
 function failureText(json: unknown): string {
   const o = json !== null && typeof json === 'object' ? (json as Record<string, unknown>) : {};
-  const first = text(o.message) || text(o.errors) || text(o.error) || text(o.error_description);
-  return (first || 'The store refused the request.').slice(0, 300);
+  const nested =
+    o.error !== null && typeof o.error === 'object' ? (o.error as Record<string, unknown>) : {};
+  const code = text(o.error_code) || text(nested.class);
+  const words =
+    text(o.message) ||
+    text(o.error_message) ||
+    text(o.errors) ||
+    text(o.error) ||
+    text(nested.message) ||
+    text(o.error_description);
+  const joined = code !== '' && words !== '' ? `${code}: ${words}` : code || words;
+  return (joined || 'The store refused the request.').slice(0, 300);
 }
 
 export async function callStore(

@@ -49,7 +49,9 @@ What unblocks it: `invoices.createDraft` (and a credit note operation) from R1. 
 
 ## B8 Documentation of Plaid and Salt Edge cannot be reached (16.7)
 
-Status: open. Found in: 16.7 (2026-10-23, tested again after the owner allowed more hosts).
+Status: resolved in 16.7 (2026-10-23): `plaid.com` and `docs.saltedge.com` were allowed, the pages were read with `curl` and the adapters were written (`docs/integrations/plaid.md`, `saltedge.md`). `api.plaid.com` stays refused and is not needed.
+
+Found in: 16.7 (2026-10-23, tested again after the owner allowed more hosts).
 
 The rule of this STEP is to read each provider's latest official documentation in the session before writing its adapter, and to stop when it cannot be reached. `plaid.com`, `api.plaid.com`, `docs.saltedge.com` and `www.saltedge.com` all fail through the session proxy with `CONNECT tunnel failed, response 403` (the hosts of Shopify and WooCommerce, tested in the same session, answered 200). So the bank feed sub-step (Plaid and Salt Edge adapters, account linking, transaction import into the STEP 15 reconciliation, smart matching suggestions) is not started.
 

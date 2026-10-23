@@ -374,7 +374,8 @@ export function conflictsOf(order: NormalizedOrder, mapped: ReadonlySet<string>)
   if (order.billing === null || order.billing.postalCode === '')
     out.push({
       kind: 'no_address',
-      detail: 'The order has no billing address (street, city, postal code and country) that a client needs.',
+      detail:
+        'The order has no billing address (street, city, postal code and country) that a client needs.',
     });
   const seen = new Set<string>();
   for (const line of order.lines) {

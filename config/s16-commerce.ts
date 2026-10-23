@@ -7,7 +7,11 @@ export type CommerceProvider = (typeof COMMERCE_PROVIDERS)[number];
 /** The Admin API version in the address. 2026-10 is the latest stable version on 2026-10-23 (supported until 2027-10-16). */
 export const SHOPIFY_API_VERSION = '2026-10';
 export const SHOPIFY_DOMAIN_SUFFIX = '.myshopify.com';
-export const SHOPIFY_WEBHOOK_TOPICS = ['ORDERS_CREATE', 'ORDERS_UPDATED', 'REFUNDS_CREATE'] as const;
+export const SHOPIFY_WEBHOOK_TOPICS = [
+  'ORDERS_CREATE',
+  'ORDERS_UPDATED',
+  'REFUNDS_CREATE',
+] as const;
 export const WOOCOMMERCE_API_PATH = '/wp-json/wc/v3';
 export const WOOCOMMERCE_WEBHOOK_TOPICS = ['order.created', 'order.updated'] as const;
 
@@ -32,7 +36,13 @@ export const ORDER_STATUSES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export const CONFLICT_KINDS = ['currency', 'unmapped_sku', 'no_email', 'no_address', 'refund'] as const;
+export const CONFLICT_KINDS = [
+  'currency',
+  'unmapped_sku',
+  'no_email',
+  'no_address',
+  'refund',
+] as const;
 export type ConflictKind = (typeof CONFLICT_KINDS)[number];
 
 /** The platform keeps money in one currency. An order in another currency waits as a conflict. */

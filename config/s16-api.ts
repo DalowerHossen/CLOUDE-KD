@@ -88,7 +88,9 @@ export const WEBHOOK_SECRET_RANDOM_LENGTH = 40;
 export const WEBHOOK_SECRET_OVERLAP_HOURS = 24;
 export const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 300;
 /** Delay (seconds) before attempt 2, 3, ... after a failed attempt. There are at most `WEBHOOK_MAX_ATTEMPTS` attempts. */
-export const WEBHOOK_RETRY_SECONDS: readonly number[] = [60, 300, 1800, 7200, 21_600, 43_200, 86_400];
+export const WEBHOOK_RETRY_SECONDS: readonly number[] = [
+  60, 300, 1800, 7200, 21_600, 43_200, 86_400,
+];
 export const WEBHOOK_MAX_ATTEMPTS = WEBHOOK_RETRY_SECONDS.length + 1;
 /** An endpoint is switched off after this many failed attempts in a row. */
 export const WEBHOOK_DISABLE_AFTER_FAILURES = 10;

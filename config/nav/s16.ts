@@ -74,4 +74,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 92,
   },
+  {
+    id: 'bankfeed',
+    labelKey: 's16Bankfeed.nav.bankfeed',
+    href: '/integrations/bank',
+    icon: 'building',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 93,
+  },
 ];

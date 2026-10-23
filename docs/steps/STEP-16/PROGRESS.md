@@ -10,7 +10,7 @@
 - [x] 16.4.b Social: scheduling, rules, approval, analytics, share widgets (2026-10-23)
 - [x] 16.5 Commerce: Shopify and WooCommerce (2026-10-23; invoice drafts wait for R1, BLOCKERS B7)
 - [x] 16.6 Automation tools (2026-10-23)
-- [ ] 16.7 Bank feed
+- [x] 16.7 Bank feed (2026-10-23; the matching and the report stay in STEP 15, D16)
 - [x] 16.8 Receipt OCR (2026-10-23)
 - [x] 16.9 Multi-channel messaging (2026-10-23)
 - [x] 16.10 Migration wizard (2026-10-23)
