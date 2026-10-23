@@ -38,4 +38,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 87,
   },
+  {
+    id: 'ocr',
+    labelKey: 's16Ocr.nav.ocr',
+    href: '/integrations/ocr',
+    icon: 'receipt',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 88,
+  },
 ];
