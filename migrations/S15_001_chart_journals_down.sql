@@ -2,7 +2,7 @@
 drop function if exists public.kd_journal_balances(uuid, date);
 drop function if exists public.kd_journal_reverse(uuid, uuid, date, text, uuid);
 drop function if exists public.kd_journal_replace(uuid, uuid, integer, date, text, text, jsonb, uuid);
-drop function if exists public.kd_journal_create(uuid, date, text, text, text, text, text, jsonb, uuid, text, boolean, text, uuid, text);
+drop function if exists public.kd_journal_create(uuid, date, text, text, text, text, text, jsonb, uuid, text, boolean, text, uuid, text, text);
 drop function if exists public.kd_journal_post(uuid, uuid, uuid);
 drop function if exists public.kd_journal_number(uuid, integer);
 drop table if exists public.journal_attachments;

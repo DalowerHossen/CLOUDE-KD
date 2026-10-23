@@ -242,6 +242,8 @@ export interface CreateOptions {
   /** `draft` keeps the entry for later; `post` posts it (an owner) or sends it for approval (staff). */
   mode: 'draft' | 'post';
   confirmDuplicate?: boolean;
+  /** An adjusting entry (year-end or month-end adjustment); it is listed apart in the reports. */
+  adjusting?: boolean;
 }
 
 async function askApproval(
@@ -285,6 +287,7 @@ export async function createJournal(
     p_source_type: null,
     p_source_id: null,
     p_source_key: null,
+    p_kind: options.adjusting ? 'adjusting' : 'normal',
     p_lines: linesJson(d.lines),
     p_actor: actor.userId,
     p_status: status,
@@ -455,6 +458,8 @@ export interface SystemEntry {
   /** One entry per key: a second call with the same key changes nothing. */
   sourceKey: string;
   lines: readonly JournalLineInput[];
+  /** `closing` marks the year-end closing entry (left out of the reports of the year). */
+  kind?: 'normal' | 'closing';
 }
 
 /** An entry made by the system from a domain event: posted at once, once per source key. */
@@ -476,6 +481,7 @@ export async function postSystemEntry(
     p_source_type: entry.sourceType,
     p_source_id: entry.sourceId,
     p_source_key: entry.sourceKey,
+    p_kind: entry.kind ?? 'normal',
     p_lines: linesJson(parsed.data.lines),
     p_actor: null,
     p_status: 'posted',

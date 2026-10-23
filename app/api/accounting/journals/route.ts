@@ -38,6 +38,7 @@ export const POST = withApi(
       entry: journalDraftInput,
       mode: z.enum(['draft', 'post']).default('draft'),
       confirmDuplicate: z.boolean().default(false),
+      adjusting: z.boolean().default(false),
     }),
     idempotent: true,
     auditExempt: 'The journal service writes the audit entry.',
@@ -49,6 +50,7 @@ export const POST = withApi(
       data: await createJournal(actor, body.entry, {
         mode: body.mode,
         confirmDuplicate: body.confirmDuplicate,
+        adjusting: body.adjusting,
       }),
     };
   },

@@ -87,6 +87,7 @@ create table if not exists public.journal_entries (
   internal_note text not null default '' check (char_length(internal_note) <= 2000),
   status text not null default 'draft' check (status in ('draft', 'pending_approval', 'posted')),
   source text not null default 'manual' check (source in ('manual', 'system', 'import', 'reversal', 'recurring')),
+  entry_kind text not null default 'normal' check (entry_kind in ('normal', 'adjusting', 'closing')),
   source_type text check (source_type is null or char_length(source_type) between 1 and 60),
   source_id text check (source_id is null or char_length(source_id) between 1 and 120),
   source_key text check (source_key is null or char_length(source_key) between 8 and 200),
@@ -281,7 +282,7 @@ begin
       if new.status <> 'posted' or new.deleted_at is distinct from old.deleted_at or new.entry_date <> old.entry_date
          or new.memo <> old.memo or new.entry_number is distinct from old.entry_number or new.content_hash <> old.content_hash
          or new.total_amount <> old.total_amount or new.source <> old.source or new.company_id <> old.company_id
-         or new.source_key is distinct from old.source_key or new.reverses_entry_id is distinct from old.reverses_entry_id
+         or new.entry_kind <> old.entry_kind or new.source_key is distinct from old.source_key or new.reverses_entry_id is distinct from old.reverses_entry_id
          or (old.reversed_by_id is not null and new.reversed_by_id is distinct from old.reversed_by_id) then
         raise exception 'a posted entry cannot change; reverse it instead' using errcode = '55000';
       end if;
@@ -350,7 +351,7 @@ $$;
 create or replace function public.kd_journal_create(
   p_company uuid, p_date date, p_memo text, p_source text, p_source_type text, p_source_id text, p_source_key text,
   p_lines jsonb, p_actor uuid, p_status text default 'draft', p_allow_duplicate boolean default false,
-  p_note text default '', p_reverses uuid default null, p_reason text default null
+  p_note text default '', p_reverses uuid default null, p_reason text default null, p_kind text default 'normal'
 ) returns jsonb
 language plpgsql
 security definer
@@ -371,6 +372,7 @@ begin
     raise exception 'an entry needs between 2 and 200 lines' using errcode = '22023';
   end if;
   if p_status not in ('draft', 'pending_approval', 'posted') then raise exception 'bad status' using errcode = '22023'; end if;
+  if p_kind not in ('normal', 'adjusting', 'closing') then raise exception 'bad kind' using errcode = '22023'; end if;
   if p_source_key is not null then
     perform pg_advisory_xact_lock(hashtextextended(p_company::text || ':je:' || p_source_key, 0));
     select * into v_old from public.journal_entries where company_id = p_company and source_key = p_source_key and deleted_at is null;
@@ -388,9 +390,9 @@ begin
       raise exception 'an entry with the same date and lines exists' using errcode = 'KD001', detail = v_dup_id::text;
     end if;
   end if;
-  insert into public.journal_entries (company_id, entry_date, memo, internal_note, status, source, source_type, source_id, source_key,
+  insert into public.journal_entries (company_id, entry_date, memo, internal_note, status, source, entry_kind, source_type, source_id, source_key,
       content_hash, duplicate_of, reverses_entry_id, reverse_reason, created_by)
-    values (p_company, p_date, coalesce(p_memo, ''), coalesce(p_note, ''), 'draft', p_source, p_source_type, p_source_id, p_source_key,
+    values (p_company, p_date, coalesce(p_memo, ''), coalesce(p_note, ''), 'draft', p_source, p_kind, p_source_type, p_source_id, p_source_key,
       v_hash, v_dup_id, p_reverses, p_reason, p_actor)
     returning id into v_id;
   for v_line in select * from jsonb_array_elements(p_lines) loop
@@ -466,7 +468,7 @@ begin
   select jsonb_agg(jsonb_build_object('account_id', account_id, 'debit', credit::text, 'credit', debit::text, 'description', description) order by line_no)
     into v_lines from public.journal_lines where entry_id = p_entry and deleted_at is null;
   v_new := public.kd_journal_create(p_company, p_date, 'Reversal of ' || v_e.entry_number || ': ' || coalesce(p_reason, ''), 'reversal',
-    'journal_entry', p_entry::text, 'reverse:' || p_entry::text, v_lines, p_actor, 'posted', true, '', p_entry, p_reason);
+    'journal_entry', p_entry::text, 'reverse:' || p_entry::text, v_lines, p_actor, 'posted', true, '', p_entry, p_reason, v_e.entry_kind);
   update public.journal_entries set reversed_by_id = (v_new->>'entry_id')::uuid where id = p_entry;
   return v_new;
 end
@@ -492,13 +494,13 @@ grant all on public.accounts, public.account_history, public.account_mappings, p
   public.journal_lines, public.journal_templates, public.journal_attachments to service_role;
 revoke execute on function public.kd_journal_number(uuid, integer) from public, anon, authenticated;
 revoke execute on function public.kd_journal_post(uuid, uuid, uuid) from public, anon, authenticated;
-revoke execute on function public.kd_journal_create(uuid, date, text, text, text, text, text, jsonb, uuid, text, boolean, text, uuid, text) from public, anon, authenticated;
+revoke execute on function public.kd_journal_create(uuid, date, text, text, text, text, text, jsonb, uuid, text, boolean, text, uuid, text, text) from public, anon, authenticated;
 revoke execute on function public.kd_journal_replace(uuid, uuid, integer, date, text, text, jsonb, uuid) from public, anon, authenticated;
 revoke execute on function public.kd_journal_reverse(uuid, uuid, date, text, uuid) from public, anon, authenticated;
 revoke execute on function public.kd_journal_balances(uuid, date) from public, anon, authenticated;
 grant execute on function public.kd_journal_number(uuid, integer) to service_role;
 grant execute on function public.kd_journal_post(uuid, uuid, uuid) to service_role;
-grant execute on function public.kd_journal_create(uuid, date, text, text, text, text, text, jsonb, uuid, text, boolean, text, uuid, text) to service_role;
+grant execute on function public.kd_journal_create(uuid, date, text, text, text, text, text, jsonb, uuid, text, boolean, text, uuid, text, text) to service_role;
 grant execute on function public.kd_journal_replace(uuid, uuid, integer, date, text, text, jsonb, uuid) to service_role;
 grant execute on function public.kd_journal_reverse(uuid, uuid, date, text, uuid) to service_role;
 grant execute on function public.kd_journal_balances(uuid, date) to service_role;

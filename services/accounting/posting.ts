@@ -17,8 +17,9 @@ import { Money } from '@/lib/utils/currency';
 import type { DomainEvent } from '@/types/events';
 import type { Actor } from '@/types/contracts';
 import { resolveAccount } from './accounts';
-import { mapAccountingError } from './db-errors';
-import { postSystemEntry } from './journals';
+import { mapAccountingError, PeriodClosedError } from './db-errors';
+import { postSystemEntry, type SystemEntry } from './journals';
+import { getSettings, nextOpenDate } from './periods';
 import type { JournalLineInput } from './journal-rules';
 import { POSTING_EVENTS, planEntry, type EventFacts, type PostingEventName } from './posting-rules';
 
@@ -175,6 +176,27 @@ async function reverseBySourceKey(
   return { entryId: String((out.data as { entry_id: string }).entry_id), skip: null };
 }
 
+/**
+ * Posts the entry. When the date falls in a closed period the company's policy decides: `next_open` posts it on the first day
+ * of the next open period (the memo says so), `fail` leaves the event failed until the owner reopens the period.
+ */
+async function postWithPolicy(entry: SystemEntry): Promise<{ entryId: string; replay: boolean }> {
+  try {
+    return await postSystemEntry(entry);
+  } catch (error) {
+    if (!(error instanceof PeriodClosedError)) throw error;
+    const settings = await getSettings(entry.companyId);
+    if (settings.closedPeriodPolicy === 'fail') throw error;
+    const moved = await nextOpenDate(entry.companyId, entry.date);
+    if (!moved) throw error;
+    return postSystemEntry({
+      ...entry,
+      date: moved,
+      memo: `${entry.memo} (dated ${entry.date}, posted in the next open period)`.slice(0, 500),
+    });
+  }
+}
+
 /** Posts the entry of one domain event. Safe to run again for the same event. */
 export async function processEvent(event: DomainEvent): Promise<void> {
   if (!event.companyId || !isPostingEvent(event.name)) return;
@@ -208,7 +230,7 @@ export async function processEvent(event: DomainEvent): Promise<void> {
         description: l.description,
       });
     }
-    const posted = await postSystemEntry({
+    const posted = await postWithPolicy({
       companyId,
       date: plan.entry.date,
       memo: plan.entry.memo,

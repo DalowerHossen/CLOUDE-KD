@@ -27,4 +27,18 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'accounting.period.manage',
+    description:
+      'Set up fiscal years, close months and years, lock modules and manage recurring entries',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'accounting.period.reopen',
+    description:
+      'Reopen a closed month or year (needs a fresh identity check and a reason; audited)',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

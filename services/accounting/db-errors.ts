@@ -16,9 +16,14 @@ export interface DbError {
   details?: string | null;
 }
 
+/** A posting into a closed period, a locked module or behind the lock date. */
+export class PeriodClosedError extends ConflictError {}
+
 export function mapAccountingError(error: DbError): never {
   const text = error.message ?? '';
   switch (error.code) {
+    case 'KD002':
+      throw new PeriodClosedError(text || 'The period is closed.');
     case 'KD001':
       throw new DuplicateError('An entry with the same date and lines already exists.', {
         entryId: error.details ?? null,
