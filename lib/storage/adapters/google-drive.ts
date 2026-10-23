@@ -1,6 +1,7 @@
 // path: lib/storage/adapters/google-drive.ts
 // Google Drive through the REST API with the company's own OAuth link and the minimal scope (drive.file: only files
 // this app created). Folder layout: tenants/{company_id}/{category}/. Holds encrypted bytes only.
+import { randomBytes } from 'node:crypto';
 import { ProviderUnavailableError, objectPath, withBackoff, type StorageAdapter } from './base';
 
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
@@ -75,7 +76,8 @@ export function createDriveAdapter(
     name: string,
     parent: string | null,
   ): Promise<string | null> {
-    const escaped = name.replace(/'/g, "\\'");
+    // Backslashes are escaped first, then quotes, so an escape cannot be undone by the name itself.
+    const escaped = name.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     const q = `name='${escaped}' and mimeType='${FOLDER_MIME}' and trashed=false and '${parent ?? 'root'}' in parents`;
     const response = await call(
       companyId,
@@ -133,7 +135,7 @@ export function createDriveAdapter(
       const path = objectPath(input.companyId, input.category, input.fileId).split('/');
       const name = path.pop() ?? `${input.fileId}.kdenc`;
       const parent = await ensurePath(input.companyId, path);
-      const boundary = `kd${Math.random().toString(36).slice(2)}${Date.now()}`;
+      const boundary = `kd${randomBytes(12).toString('hex')}`;
       const meta = JSON.stringify({
         name,
         parents: [parent],

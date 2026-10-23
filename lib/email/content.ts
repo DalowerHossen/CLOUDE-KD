@@ -2,6 +2,7 @@
 // Message body helpers: plain-text alternative, link collection, tracking rewrite, link allow list and a simple
 // phishing and spam pre-check. Pure functions; no network access.
 import { createHmac, randomBytes } from 'node:crypto';
+import { decodeEntities, replaceUntilStable, stripTags } from '@/lib/utils/html-text';
 
 const HREF = /<a\b([^>]*?)\shref\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>/gi;
 
@@ -11,25 +12,19 @@ export function newTrackingToken(): string {
 
 /** Readable text from HTML: links keep their address in brackets, blocks become lines. */
 export function htmlToText(html: string): string {
-  return html
-    .replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, '')
+  const blocks = replaceUntilStable(html, /<(style|script|head)[\s\S]*?<\/\1>/gi, '')
     .replace(
       /<a\b[^>]*?href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
       (_m, href: string, label: string) => {
-        const text = label.replace(/<[^>]+>/g, '').trim();
+        const text = stripTags(label).trim();
         return /^https?:/i.test(href) && text !== href ? `${text} (${href})` : text || href;
       },
     )
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|tr|h[1-6]|li|table)>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '- ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/<li[^>]*>/gi, '- ');
+  // Tags go first and entities are decoded last, so a decoded "<" is text and is never taken for a tag.
+  return decodeEntities(stripTags(blocks))
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -38,7 +33,7 @@ export function htmlToText(html: string): string {
 export function collectLinks(html: string): string[] {
   const out: string[] = [];
   for (const m of html.matchAll(HREF)) {
-    const href = (m[3] ?? m[4] ?? '').replace(/&amp;/g, '&');
+    const href = decodeEntities(m[3] ?? m[4] ?? '');
     if (/^https?:\/\//i.test(href)) out.push(href);
   }
   return out;
@@ -66,7 +61,7 @@ export function addTracking(
       sq: string | undefined,
       after: string,
     ) => {
-      const href = (dq ?? sq ?? '').replace(/&amp;/g, '&');
+      const href = decodeEntities(dq ?? sq ?? '');
       if (!/^https?:\/\//i.test(href)) return whole;
       links.push(href);
       return `<a${before} href="${base}/api/email/track/click/${token}/${links.length - 1}"${after}>`;
@@ -136,7 +131,7 @@ export function scanContent(html: string): ContentFinding[] {
     findings.push({ code: 'form', detail: 'Forms in e-mail are used for phishing.' });
   for (const m of html.matchAll(/<a\b[^>]*?href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const href = m[1] ?? '';
-    const label = (m[2] ?? '').replace(/<[^>]+>/g, '').trim();
+    const label = stripTags(m[2] ?? '').trim();
     let host = '';
     try {
       host = new URL(href).hostname.toLowerCase();

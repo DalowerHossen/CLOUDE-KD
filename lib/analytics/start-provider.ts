@@ -173,7 +173,7 @@ export function trackConversion(name: 'signup_click' | 'contact_sent' | 'free_to
   }).catch(() => undefined);
   if (name === 'free_tool_used') return;
   const lead = name === 'contact_sent' ? 'Lead' : 'CompleteRegistration';
-  const eventId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  const eventId = `${Date.now().toString(36)}${globalThis.crypto.randomUUID().replaceAll('-', '').slice(0, 8)}`;
   if (started.has('metaPixel') && typeof w.fbq === 'function') {
     (w.fbq as Fn)('track', lead, {}, { eventID: eventId });
     void fetch('/api/public-site/track', {

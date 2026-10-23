@@ -2,7 +2,7 @@
 // The rules of coupons as pure functions: the shape of a coupon, the code, the discount on an amount, the checks a
 // coupon must pass, and the plain words for each way it can be refused. The database function `kd_coupon_redeem` makes
 // the same checks under a lock, so these are used to explain a coupon before it is used and to test the rules.
-import { randomBytes } from 'node:crypto';
+import { randomInt } from 'node:crypto';
 import { z } from 'zod';
 import { Money } from '@/lib/utils/currency';
 
@@ -23,9 +23,9 @@ export const codeSchema = z
 
 /** A random code such as KD-7H3QX9PM. */
 export function generateCode(prefix = 'KD'): string {
-  const bytes = randomBytes(8);
   let out = '';
-  for (const b of bytes) out += ALPHABET[b % ALPHABET.length];
+  // randomInt draws every position with equal probability (no bias from a remainder).
+  for (let i = 0; i < 8; i += 1) out += ALPHABET[randomInt(ALPHABET.length)];
   return `${prefix}-${out}`;
 }
 

@@ -2,7 +2,8 @@
 // TOTP and backup code helpers. Pure functions: no database, no environment.
 import { authenticator } from 'otplib';
 import { BACKUP_CODE_COUNT, TOTP_PERIOD_SECONDS, TOTP_WINDOW_STEPS } from '@/config/auth-lock';
-import { hmacSha256Hex, randomBytes } from '@/lib/utils/hash';
+import { randomInt } from 'node:crypto';
+import { hmacSha256Hex } from '@/lib/utils/hash';
 
 authenticator.options = { step: TOTP_PERIOD_SECONDS, window: TOTP_WINDOW_STEPS, digits: 6 };
 
@@ -53,9 +54,8 @@ const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export function generateBackupCodes(count: number = BACKUP_CODE_COUNT): string[] {
   const codes: string[] = [];
   while (codes.length < count) {
-    const bytes = randomBytes(10);
     let raw = '';
-    for (const b of bytes) raw += ALPHABET[b % ALPHABET.length];
+    for (let i = 0; i < 10; i += 1) raw += ALPHABET[randomInt(ALPHABET.length)];
     codes.push(`${raw.slice(0, 5)}-${raw.slice(5)}`);
   }
   return codes;

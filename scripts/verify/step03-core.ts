@@ -154,7 +154,7 @@ async function main(): Promise<void> {
     const code = codes[0] ?? '';
     assert.equal(
       await hashBackupCode(code, key),
-      await hashBackupCode(code.toLowerCase().replace('-', ' '), key),
+      await hashBackupCode(code.toLowerCase().replaceAll('-', ' '), key),
     );
     assert.notEqual(await hashBackupCode(code, key), await hashBackupCode(codes[1] ?? '', key));
     assert.notEqual(await hashBackupCode(code, key), await hashBackupCode(code, 'z'.repeat(48)));

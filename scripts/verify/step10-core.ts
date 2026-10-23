@@ -94,7 +94,9 @@ function installFakeEncryption(): void {
       };
     },
     async decrypt(_purpose, payload: EncryptedPayload, scope) {
-      const decipher = createDecipheriv('aes-256-gcm', testKey, Buffer.from(payload.iv, 'base64'));
+      const decipher = createDecipheriv('aes-256-gcm', testKey, Buffer.from(payload.iv, 'base64'), {
+        authTagLength: 16,
+      });
       decipher.setAAD(Buffer.from(scope ?? ''));
       decipher.setAuthTag(Buffer.from(payload.tag, 'base64'));
       return new Uint8Array(

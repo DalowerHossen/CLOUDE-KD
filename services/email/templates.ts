@@ -8,6 +8,7 @@ import { ValidationError } from '@/lib/errors';
 import { htmlToText } from '@/lib/email/content';
 import { fillVariables, sanitizeBodyHtml, wrapInShell } from '@/lib/email/template-body';
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { replaceUntilStable } from '@/lib/utils/html-text';
 import { resolveBrand } from './brand';
 import type { EmailTemplateDefinition } from '@/types/contracts';
 
@@ -130,6 +131,6 @@ export async function renderTemplate(
   }
   if (!entry.component) throw new ValidationError(`The e-mail template "${id}" has no design yet.`);
   const element = createElement(entry.component as ComponentType<Record<string, unknown>>, data);
-  const html = (await render(element)).replace(/<!--\/?\$-->/g, '');
+  const html = replaceUntilStable(await render(element), /<!--\/?\$-->/g, '');
   return { subject: renderSubject(entry.definition.subject, data), html, text: htmlToText(html) };
 }

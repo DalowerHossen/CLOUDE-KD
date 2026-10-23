@@ -15,6 +15,7 @@ import { getPublicEnv } from '@/lib/env/public';
 import { disallowedLinkHosts, scanContent } from '@/lib/email/content';
 import { sampleData, sanitizeBodyHtml, unknownVariables } from '@/lib/email/template-body';
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { stripTags } from '@/lib/utils/html-text';
 import type { Actor, EmailTemplateDefinition } from '@/types/contracts';
 import {
   activeOverride,
@@ -200,8 +201,7 @@ export function validateBody(
       `Unknown variable(s): ${[...new Set(unknown)].map((v) => `{{${v}}}`).join(', ')}. Allowed: ${definition.variables.map((v) => `{{${v}}}`).join(', ') || 'none'}.`,
     );
   const clean = sanitizeBodyHtml(bodyHtml);
-  if (clean.replace(/<[^>]+>/g, '').trim().length === 0)
-    throw new ValidationError('The message has no text.');
+  if (stripTags(clean).trim().length === 0) throw new ValidationError('The message has no text.');
   const bad = disallowedLinkHosts(clean, appHosts());
   if (bad.length > 0)
     throw new ValidationError(

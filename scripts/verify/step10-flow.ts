@@ -67,7 +67,9 @@ registerService('encryption', {
     };
   },
   async decrypt(_p, payload, scope) {
-    const d = createDecipheriv('aes-256-gcm', key, Buffer.from(payload.iv, 'base64'));
+    const d = createDecipheriv('aes-256-gcm', key, Buffer.from(payload.iv, 'base64'), {
+      authTagLength: 16,
+    });
     d.setAAD(Buffer.from(scope ?? ''));
     d.setAuthTag(Buffer.from(payload.tag, 'base64'));
     return new Uint8Array(

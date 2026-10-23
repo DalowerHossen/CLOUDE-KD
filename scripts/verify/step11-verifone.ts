@@ -810,18 +810,18 @@ async function main(): Promise<void> {
     publishKeys(signer);
     const good = sign(signer, body);
     assert.equal(await verify({ 'x-vfi-jws': good }), true);
-    assert.equal(await verify({ 'x-vfi-jws': good }, body.replace('120.50', '1.50')), false);
+    assert.equal(await verify({ 'x-vfi-jws': good }, body.replaceAll('120.50', '1.50')), false);
     assert.equal(await verify({}), false);
     assert.equal(await verify({ 'x-vfi-jws': good }, ''), false);
     assert.equal(await verify({ 'x-vfi-jws': good }, 'not json'), false);
     assert.equal(await verify({ 'x-vfi-jws': 'a.b' }), false);
-    assert.equal(await verify({ 'x-vfi-jws': good.replace('..', '.eyJ4IjoxfQ.') }), false);
+    assert.equal(await verify({ 'x-vfi-jws': good.replaceAll('..', '.eyJ4IjoxfQ.') }), false);
     assert.equal(await verify({ 'x-vfi-jws': `${good}x` }), false);
     assert.equal(await verify({ 'x-vfi-jws': sign(other, body) }), false);
     assert.equal(await verify({ 'x-vfi-jws': sign(signer, body, {}, '{"a":1}') }), false);
     // signature over the wrong (non-canonical) text of the same body
     assert.equal(
-      await verify({ 'x-vfi-jws': sign(signer, body, {}, body.replace('{', '{ ')) }),
+      await verify({ 'x-vfi-jws': sign(signer, body, {}, body.replaceAll('{', '{ ')) }),
       false,
     );
   });

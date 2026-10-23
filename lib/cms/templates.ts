@@ -22,7 +22,7 @@ export const BLOCK_LABELS: Readonly<Record<BlockType, string>> = {
 };
 
 function stamp(): string {
-  return Math.random().toString(36).slice(2, 8);
+  return globalThis.crypto.randomUUID().replaceAll('-', '').slice(0, 6);
 }
 
 /** A valid new block of a type. The id is unique within a page because of the random part. */

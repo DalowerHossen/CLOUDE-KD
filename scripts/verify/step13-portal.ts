@@ -64,7 +64,7 @@ async function main(): Promise<void> {
       'abc',
       TOKEN + 'x',
       'A'.repeat(22) + '.' + 'B'.repeat(21),
-      TOKEN.replace('.', '/'),
+      TOKEN.replaceAll('.', '/'),
       `${TOKEN}\n`,
     ])
       assert.ok(!portalTokenSchema.safeParse(bad).success, bad);
