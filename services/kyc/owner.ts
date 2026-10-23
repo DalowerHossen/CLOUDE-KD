@@ -225,7 +225,8 @@ export async function uploadDocument(
     const gone = await admin
       .from('kyc_documents')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', String(old.data.id));
+      .eq('id', String(old.data.id))
+      .eq('company_id', companyId);
     if (gone.error) throw new InternalError(gone.error);
     await storage.remove(String(old.data.file_id)).catch(() => undefined);
   }
@@ -248,7 +249,11 @@ export async function uploadDocument(
     .single();
   if (error) throw new InternalError(error);
   if (typeof dup.data === 'string')
-    await admin.from('kyc_submissions').update({ duplicate_flag: true }).eq('id', submission.id);
+    await admin
+      .from('kyc_submissions')
+      .update({ duplicate_flag: true })
+      .eq('id', submission.id)
+      .eq('company_id', companyId);
   await getService('audit').record({
     action: 'kyc.document_uploaded',
     resourceType: 'kyc_document',
@@ -274,7 +279,8 @@ export async function saveOwners(actor: Actor, input: Owners): Promise<void> {
   const { error } = await getAdminSupabase()
     .from('kyc_submissions')
     .update({ owners_encrypted: payload })
-    .eq('id', submission.id);
+    .eq('id', submission.id)
+    .eq('company_id', companyId);
   if (error) throw new InternalError(error);
   await getService('audit').record({
     action: 'kyc.owners_saved',
@@ -299,6 +305,7 @@ export async function submitKyc(actor: Actor): Promise<void> {
     .from('kyc_submissions')
     .update({ status: 'submitted', submitted_at: new Date().toISOString(), decision_reason: '' })
     .eq('id', view.submissionId)
+    .eq('company_id', companyId)
     .in('status', ['draft', 'changes_requested'])
     .select('id');
   if (error) throw new InternalError(error);

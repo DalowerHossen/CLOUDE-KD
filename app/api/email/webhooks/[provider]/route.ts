@@ -33,7 +33,8 @@ export async function POST(
       const company = request.nextUrl.searchParams.get('c');
       if (company !== null && !UUID.test(company)) return new Response(null, { status: 404 });
       const body = await request.text();
-      if (body.length > 1_000_000) return new Response(null, { status: 413 });
+      if (new TextEncoder().encode(body).byteLength > 1_000_000)
+        return new Response(null, { status: 413 });
 
       const rows = (await loadRows(company)).filter((r) => r.provider === provider && r.enabled);
       let verdict: InboundResult = { ok: false, reason: 'bad_signature' };

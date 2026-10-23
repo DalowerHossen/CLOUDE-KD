@@ -31,7 +31,8 @@ export function processorWebhookRoute(
           return new Response(null, { status: 413 });
         }
         const rawBody = await request.text();
-        if (rawBody.length > MAX_BODY_BYTES) return new Response(null, { status: 413 });
+        if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES)
+          return new Response(null, { status: 413 });
         const headers: Record<string, string> = {};
         request.headers.forEach((value, key) => {
           headers[key.toLowerCase()] = value;
