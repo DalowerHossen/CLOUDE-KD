@@ -51,7 +51,7 @@
     "cmdk": "^1.0.0",
     "decimal.js": "^10.4.3",
     "fast-xml-parser": "^5.11.2",
-    "framer-motion": "^11.11.0",
+    "framer-motion": "^14.3.0",
     "isomorphic-dompurify": "^2.16.0",
     "jose": "^5.9.3",
     "lucide-react": "^0.452.0",
