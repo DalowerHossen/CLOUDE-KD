@@ -20,11 +20,13 @@ import { requirePagePermission } from '@/services/base/page-guard';
 import {
   getEmployee,
   listDocuments,
+  listEmployees,
   type EmployeeDocumentView,
   type EmployeeView,
   type SensitiveView,
 } from '@/services/payroll/employees';
 import { CONTRACTS, STATUSES } from '@/services/payroll/payroll-rules';
+import { listDepartments, listPositions } from '@/services/hr/org';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Employee' };
@@ -42,11 +44,15 @@ export default async function EmployeePage({
   const canManage = await permissions.can(actor, 'payroll.employee.manage', { type: 'employee' });
   const canPayManage = await permissions.can(actor, 'payroll.pay.manage', { type: 'employee' });
   const canPortal = await permissions.can(actor, 'payroll.portal.manage', { type: 'employee' });
+  const canHr = await permissions.can(actor, 'hr.manage', { type: 'employee' });
   let data: {
     employee: EmployeeView;
     sensitive: SensitiveView | null;
     documents: EmployeeDocumentView[];
     links: LinkView[];
+    departments: { value: string; label: string }[];
+    positions: { value: string; label: string }[];
+    managers: { value: string; label: string }[];
   } | null;
   try {
     const [{ employee, sensitive }, documents] = await Promise.all([
@@ -54,7 +60,24 @@ export default async function EmployeePage({
       listDocuments(companyId, id),
     ]);
     const links = canPortal ? await listLinks(companyId, id).catch(() => []) : [];
-    data = { employee, sensitive, documents, links };
+    const [departments, positions, people] = canHr
+      ? await Promise.all([
+          listDepartments(companyId),
+          listPositions(companyId),
+          listEmployees(companyId, { status: 'active' }),
+        ]).catch(() => [[], [], []] as const)
+      : [[], [], []];
+    data = {
+      employee,
+      sensitive,
+      documents,
+      links,
+      departments: departments.map((d) => ({ value: d.id, label: d.name })),
+      positions: positions.map((p) => ({ value: p.id, label: p.title })),
+      managers: people
+        .filter((m) => m.id !== id)
+        .map((m) => ({ value: m.id, label: `${m.number} ${m.firstName} ${m.lastName}` })),
+    };
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
     data = null;
@@ -349,6 +372,86 @@ export default async function EmployeePage({
                   />
                 </CardContent>
               </Card>
+            </>
+          ) : null}
+          {canHr ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('s15Hr.employee.placeTitle')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <JsonForm
+                    endpoint={`/api/hr/employees/${id}/assign`}
+                    method="PUT"
+                    emptyAsNull
+                    fixed={{ version: e.version }}
+                    submitLabel={t('s15Hr.org.place')}
+                    doneText={t('s15Hr.common.done')}
+                    fields={[
+                      {
+                        name: 'departmentId',
+                        label: t('s15Hr.org.department'),
+                        kind: 'select',
+                        options: [
+                          { value: '', label: t('s15Hr.common.none') },
+                          ...data.departments,
+                        ],
+                      },
+                      {
+                        name: 'positionId',
+                        label: t('s15Hr.org.position'),
+                        kind: 'select',
+                        options: [{ value: '', label: t('s15Hr.common.none') }, ...data.positions],
+                      },
+                      {
+                        name: 'managerId',
+                        label: t('s15Hr.org.manager'),
+                        kind: 'select',
+                        options: [{ value: '', label: t('s15Hr.common.none') }, ...data.managers],
+                      },
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+              {e.status !== 'terminated' ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t('s15Hr.employee.endTitle')}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-sp-12">
+                    <p className="text-sm text-muted-foreground">{t('s15Hr.employee.endHelp')}</p>
+                    <JsonForm
+                      endpoint={`/api/hr/employees/${id}/terminate`}
+                      idempotent
+                      fixed={{ version: e.version }}
+                      submitLabel={t('s15Hr.employee.end')}
+                      doneText={t('s15Hr.employee.ended')}
+                      fields={[
+                        {
+                          name: 'endDate',
+                          label: t('s15Hr.employee.endDate'),
+                          hint,
+                          required: true,
+                        },
+                        {
+                          name: 'reason',
+                          label: t('s15Hr.employee.reason'),
+                          kind: 'select',
+                          initial: 'resignation',
+                          options: (
+                            ['resignation', 'termination', 'end_of_contract', 'other'] as const
+                          ).map((r) => ({
+                            value: r,
+                            label: t(`s15Hr.employee.reasons.${r}` as StringKey),
+                          })),
+                        },
+                        { name: 'note', label: t('s15Hr.employee.note') },
+                      ]}
+                    />
+                  </CardContent>
+                </Card>
+              ) : null}
             </>
           ) : null}
           {canPortal ? (

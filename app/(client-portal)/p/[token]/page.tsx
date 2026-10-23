@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { OtpGate } from '@/components/client/otp-gate';
 import { StateCard } from '@/components/client/state-card';
 import { DeclarationForm } from '@/components/payroll/declaration-form';
+import { LeaveCancelButton, LeaveForm } from '@/components/payroll/leave-form';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { NotFoundError } from '@/lib/errors';
@@ -10,6 +11,7 @@ import { t, type StringKey } from '@/lib/i18n';
 import { resolvePortalAccess } from '@/services/portal/access';
 import { recordPortalEvent } from '@/services/portal/events';
 import { portalView, type PortalView } from '@/services/payroll/portal';
+import { portalLeave, type PortalLeave } from '@/services/hr/leave';
 
 // An employee page is always built for the request: it checks the link, the code and the rate limits each time.
 export const dynamic = 'force-dynamic';
@@ -60,6 +62,11 @@ export default async function EmployeePortalPage({
     if (error instanceof NotFoundError) return invalid();
     throw error;
   }
+  const leave: PortalLeave = await portalLeave(access).catch(() => ({
+    types: [],
+    balances: [],
+    requests: [],
+  }));
   await recordPortalEvent(access, 'view');
   const pending = view.declaration?.status === 'pending';
   return (
@@ -128,6 +135,47 @@ export default async function EmployeePortalPage({
           ) : (
             <DeclarationForm token={token} />
           )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('s15Hr.portal.leaveTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-sp-12">
+          {leave.balances.length > 0 ? (
+            <ul className="text-sm">
+              {leave.balances.map((b) => (
+                <li key={`${b.type}-${b.year}`}>
+                  {b.type} {b.year}: {b.left} {t('s15Hr.portal.left')} {t('s15Hr.portal.of')}{' '}
+                  {b.entitled}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <h3 className="font-semibold">{t('s15Hr.portal.requests')}</h3>
+          {leave.requests.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('s15Hr.portal.none')}</p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {leave.requests.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <span>
+                    {r.type}: {r.startDate} - {r.endDate} ({r.days}){r.note ? ` - ${r.note}` : ''}
+                  </span>
+                  <Badge variant="outline">
+                    {t(`s15Hr.portal.statuses.${r.status}` as StringKey)}
+                  </Badge>
+                  {r.status === 'pending' ? <LeaveCancelButton token={token} id={r.id} /> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+          {leave.types.length > 0 ? (
+            <>
+              <h3 className="font-semibold">{t('s15Hr.portal.newTitle')}</h3>
+              <LeaveForm token={token} types={leave.types} />
+            </>
+          ) : null}
         </CardContent>
       </Card>
       <p className="text-xs text-muted-foreground">{t('s15Payroll.portal.confidential')}</p>
