@@ -52,7 +52,7 @@ When two sources disagree on the same topic, the higher one wins. Record every s
 
 ## 5. Tech stack (fixed)
 
-Next.js 14+ (App Router), TypeScript strict, Tailwind CSS, shadcn/ui, Supabase (PostgreSQL, Auth, RLS, Realtime, pg_cron), Google Drive API, payment processors through pluggable adapters (16 processors, see PAYMENT_PROCESSORS.md), universal SMTP email, WhatsApp Meta Cloud API, Netlify (primary) and Docker/VPS (alternative), Sentry, Cloudflare Turnstile, DOMPurify, nonce-based CSP.
+Next.js 16 (App Router; the former middleware file is `proxy.ts`), React 19, Node.js 22, TypeScript strict, Tailwind CSS, shadcn/ui, Supabase (PostgreSQL, Auth, RLS, Realtime, pg_cron), Google Drive API, payment processors through pluggable adapters (16 processors, see PAYMENT_PROCESSORS.md), universal SMTP email, WhatsApp Meta Cloud API, Netlify (primary) and Docker/VPS (alternative), Sentry, Cloudflare Turnstile, DOMPurify, nonce-based CSP.
 
 ## 6. Branch policy
 

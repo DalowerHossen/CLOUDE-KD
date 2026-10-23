@@ -1,4 +1,5 @@
 // path: app/layout.tsx
+import { CsrfInit } from '@/lib/security/csrf-init';
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
@@ -49,15 +50,20 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}): Promise<JSX.Element> {
   // The middleware (STEP 04) sets x-nonce for the nonce-based content security policy.
-  const nonce = headers().get('x-nonce') ?? undefined;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <ThemeInitScript nonce={nonce} />
       </head>
       <body>
+        <CsrfInit />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

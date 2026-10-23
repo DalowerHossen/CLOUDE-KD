@@ -1,0 +1,50 @@
+name: deploy-netlify
+
+# Manual production deployment to Netlify. The workflow has no inputs. Docker/VPS deployments use
+# `bash scripts/deploy.sh docker` on the server (see docs/RUNBOOKS/README.md).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse Friday deployments after 15:00 UTC
+        run: |
+          dow="$(date -u +%u)"
+          hour="$(date -u +%H)"
+          if [ "$dow" = "5" ] && [ "$((10#$hour))" -ge 15 ]; then
+            echo "Deployments are not allowed on Friday after 15:00 UTC." >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: bash scripts/integration-check.sh --quick
+
+  deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Deploy
+        run: bash scripts/deploy.sh netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

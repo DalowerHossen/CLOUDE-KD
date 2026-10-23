@@ -222,7 +222,7 @@ STEP ১১: stripe, paypal, braintree, square, authorizenet, bluesnap, verifone
 
 ### ৫.৫ কনফ্লিক্ট ও ডুপ্লিকেট প্রতিরোধ ব্যবস্থা
 - **ফাইল মালিকানা:** প্রতিটি পাথ ঠিক একটি STEP-এর (`OWNERSHIP_MAP.md`); `check-ownership.sh` ও CODEOWNERS তা ধরে।
-- **শেয়ার্ড ফাইল:** `package.json`, লকফাইল, `middleware.ts`-এর চেইন, i18n/nav/permission/env/cron ব্যারেল — ফ্র্যাগমেন্ট ফাইল ও জেনারেটরে; ইন্টিগ্রেটর নিয়ন্ত্রণ করে। প্যাকেজ লাগলে `DEPENDENCY_REQUESTS.md`।
+- **শেয়ার্ড ফাইল:** `package.json`, লকফাইল, `proxy.ts`-এর (Next.js 16-এ middleware-এর নতুন নাম) চেইন, i18n/nav/permission/env/cron ব্যারেল — ফ্র্যাগমেন্ট ফাইল ও জেনারেটরে; ইন্টিগ্রেটর নিয়ন্ত্রণ করে। প্যাকেজ লাগলে `DEPENDENCY_REQUESTS.md`।
 - **মাইগ্রেশন:** `S{NN}_{seq}_…` নাম; প্রতিটি STEP-এর নিজস্ব নম্বর ব্লক; টেবিল মালিকানা তালিকা (`OWNERSHIP_MAP.md` §৪)।
 - **কনট্র্যাক্ট:** STEP-এর মধ্যে কল শুধু `types/contracts/` ও `lib/container.ts` দিয়ে; ইভেন্ট নাম নির্দিষ্ট (`types/events.ts`)।
 - **ব্লকার:** অস্পষ্ট বা অনুপস্থিত কনট্র্যাক্টে `BLOCKERS.md` লিখে থামা; নিজে বানানো নয়।
@@ -256,7 +256,7 @@ STEP ১১: stripe, paypal, braintree, square, authorizenet, bluesnap, verifone
 
 | স্তর | পছন্দ | কেন |
 |---|---|---|
-| ফ্রন্টএন্ড | Next.js 14+ (App Router), TypeScript strict, Tailwind, shadcn/ui | SSR/ISR, এক কোডবেসে পাবলিক সাইট ও অ্যাপ |
+| ফ্রন্টএন্ড | Next.js 16 (App Router), React 19, TypeScript strict, Tailwind, shadcn/ui | SSR/ISR, এক কোডবেসে পাবলিক সাইট ও অ্যাপ |
 | ডেটাবেস/অথ | Supabase (PostgreSQL, Auth, RLS, Realtime, pg_cron) | RLS দিয়ে মাল্টি-টেন্যান্ট আইসোলেশন |
 | ফাইল | Google Drive API (গ্রাহকের নিজের OAuth লিংক) অথবা Supabase Storage; দুটোতেই আগে AES-256-GCM | আপনার নির্দেশ অনুযায়ী প্রতিষ্ঠানভেদে রানটাইমে নির্বাচন |
 | পেমেন্ট | ১৬ প্রসেসর, পাল্টানো যায় এমন অ্যাডাপ্টার | রেজিস্ট্রি + আলাদা ফাইল |

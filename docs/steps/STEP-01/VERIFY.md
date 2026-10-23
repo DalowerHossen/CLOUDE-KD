@@ -34,3 +34,21 @@ Outside development the preview pages show the not-found view (no gallery conten
 - End-to-end behaviour of `withApi` with real services (needs STEPs 02 to 05); covered here with in-memory services.
 - Docker image build and CI workflow runs (no Docker daemon or GitHub runner in this session); compose files and workflow YAML were validated for syntax (`docker compose config`, YAML parse).
 - Lighthouse scores (no pages with content yet); the budget is configured in `.lighthouserc.json`.
+
+## Re-check after the CI review (Next.js 16, React 19, Node 22)
+
+| Check | Result |
+|---|---|
+| `npm audit --omit=dev --audit-level=high` (the CI gate) | 0 vulnerabilities (before: 1 critical, 13 high) |
+| `npm run lint` (ESLint 9 flat config, zero warnings), `npm run typecheck` | ok |
+| `node scripts/gen.mjs --check`, `bash scripts/check-all.sh` | ok |
+| `bash scripts/verify/step01-guards.sh` | 45 passed, 0 failed |
+| `npx tsx scripts/verify/step01-core.ts` | 29 passed, 0 failed |
+| `node scripts/verify/step01-tokens.mjs` | ok |
+| `next build` (Next.js 16.4.1, Turbopack) and `check-bundle-secrets.sh` | ok |
+| Browser matrix (5 route groups x 3 widths x light/dark) | 30 of 30 ok |
+| Browser interaction checks | 13 of 13 ok: theme choice persists after reload, high contrast attribute, Ctrl+K palette, ? shortcuts dialog, sidebar collapse, mobile drawer, field error with `role="alert"` and `aria-invalid`, no page errors |
+| Workflow and Dependabot YAML | valid; every `uses:` is pinned to a full commit SHA |
+| Docker compose files | validated with `docker compose config` (the image itself cannot be built in this session) |
+
+Not re-runnable here: GitHub Actions jobs (Semgrep, Trivy, Checkov, Lighthouse) and the Docker image build. The failures reported by those jobs were read from the GitHub run logs and each cause was fixed (DECISIONS items 13 to 16).

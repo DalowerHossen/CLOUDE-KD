@@ -4,7 +4,7 @@ Enterprise multi-tenant SaaS platform for invoicing, payments, payroll and accou
 
 ## Stack
 
-Next.js 14 (App Router), TypeScript (strict), Tailwind CSS, shadcn/ui, Supabase (PostgreSQL, Auth, RLS, Realtime, pg_cron), Google Drive API (optional per-company file storage), 16 pluggable payment processor adapters, universal SMTP email, WhatsApp Meta Cloud API, Netlify (primary) and Docker/VPS (alternative), Sentry, Cloudflare Turnstile.
+Next.js 16 (App Router, Turbopack), React 19, TypeScript (strict), Tailwind CSS, shadcn/ui, Supabase (PostgreSQL, Auth, RLS, Realtime, pg_cron), Google Drive API (optional per-company file storage), 16 pluggable payment processor adapters, universal SMTP email, WhatsApp Meta Cloud API, Netlify (primary) and Docker/VPS (alternative), Sentry, Cloudflare Turnstile.
 
 ## How the project is built
 
@@ -26,7 +26,7 @@ The work is split into 16 STEPs. One STEP is built in one chat; every STEP is di
 ## Getting started
 
 ```bash
-nvm use                       # Node 20
+nvm use                       # Node 22
 npm ci --ignore-scripts
 cp .env.example .env.local    # fill in the values (see comments in the file)
 npm run gen                   # generates barrels from fragments

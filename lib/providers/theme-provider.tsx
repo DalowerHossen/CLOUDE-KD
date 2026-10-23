@@ -1,16 +1,16 @@
 // path: lib/providers/theme-provider.tsx
 'use client';
 
-import { CONTRAST_STORAGE_KEY, THEME_STORAGE_KEY } from './theme-script';
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { CONTRAST_STORAGE_KEY, THEME_STORAGE_KEY } from './theme-script';
 
 export type ThemeChoice = 'light' | 'dark' | 'system';
 export type ContrastChoice = 'normal' | 'high';
@@ -23,10 +23,28 @@ interface ThemeContextValue {
   setContrast: (value: ContrastChoice) => void;
 }
 
-const THEME_KEY = THEME_STORAGE_KEY;
-const CONTRAST_KEY = CONTRAST_STORAGE_KEY;
+const THEMES: readonly ThemeChoice[] = ['light', 'dark', 'system'];
+const CONTRASTS: readonly ContrastChoice[] = ['normal', 'high'];
+const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+const listeners = new Set<() => void>();
+
+function subscribeStore(callback: () => void): () => void {
+  listeners.add(callback);
+  window.addEventListener('storage', callback);
+  return () => {
+    listeners.delete(callback);
+    window.removeEventListener('storage', callback);
+  };
+}
+
+function subscribeSystem(callback: () => void): () => void {
+  const list = window.matchMedia(DARK_QUERY);
+  list.addEventListener('change', callback);
+  return () => list.removeEventListener('change', callback);
+}
 
 function readStored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
   try {
@@ -45,58 +63,45 @@ function writeStored(key: string, value: string): void {
   } catch {
     // Storage can be blocked; the choice then lasts for this page view only.
   }
+  listeners.forEach((listener) => listener());
 }
 
-function systemPrefersDark(): boolean {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
-
-function apply(theme: ThemeChoice, contrast: ContrastChoice): 'light' | 'dark' {
-  const resolved = theme === 'system' ? (systemPrefersDark() ? 'dark' : 'light') : theme;
+/** Keeps the document in step with the theme (an external system, so an effect is the right tool). */
+function applyToDocument(resolved: 'light' | 'dark', contrast: ContrastChoice): void {
   const root = document.documentElement;
   root.classList.toggle('dark', resolved === 'dark');
   if (contrast === 'high') root.setAttribute('data-contrast', 'high');
   else root.removeAttribute('data-contrast');
   root.style.colorScheme = resolved;
-  return resolved;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }): JSX.Element {
-  const [theme, setThemeState] = useState<ThemeChoice>('system');
-  const [contrast, setContrastState] = useState<ContrastChoice>('normal');
-  const [resolvedTheme, setResolved] = useState<'light' | 'dark'>('light');
-
-  useEffect(() => {
-    const storedTheme = readStored<ThemeChoice>(THEME_KEY, ['light', 'dark', 'system'], 'system');
-    const storedContrast = readStored<ContrastChoice>(CONTRAST_KEY, ['normal', 'high'], 'normal');
-    setThemeState(storedTheme);
-    setContrastState(storedContrast);
-    setResolved(apply(storedTheme, storedContrast));
-  }, []);
-
-  useEffect(() => {
-    if (theme !== 'system') return;
-    const list = window.matchMedia('(prefers-color-scheme: dark)');
-    const listener = (): void => setResolved(apply('system', contrast));
-    list.addEventListener('change', listener);
-    return () => list.removeEventListener('change', listener);
-  }, [theme, contrast]);
-
-  const setTheme = useCallback(
-    (value: ThemeChoice) => {
-      writeStored(THEME_KEY, value);
-      setThemeState(value);
-      setResolved(apply(value, contrast));
-    },
-    [contrast],
+  const theme = useSyncExternalStore(
+    subscribeStore,
+    () => readStored<ThemeChoice>(THEME_STORAGE_KEY, THEMES, 'system'),
+    () => 'system' as ThemeChoice,
   );
+  const contrast = useSyncExternalStore(
+    subscribeStore,
+    () => readStored<ContrastChoice>(CONTRAST_STORAGE_KEY, CONTRASTS, 'normal'),
+    () => 'normal' as ContrastChoice,
+  );
+  const systemDark = useSyncExternalStore(
+    subscribeSystem,
+    () => window.matchMedia(DARK_QUERY).matches,
+    () => false,
+  );
+  const resolvedTheme: 'light' | 'dark' =
+    theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
+
+  useEffect(() => {
+    applyToDocument(resolvedTheme, contrast);
+  }, [resolvedTheme, contrast]);
+
+  const setTheme = useCallback((value: ThemeChoice) => writeStored(THEME_STORAGE_KEY, value), []);
   const setContrast = useCallback(
-    (value: ContrastChoice) => {
-      writeStored(CONTRAST_KEY, value);
-      setContrastState(value);
-      setResolved(apply(theme, value));
-    },
-    [theme],
+    (value: ContrastChoice) => writeStored(CONTRAST_STORAGE_KEY, value),
+    [],
   );
 
   const value = useMemo(
