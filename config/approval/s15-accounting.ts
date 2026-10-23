@@ -8,4 +8,6 @@ export const approvalRules: ApprovalRuleDefinition[] = [
   { action: 'expense.approve', level: 'L1', slaHours: 72 },
   // A budget that a staff member submitted waits for the owner.
   { action: 'budget.approve', level: 'L1', slaHours: 72 },
+  // A pay run waits for the owner before it is booked and paid.
+  { action: 'payroll.run.approve', level: 'L1', slaHours: 48 },
 ];

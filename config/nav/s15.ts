@@ -147,4 +147,22 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 83,
   },
+  {
+    id: 'payroll-runs',
+    labelKey: 's15Payroll.nav.runs',
+    href: '/payroll/runs',
+    icon: 'wallet',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 84,
+  },
+  {
+    id: 'payroll-reports',
+    labelKey: 's15Payroll.nav.reports',
+    href: '/payroll/reports',
+    icon: 'bar-chart',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 85,
+  },
 ];

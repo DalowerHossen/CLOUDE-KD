@@ -11,6 +11,6 @@
 - [x] 15.7.b Budgets, multi-entity, forecast and BI (2026-10-23)
 - [x] 15.7.c Tax reporting and audit pack (2026-10-23)
 - [x] 15.8.a Payroll: people and calculation (2026-10-23)
-- [ ] 15.8.b Payroll: pay runs and payslips
+- [x] 15.8.b Payroll: pay runs and payslips (2026-10-23)
 - [ ] 15.9 Employee self-service portal
 - [ ] 15.10 HR

@@ -16,3 +16,5 @@
 
 **R8 TypeScript memory.** `npx tsc --noEmit` now needs more than the default 2 GB of Node heap (it ran out of memory at that size after the payroll strings and pages were added; it passes with `NODE_OPTIONS=--max-old-space-size=6144`). The Integrator should set the heap in the `typecheck` script and in CI (for example `NODE_OPTIONS=--max-old-space-size=4096`), or split the type check by folder. STEP 15 added a large share of the page and string types.
 
+**R9 Payroll e-mail templates.** `emails/payroll/index.ts` exports `payrollEmailTemplates` (template `payroll.pay-notice`). Please add one line to `emails/catalog.ts`: `import { payrollEmailTemplates } from './payroll';` and `...payrollEmailTemplates,` in the list. Until then the notice e-mail to employees after a pay run is paid is queued, fails and is logged; nothing else is affected.
+

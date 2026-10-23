@@ -34,4 +34,35 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'payroll.run.read',
+    description: 'See pay runs and open payslips (every opening is audited)',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'payroll.run.manage',
+    description: 'Make, calculate and submit pay runs',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'payroll.run.approve',
+    description: 'Approve or send back a submitted pay run',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'payroll.run.pay',
+    description:
+      'Make the bank transfer list and record that a pay run was paid (needs a fresh identity check)',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'payroll.report.read',
+    description: 'See and export payroll reports',
+    defaultRoles: ['owner'],
+    approvalLevel: 'L0',
+  },
 ];

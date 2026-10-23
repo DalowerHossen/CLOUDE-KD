@@ -23,6 +23,7 @@ import register_mor from '@/services/mor/register';
 import register_notification from '@/services/notification/register';
 import register_payment from '@/services/payment/register';
 import register_payout from '@/services/payout/register';
+import register_payroll from '@/services/payroll/register';
 import register_portal from '@/services/portal/register';
 import register_security from '@/services/security/register';
 import register_storage from '@/services/storage/register';
@@ -52,6 +53,7 @@ export async function bootstrapServices(): Promise<void> {
   await register_notification();
   await register_payment();
   await register_payout();
+  await register_payroll();
   await register_portal();
   await register_security();
   await register_storage();
