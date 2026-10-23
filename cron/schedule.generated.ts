@@ -59,6 +59,7 @@ import { job as s15Expenses } from './jobs/s15-expenses';
 import { job as s15Payroll } from './jobs/s15-payroll';
 import { job as s15Recurring } from './jobs/s15-recurring';
 import { job as s15Tax } from './jobs/s15-tax';
+import { job as s16Housekeeping } from './jobs/s16-housekeeping';
 import { job as s16Messaging } from './jobs/s16-messaging';
 import { job as s16Migration } from './jobs/s16-migration';
 import { job as s16Ocr } from './jobs/s16-ocr';
@@ -69,4 +70,4 @@ import { job as s16Webhooks } from './jobs/s16-webhooks';
 import { job as s16WhatsappDaily } from './jobs/s16-whatsapp-daily';
 import { job as s16Whatsapp } from './jobs/s16-whatsapp';
 
-export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle, s07Support, s08Clients, s08Inventory, s08Purchasing, s09Batches, s09Estimates, s09Fx, s09Invoices, s09LateFees, s09Overdue, s09Recurring, s09Reminders, s09ReportSchedules, s09Snapshots, s09Time, s10PaymentUpkeep, s10ReviewExpiry, s10WebhookRetry, s13Approvals, s13Contracts, s13Disputes, s13Notices, s14Bnpl, s14ClientBilling, s14Holds, s14Payouts, s14Subscriptions, s14Usage, s15Assets, s15Budgets, s15Expenses, s15Payroll, s15Recurring, s15Tax, s16Messaging, s16Migration, s16Ocr, s16SocialHourly, s16SocialQuarter, s16Social, s16Webhooks, s16WhatsappDaily, s16Whatsapp];
+export const cronJobs: CronJobDefinition[] = [s02ApprovalEscalation, s02AuditIntegrity, s02QueuePurge, s02Retention, s02WorkerTick, s04AlertEscalation, s04RateLimitPurge, s04Siem, s04TorList, s05EmailPurge, s05EmailQueue, s05FileRetention, s05NotificationDigest, s05NotificationPurge, s05StorageHealth, s05StorageMigrate, s05UploadPurge, s06Blog, s06Cms, s07Admin, s07Domains, s07Kyc, s07Lifecycle, s07Support, s08Clients, s08Inventory, s08Purchasing, s09Batches, s09Estimates, s09Fx, s09Invoices, s09LateFees, s09Overdue, s09Recurring, s09Reminders, s09ReportSchedules, s09Snapshots, s09Time, s10PaymentUpkeep, s10ReviewExpiry, s10WebhookRetry, s13Approvals, s13Contracts, s13Disputes, s13Notices, s14Bnpl, s14ClientBilling, s14Holds, s14Payouts, s14Subscriptions, s14Usage, s15Assets, s15Budgets, s15Expenses, s15Payroll, s15Recurring, s15Tax, s16Housekeeping, s16Messaging, s16Migration, s16Ocr, s16SocialHourly, s16SocialQuarter, s16Social, s16Webhooks, s16WhatsappDaily, s16Whatsapp];

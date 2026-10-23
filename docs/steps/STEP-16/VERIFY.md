@@ -80,3 +80,23 @@
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-migration.ts` -> 9 checks passed: every preset key exists in the real field list of its target; a QuickBooks customer file read with the import readers is mapped and its rows checked with the real client rules (a bad e-mail fails only its row); a column is used for one field; Xero and Zoho item files map to the product fields and bad rows fail; a default fills a required field the file lacks; the dry run report (skip and make again, repeats in the file, records that exist, the first 50 problems, notes); batches; the 24 hour rollback window; strict inputs (no overwrite mode, only known default fields).
 - `npx tsc --noEmit` (larger heap), full `eslint`, `bash scripts/check-all.sh`, earlier `step16-*` scripts: see the commit.
 - Not run here: reading a stored file, the dry run against the database (duplicates in the system), the batch writing through the STEP 08 services, "rollback removes exactly the rows a batch created" as an end-to-end run (the rule that only created rows are removed is in the code and the row rules are tested in SQL), the cron job, the routes and the pages with a session.
+
+## 16.11 Whole-STEP verification (2026-10-23)
+
+Checked against the "Verification" list of `SCOPE.md`:
+
+| Item | Result | Evidence |
+|---|---|---|
+| API key scope enforced (403 outside the scope) | passes | `step16-api-keys.ts`, `step16-public-api.ts` (scope rules, 403 rule, registry against routes) |
+| Rate limit headers present | passes at the rule level | `step16-api-keys.ts` (header values); the wrapper was not run over HTTP |
+| Outgoing webhook retries then disables | passes | `step16-webhooks-out.ts` (retry schedule, disable after 10 failures) |
+| WhatsApp opt-out blocks sending | passes | `step16-whatsapp.ts` and `sql/assertions/s16_003_whatsapp.sql` (service rule and database trigger) |
+| A scheduled post publishes in sandbox | passes at the adapter level | `step16-social.ts` (sandbox adapter), `step16-social-schedule.ts` (slots); the cron run against the database was not run |
+| Shopify order creates a client and an invoice draft once | **not built** | 16.5 is open (hosts blocked) |
+| OCR sample receipts produce the expected fields | passes | `step16-ocr.ts` (11 sample receipts) |
+| Bank import creates reconciliation candidates | **not built** | 16.7 is open (hosts blocked) |
+
+16.11 itself: every integration job of the plan that belongs to a finished sub-step exists, appears in `cron/schedule.generated.ts` (ten `s16-*` jobs), and is safe to repeat; `sql/assertions/s16_012_housekeeping.sql` passes (the expiry notice mark does not change the identity of a key and a noticed key is not found again). The housekeeping service itself (notices, trimming, cancelling idle imports) was not run against a database.
+
+Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions of `S16_001` to `S16_012`; the eleven `step16-*` scripts (api-keys 12, public-api 15, webhooks-out 15, whatsapp 17, whatsapp-campaigns 15, social 15, social-schedule 9, automation 7, ocr 19, messaging 8, migration 9 checks); `npx tsc --noEmit` with a larger heap; full `eslint`; `bash scripts/check-all.sh`. See the closing commit for the results.
+
