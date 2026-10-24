@@ -126,3 +126,11 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 | Working out a sale, refund, chargeback, adjustment; rounding; hold; terms in force by time; the balance rule (same numbers as the database); inputs; the statement file | passes | `scripts/verify/step16-settlement.ts` (12 checks) |
 | Two payouts recorded at the same time for one sub-merchant (the lock) | **not run** | needs two database sessions at once |
 | The services, routes and page against a running app | **not run** | needs a running app |
+
+## 16.15 Automatic settlement entries
+
+| Check | Result | Evidence |
+|---|---|---|
+| Key table: unique fixed hash, fixed company, a revoked key stays revoked, bounded limit, minute counter | passes | `sql/assertions/s16_022_settlement_ingest.sql` |
+| Key format and hash, header reading, inputs, and the pipeline with fake ports: 401 for wrong/revoked/expired, limited attempts, address list, limit of the key, bad JSON, bad batch, too large, unknown (404) and closed (409) sub-merchant, one good batch handed on once | passes | `scripts/verify/step16-settlement-ingest.ts` (7 checks) |
+| The same batch posted twice through the database | **not run** | needs a running app; the unique rule is tested in `s16_021_settlement.sql` and the duplicate answer in `postBatch` is not run against it |

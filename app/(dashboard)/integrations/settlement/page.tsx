@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   EntriesForm,
+  IngestKeyForm,
+  RevokeIngestKey,
   PayoutForm,
   RemoveTerms,
   TermsForm,
@@ -27,6 +29,7 @@ import { t, type StringKey } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { balanceOfSub } from '@/services/gateway/balances';
 import { listEntries, type EntryView } from '@/services/gateway/entries';
+import { listIngestKeys, type IngestKeyView } from '@/services/gateway/ingest-keys';
 import { listSubMerchants, type SubMerchantView } from '@/services/gateway/sub-merchants';
 import { listTerms, type TermsView } from '@/services/gateway/terms';
 import { listPayouts, type PayoutView } from '@/services/gateway/transfers';
@@ -40,6 +43,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 interface Loaded {
   subs: { sub: SubMerchantView; balance: Balance }[];
   terms: TermsView[];
+  keys: IngestKeyView[];
   selected: { sub: SubMerchantView; entries: EntryView[]; payouts: PayoutView[] } | null;
 }
 
@@ -56,7 +60,11 @@ export default async function SettlementPage({
   const { sub: wanted } = await searchParams;
   let data: Loaded | null;
   try {
-    const [subs, terms] = await Promise.all([listSubMerchants(companyId), listTerms(companyId)]);
+    const [subs, terms, keys] = await Promise.all([
+      listSubMerchants(companyId),
+      listTerms(companyId),
+      listIngestKeys(companyId),
+    ]);
     const withBalance = await Promise.all(
       subs.map(async (sub) => ({ sub, balance: await balanceOfSub(companyId, sub.id) })),
     );
@@ -64,6 +72,7 @@ export default async function SettlementPage({
     data = {
       subs: withBalance,
       terms,
+      keys,
       selected: pick
         ? {
             sub: pick,
@@ -178,6 +187,36 @@ export default async function SettlementPage({
                   subOptions={data.subs.map((s) => ({ id: s.sub.id, name: s.sub.name }))}
                 />
               ) : null}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('s16Settlement.ingest.title')}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t('s16Settlement.ingest.help')}</p>
+              <p className="font-mono text-xs">{t('s16Settlement.ingest.endpoint')}</p>
+            </CardHeader>
+            <CardContent className="space-y-sp-12">
+              {data.keys.length === 0 ? (
+                <p className="text-sm">{t('s16Settlement.ingest.empty')}</p>
+              ) : (
+                <ul className="space-y-sp-4 text-sm">
+                  {data.keys.map((k) => (
+                    <li key={k.id} className="flex flex-wrap items-center gap-sp-8">
+                      <span>{k.name}</span>
+                      <code className="text-xs">{k.masked}</code>
+                      <Badge variant="outline">
+                        {t(`s16Settlement.ingest.states.${k.state}` as StringKey)}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {t('s16Settlement.ingest.lastUsed')}: {utc(k.lastUsedAt)}
+                      </span>
+                      {canManage && k.state === 'active' ? <RevokeIngestKey id={k.id} /> : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canManage ? <IngestKeyForm /> : null}
             </CardContent>
           </Card>
 

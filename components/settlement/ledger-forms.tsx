@@ -359,3 +359,133 @@ export function RemoveTerms({ id }: { id: string }): JSX.Element {
     </span>
   );
 }
+
+/** Makes a key with which the main merchant's app posts entries. The key is shown once. */
+export function IngestKeyForm(): JSX.Element {
+  const router = useRouter();
+  const [name, setName] = useState('');
+  const [rate, setRate] = useState(60);
+  const [ips, setIps] = useState('');
+  const [days, setDays] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  const [secret, setSecret] = useState<string | null>(null);
+
+  async function submit(event: FormEvent): Promise<void> {
+    event.preventDefault();
+    setBusy(true);
+    setNotice(null);
+    const list = ips
+      .split('\n')
+      .map((v) => v.trim())
+      .filter(Boolean);
+    const reply = await send('/api/integrations/settlement/ingest-keys', 'POST', {
+      name,
+      rateLimitPerMinute: rate,
+      allowedIps: list.length > 0 ? list : null,
+      expiresInDays: days,
+    });
+    if (!reply.ok) setNotice({ ok: false, text: reply.text });
+    else {
+      const value = (reply.data as { secret?: unknown } | null)?.secret;
+      setSecret(typeof value === 'string' ? value : null);
+      setName('');
+      router.refresh();
+    }
+    setBusy(false);
+  }
+
+  return (
+    <form onSubmit={(e) => void submit(e)} className="space-y-sp-8" noValidate>
+      {notice ? <Alert variant="destructive">{notice.text}</Alert> : null}
+      {secret ? (
+        <Alert variant="success" role="status">
+          <p className="font-medium">{t('s16Settlement.ingest.newKey')}</p>
+          <p className="text-sm">{t('s16Settlement.ingest.secretOnce')}</p>
+          <code className="mt-1 block break-all rounded bg-muted p-2 text-sm">{secret}</code>
+        </Alert>
+      ) : null}
+      <div className="grid gap-sp-8 sm:grid-cols-3">
+        <div className="space-y-1">
+          <Label htmlFor="ik-name">{t('s16Settlement.ingest.name')}</Label>
+          <Input
+            id="ik-name"
+            maxLength={80}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="ik-rate">{t('s16Settlement.ingest.rate')}</Label>
+          <Input
+            id="ik-rate"
+            type="number"
+            min={1}
+            max={10000}
+            value={rate}
+            onChange={(e) => setRate(e.target.valueAsNumber || 60)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="ik-days">{t('s16Settlement.ingest.expires')}</Label>
+          <Input
+            id="ik-days"
+            type="number"
+            min={1}
+            max={730}
+            value={days ?? ''}
+            onChange={(e) =>
+              setDays(Number.isNaN(e.target.valueAsNumber) ? null : e.target.valueAsNumber)
+            }
+          />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="ik-ips">{t('s16Settlement.ingest.ips')}</Label>
+        <Textarea
+          id="ik-ips"
+          rows={2}
+          spellCheck={false}
+          value={ips}
+          onChange={(e) => setIps(e.target.value)}
+        />
+      </div>
+      <Button type="submit" size="sm" disabled={busy || name.trim() === ''}>
+        {t('s16Settlement.ingest.make')}
+      </Button>
+    </form>
+  );
+}
+
+/** Revokes a key of the main merchant's app. */
+export function RevokeIngestKey({ id }: { id: string }): JSX.Element {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function run(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    const reply = await send(`/api/integrations/settlement/ingest-keys/${id}`, 'DELETE');
+    if (!reply.ok) setError(reply.text);
+    else router.refresh();
+    setBusy(false);
+  }
+  return (
+    <span className="inline-flex flex-col gap-1">
+      <Button
+        type="button"
+        size="sm"
+        variant="destructive"
+        disabled={busy}
+        onClick={() => void run()}
+      >
+        {t('s16Settlement.ingest.revoke')}
+      </Button>
+      {error ? (
+        <span role="alert" className="text-xs text-destructive">
+          {error}
+        </span>
+      ) : null}
+    </span>
+  );
+}

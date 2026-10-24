@@ -30,4 +30,4 @@
 - [x] 16.14.d Settlement ledger: closure (2026-10-24)
 - [x] 16.15.a Automatic settlement entries: table (2026-10-24)
 - [x] 16.15.b Automatic settlement entries: rules and services (2026-10-24)
-- [ ] 16.15.c Automatic settlement entries: route, page and closure
+- [x] 16.15.c Automatic settlement entries: route, page and closure (2026-10-24)

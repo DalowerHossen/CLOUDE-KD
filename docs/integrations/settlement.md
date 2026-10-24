@@ -19,3 +19,27 @@ All amounts are USD with four decimals, rounded half up. Every change is in the 
 ## What it is not
 
 It is not a payment service: whether the arrangement needs a licence or a regulated partner is for the owner and counsel to decide before a merchant relies on it. Also not built: automatic entries from payments or from a key-authenticated route, posting to the books of STEP 15, a statement page for the sub-merchant, reserves, tax reporting or withholding, other currencies, payouts through a processor, recovery of a negative balance.
+
+## Automatic entries from your app (16.15)
+
+Instead of typing entries, the main merchant's app can post them. In `Integrations > Sub-merchant settlement > Keys for your app` the owner makes a key (`kd_stl_...`, fresh identity check, shown once, optional address list and expiry, a limit per minute) and revokes it at once if it leaks. A key can post entries and nothing else.
+
+```
+POST https://<platform>/api/gateway/settlement/v1/entries
+Authorization: Bearer kd_stl_<32 characters>
+Content-Type: application/json
+
+{
+  "subMerchantReference": "shop-1",
+  "entries": [
+    { "kind": "sale",   "amount": "100.00", "externalRef": "order-1", "occurredAt": "2026-10-24T09:00:00Z" },
+    { "kind": "refund", "amount": "40.00",  "externalRef": "refund-9", "occurredAt": "2026-10-25T09:00:00Z", "note": "partial" }
+  ]
+}
+```
+
+- `subMerchantReference` is the reference you gave the sub-merchant (the app receives it as `X-KD-Sub-Merchant` on every gateway call). Up to 200 entries per call, 256 KB.
+- `201` with `{"data":{"posted":2,"duplicates":[],"failed":[]},"meta":{...}}`. An entry is known by its kind and `externalRef`: send the same batch again after a timeout and nothing is posted twice (the repeats come back in `duplicates`). `failed` lists entries that could not be worked out (for example a sale smaller than its fee).
+- `401` wrong, revoked or expired key (the same answer for all three; failed attempts are limited per address), `403` address not on the key's list, `404` unknown reference, `409` closed sub-merchant, `400` bad body, `413` too large, `429` over the limit (`Retry-After`).
+- Commission, fee and hold are worked out with the terms in force at `occurredAt`, exactly as for entries typed by the owner.
+- The key is a bearer secret: keep it on the server of your app and use https only.
