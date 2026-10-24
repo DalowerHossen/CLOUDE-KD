@@ -45,7 +45,14 @@ function imageSize(file: File): Promise<{ width: number; height: number } | null
   });
 }
 
-export function KycPanel({ view }: { view: KycView }): JSX.Element {
+export function KycPanel({
+  view,
+  endpoint = '/api/kyc',
+}: {
+  view: KycView;
+  /** Where the panel saves; the sub-merchant verification uses its own address with the secure link in it. */
+  endpoint?: string;
+}): JSX.Element {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -61,7 +68,7 @@ export function KycPanel({ view }: { view: KycView }): JSX.Element {
     setBusy(key);
     setMessage(null);
     try {
-      const response = await fetch('/api/kyc', {
+      const response = await fetch(endpoint, {
         method,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),

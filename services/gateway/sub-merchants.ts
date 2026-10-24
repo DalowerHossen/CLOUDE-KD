@@ -4,6 +4,7 @@
 import 'server-only';
 import { GATEWAY_MAX_SUB_MERCHANTS } from '@/config/s16-gateway';
 import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
+import { verifiedUntil } from '@/lib/gateway/kyc-rules';
 import { subMerchantInput, subMerchantUpdate } from '@/lib/gateway/rules';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
@@ -11,7 +12,7 @@ import { mapIntegrationError } from '@/services/publicapi/db-errors';
 import { need, record } from './db';
 
 const COLUMNS =
-  'id, name, reference, contact_email, status, route_ids, note, version, created_at, updated_at';
+  'id, name, reference, contact_email, status, route_ids, note, kyc_approved_until, version, created_at, updated_at';
 
 interface Row {
   id: string;
@@ -21,6 +22,7 @@ interface Row {
   status: string;
   route_ids: string[] | null;
   note: string;
+  kyc_approved_until: string | null;
   version: number;
   created_at: string;
   updated_at: string;
@@ -36,6 +38,9 @@ export interface SubMerchantView {
   status: SubMerchantStatus;
   routeIds: string[] | null;
   note: string;
+  kycApprovedUntil: string | null;
+  /** True while the verification (KYC) is valid. */
+  kycVerified: boolean;
   version: number;
   createdAt: string;
 }
@@ -48,6 +53,8 @@ const toView = (r: Row): SubMerchantView => ({
   status: r.status === 'suspended' ? 'suspended' : r.status === 'closed' ? 'closed' : 'active',
   routeIds: r.route_ids,
   note: r.note,
+  kycApprovedUntil: r.kyc_approved_until,
+  kycVerified: verifiedUntil(r.kyc_approved_until, new Date()),
   version: r.version,
   createdAt: r.created_at,
 });

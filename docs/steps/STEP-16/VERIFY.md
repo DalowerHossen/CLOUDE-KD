@@ -108,3 +108,12 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 | Path templates and matching (no dot segments, encoding, double slashes), route choice, query, app address, inputs, keys, address list, signature and its check, headers both ways, status mapping | passes | `scripts/verify/step16-gateway.ts` (14 checks) |
 | Whole forwarding pipeline with fake ports: signed request without the key, 401 for unknown/revoked/expired, address and state blocks, limit, route subset, bad query/body, missing or self-pointing upstream, 502/504 mapping, no app detail returned | passes | `scripts/verify/step16-gateway.ts` (9 checks) |
 | A real call through the guarded transport to a real app, the pages, step-up | **not run** | needs a running app, a database and a public https test app |
+
+## 16.13 Sub-merchant KYC
+
+| Check | Result | Evidence |
+|---|---|---|
+| Tables: one open submission and one round per sub-merchant, company match of every child row, one document per type, unique link hash, decided states stay decided, gate on by default | passes | `sql/assertions/s16_020_sub_merchant_kyc.sql` |
+| Link, token (40 characters, one-way hash), business input, review actions, readiness, applicant modes, expired reading, verified test | passes | `scripts/verify/step16-gateway-kyc.ts` (7 checks) |
+| The gateway refuses a sub-merchant that is not verified, an expired approval, and lets a verified one through; with the gate off nothing changes | passes | `scripts/verify/step16-gateway.ts` (24 checks) |
+| The services (link, applicant, review), the routes, the applicant page and the review page against a running app, a database and the storage service | **not run** | needs a running app |

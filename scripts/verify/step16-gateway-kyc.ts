@@ -30,7 +30,13 @@ const check = async (name: string, fn: () => void | Promise<void>): Promise<void
 };
 
 const NOW = new Date('2026-10-24T10:00:00Z');
-const docs = (statuses: ('pending' | 'accepted' | 'rejected')[]) =>
+type DocStatus = 'pending' | 'accepted' | 'rejected';
+const docs = (
+  statuses: DocStatus[],
+): {
+  docType: 'id_front' | 'id_back' | 'business_registration' | 'address_proof';
+  status: DocStatus;
+}[] =>
   (['id_front', 'id_back', 'business_registration', 'address_proof'] as const).map(
     (docType, i) => ({
       docType,

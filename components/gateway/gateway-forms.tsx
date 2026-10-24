@@ -120,9 +120,11 @@ export function UpstreamForm(): JSX.Element {
 /** Turn the upstream on or off, or make a new secret. */
 export function UpstreamActions({
   enabled,
+  kycRequired,
   version,
 }: {
   enabled: boolean;
+  kycRequired: boolean;
   version: number;
 }): JSX.Element {
   const router = useRouter();
@@ -176,6 +178,22 @@ export function UpstreamActions({
           onClick={() => void run('/api/integrations/gateway/upstream/secret', 'POST', {}, true)}
         >
           {t('s16Gateway.upstream.rotate')}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            void run(
+              '/api/integrations/gateway/upstream',
+              'PATCH',
+              { kycRequired: !kycRequired, version },
+              false,
+            )
+          }
+        >
+          {kycRequired ? t('s16Gateway.kyc.requireOff') : t('s16Gateway.kyc.requireOn')}
         </Button>
       </div>
     </div>

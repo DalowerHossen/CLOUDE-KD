@@ -1,5 +1,7 @@
 // path: app/(dashboard)/integrations/gateway/page.tsx
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { KycLinkButton } from '@/components/gateway/kyc-forms';
 import {
   KeyForm,
   RouteForm,
@@ -24,6 +26,7 @@ import { getService } from '@/lib/container';
 import { t, type StringKey } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { listCalls, type CallView } from '@/services/gateway/calls';
+import { kycQueue, type KycQueueItem } from '@/services/gateway/kyc-review';
 import { listSubKeys, type SubKeyView } from '@/services/gateway/keys';
 import { listRoutes, type RouteView } from '@/services/gateway/routes';
 import { listSubMerchants, type SubMerchantView } from '@/services/gateway/sub-merchants';
@@ -39,6 +42,8 @@ interface Loaded {
   routes: RouteView[];
   subs: { sub: SubMerchantView; keys: SubKeyView[] }[];
   calls: CallView[];
+  kyc: KycQueueItem[];
+  canReview: boolean;
 }
 
 export default async function GatewayPage(): Promise<JSX.Element> {
@@ -49,11 +54,15 @@ export default async function GatewayPage(): Promise<JSX.Element> {
   });
   let data: Loaded | null;
   try {
-    const [upstream, routes, subs, calls] = await Promise.all([
+    const canReview = await getService('permissions').can(actor, 'gateway.kyc.review', {
+      type: 'sub_merchant_kyc',
+    });
+    const [upstream, routes, subs, calls, kyc] = await Promise.all([
       getUpstream(companyId),
       listRoutes(companyId),
       listSubMerchants(companyId),
       listCalls(companyId, null, 30),
+      canReview ? kycQueue(companyId) : Promise.resolve([]),
     ]);
     data = {
       upstream,
@@ -62,6 +71,8 @@ export default async function GatewayPage(): Promise<JSX.Element> {
         subs.map(async (sub) => ({ sub, keys: await listSubKeys(companyId, sub.id) })),
       ),
       calls,
+      kyc,
+      canReview,
     };
   } catch {
     data = null;
@@ -132,6 +143,7 @@ export default async function GatewayPage(): Promise<JSX.Element> {
                   {canManage ? (
                     <UpstreamActions
                       enabled={data.upstream.enabled}
+                      kycRequired={data.upstream.kycRequired}
                       version={data.upstream.version}
                     />
                   ) : null}
@@ -278,12 +290,79 @@ export default async function GatewayPage(): Promise<JSX.Element> {
                     {canManage && sub.status === 'active' ? (
                       <KeyForm subMerchantId={sub.id} />
                     ) : null}
+                    <p className="text-sm">
+                      <strong>{t('s16Gateway.kyc.title')}:</strong>{' '}
+                      {sub.kycVerified && sub.kycApprovedUntil
+                        ? `${t('s16Gateway.kyc.verifiedUntil')} ${utc(sub.kycApprovedUntil).slice(0, 10)}`
+                        : t('s16Gateway.kyc.notVerified')}
+                    </p>
+                    {data.canReview && sub.status === 'active' ? (
+                      <KycLinkButton subMerchantId={sub.id} />
+                    ) : null}
                   </section>
                 ))
               )}
               {canManage ? <SubMerchantForm /> : null}
             </CardContent>
           </Card>
+
+          {data.canReview ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('s16Gateway.kyc.title')}</CardTitle>
+                <p className="text-sm text-muted-foreground">{t('s16Gateway.kyc.help')}</p>
+                <p className="text-sm">
+                  {data.upstream?.kycRequired === false
+                    ? t('s16Gateway.kyc.notRequired')
+                    : t('s16Gateway.kyc.required')}
+                </p>
+              </CardHeader>
+              <CardContent>
+                {data.kyc.length === 0 ? (
+                  <p className="text-sm">{t('s16Gateway.kyc.queueEmpty')}</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('s16Gateway.kyc.sub')}</TableHead>
+                        <TableHead>{t('s16Gateway.kyc.state')}</TableHead>
+                        <TableHead>{t('s16Gateway.kyc.submitted')}</TableHead>
+                        <TableHead>{t('s16Gateway.kyc.risk')}</TableHead>
+                        <TableHead>{t('s16Gateway.kyc.screening')}</TableHead>
+                        <TableHead />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.kyc.map((k) => (
+                        <TableRow key={k.id}>
+                          <TableCell>{k.subMerchantName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {t(`s16Gateway.kyc.states.${k.status}` as StringKey)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{utc(k.submittedAt)}</TableCell>
+                          <TableCell>{k.risk ?? '-'}</TableCell>
+                          <TableCell>
+                            {t(`s16Gateway.kyc.screeningStates.${k.screeningStatus}` as StringKey)}
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              className="underline"
+                              href={`/integrations/gateway/kyc/${k.id}`}
+                              prefetch={false}
+                            >
+                              {t('s16Gateway.kyc.open')}
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>

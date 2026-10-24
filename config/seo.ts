@@ -25,6 +25,7 @@ export const PRIVATE_PREFIXES: readonly string[] = [
   '/i/',
   '/p/',
   '/r/',
+  '/skyc/',
   '/hub',
   '/expired',
   '/oauth',
