@@ -18,7 +18,7 @@ const eventRow = z
     id: z.string().uuid(),
     company_id: z.string().uuid().nullable(),
     name: z.string(),
-    payload: z.record(z.unknown()),
+    payload: z.record(z.string(), z.unknown()),
     correlation_id: z.string().nullable(),
     occurred_at: z.string(),
   })
@@ -28,7 +28,7 @@ const jobRow = z
     id: z.string().uuid(),
     company_id: z.string().uuid().nullable(),
     name: z.string(),
-    payload: z.record(z.unknown()),
+    payload: z.record(z.string(), z.unknown()),
     attempts: z.number().int(),
   })
   .strip();

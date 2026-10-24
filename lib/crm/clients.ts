@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { DISPLAY_CURRENCIES } from '@/lib/company/sections';
 import { Money } from '@/lib/utils/currency';
 
-export const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+export const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

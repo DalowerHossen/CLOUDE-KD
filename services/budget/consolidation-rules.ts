@@ -13,7 +13,7 @@ import {
   type Balance,
 } from '@/services/accounting/report-rules';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

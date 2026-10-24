@@ -47,7 +47,7 @@ export function scopeFor(method: string, resource: ApiResource): string {
     : `write:${resource}`;
 }
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

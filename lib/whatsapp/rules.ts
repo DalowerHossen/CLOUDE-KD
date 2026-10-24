@@ -15,7 +15,7 @@ import {
 } from '@/config/s16-whatsapp';
 import { verifyHmacSignature } from '@/lib/webhook';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()
@@ -253,7 +253,7 @@ export const sendTemplateInput = z
     to: phone,
     templateId: z.string().uuid(),
     /** Values for the body parameters, keyed by placeholder ("1", "2" or the name). */
-    values: z.record(plain(1, 1024)).default({}),
+    values: z.record(z.string(), plain(1, 1024)).default({}),
     clientId: z.string().uuid().nullable().default(null),
   })
   .strict();

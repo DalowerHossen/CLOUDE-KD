@@ -17,7 +17,7 @@ import {
 } from '@/config/s15-accounting';
 import { csvTable, columnOf, toCsv } from './accounting-csv';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

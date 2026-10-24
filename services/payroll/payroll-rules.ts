@@ -2,11 +2,12 @@
 // Input shapes for payroll people, salary structures and tax settings, the pay frequency table, the employee CSV import and the
 // bracket checks. Strict and sanitised: no markup, amounts as text, dates that exist. No database here.
 import { z } from 'zod';
+import { partialPatch } from '@/lib/security/zod-strict';
 import { Money } from '@/lib/utils/currency';
 import { columnOf, csvTable, toCsv } from '@/services/accounting/accounting-csv';
 import { dayText } from '@/services/accounting/journal-rules';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()
@@ -122,8 +123,7 @@ const employeeBase = z.object({
 export const employeeInput = employeeBase.strict();
 export type EmployeeInput = z.infer<typeof employeeInput>;
 
-export const employeeUpdate = employeeBase
-  .partial()
+export const employeeUpdate = partialPatch(employeeBase)
   .extend({
     version: z.number().int().min(1),
     status: z.enum(STATUSES).optional(),

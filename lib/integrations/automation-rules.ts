@@ -73,7 +73,7 @@ export const triggerItemOut = z.object({
 });
 export type TriggerItem = z.infer<typeof triggerItemOut>;
 
-const plainText = (max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plainText = (max: number): z.ZodString =>
   z
     .string()
     .trim()

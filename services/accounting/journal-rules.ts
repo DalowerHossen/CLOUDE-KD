@@ -6,7 +6,7 @@ import { MAX_IMPORT_ROWS, MAX_JOURNAL_LINES } from '@/config/s15-accounting';
 import { Money } from '@/lib/utils/currency';
 import { columnOf, csvTable } from './accounting-csv';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

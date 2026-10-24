@@ -7,7 +7,7 @@ import { toInt } from '@/lib/reports/numbers';
 import { Money } from '@/lib/utils/currency';
 import { dayText } from '@/services/accounting/journal-rules';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

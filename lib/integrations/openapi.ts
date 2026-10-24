@@ -10,14 +10,18 @@ type Json = Record<string, unknown>;
 
 /** A JSON schema for the Zod schemas of the API (objects, strings, numbers, booleans, enums, arrays, literals and wrappers). */
 export function toJsonSchema(schema: z.ZodTypeAny): Json {
-  if (schema instanceof z.ZodEffects) return toJsonSchema(schema._def.schema as z.ZodTypeAny);
-  if (schema instanceof z.ZodOptional) return toJsonSchema(schema._def.innerType as z.ZodTypeAny);
-  if (schema instanceof z.ZodDefault) {
-    const inner = toJsonSchema(schema._def.innerType as z.ZodTypeAny);
-    return { ...inner, default: (schema._def.defaultValue as () => unknown)() };
+  if (schema instanceof z.ZodPipe) return toJsonSchema(schema.def.in as z.ZodTypeAny);
+  if (schema instanceof z.ZodOptional) return toJsonSchema(schema.def.innerType as z.ZodTypeAny);
+  if (schema instanceof z.ZodDefault || schema instanceof z.ZodPrefault) {
+    const inner = toJsonSchema(schema.def.innerType as z.ZodTypeAny);
+    const stored = schema.def.defaultValue as unknown;
+    return {
+      ...inner,
+      default: typeof stored === 'function' ? (stored as () => unknown)() : stored,
+    };
   }
   if (schema instanceof z.ZodNullable) {
-    const inner = toJsonSchema(schema._def.innerType as z.ZodTypeAny);
+    const inner = toJsonSchema(schema.def.innerType as z.ZodTypeAny);
     const type = inner.type;
     return typeof type === 'string'
       ? { ...inner, type: [type, 'null'] }
@@ -25,32 +29,45 @@ export function toJsonSchema(schema: z.ZodTypeAny): Json {
   }
   if (schema instanceof z.ZodString) {
     const out: Json = { type: 'string' };
-    for (const c of schema._def.checks) {
-      if (c.kind === 'min') out.minLength = c.value;
-      else if (c.kind === 'max') out.maxLength = c.value;
-      else if (c.kind === 'uuid') out.format = 'uuid';
-      else if (c.kind === 'email') out.format = 'email';
-      else if (c.kind === 'datetime') out.format = 'date-time';
-      else if (c.kind === 'regex') out.pattern = c.regex.source;
+    for (const check of schema.def.checks ?? []) {
+      const def = check._zod.def as {
+        check: string;
+        format?: string;
+        minimum?: number;
+        maximum?: number;
+        pattern?: RegExp;
+      };
+      if (def.check === 'min_length') out.minLength = def.minimum;
+      else if (def.check === 'max_length') out.maxLength = def.maximum;
+      else if (def.check === 'string_format') {
+        if (def.format === 'uuid') out.format = 'uuid';
+        else if (def.format === 'email') out.format = 'email';
+        else if (def.format === 'datetime') out.format = 'date-time';
+        else if (def.format === 'regex' && def.pattern) out.pattern = def.pattern.source;
+      }
     }
     return out;
   }
   if (schema instanceof z.ZodNumber) {
     const out: Json = { type: 'number' };
-    for (const c of schema._def.checks) {
-      if (c.kind === 'int') out.type = 'integer';
-      else if (c.kind === 'min') out.minimum = c.value;
-      else if (c.kind === 'max') out.maximum = c.value;
+    for (const check of schema.def.checks ?? []) {
+      const def = check._zod.def as { check: string; format?: string; value?: number };
+      if (def.check === 'number_format' && def.format === 'safeint') out.type = 'integer';
+      else if (def.check === 'greater_than') out.minimum = def.value;
+      else if (def.check === 'less_than') out.maximum = def.value;
     }
     return out;
   }
   if (schema instanceof z.ZodBoolean) return { type: 'boolean' };
-  if (schema instanceof z.ZodLiteral) return { const: schema._def.value as unknown };
-  if (schema instanceof z.ZodEnum) return { type: 'string', enum: schema._def.values as string[] };
+  if (schema instanceof z.ZodLiteral) return { const: schema.def.values[0] as unknown };
+  if (schema instanceof z.ZodEnum) return { type: 'string', enum: schema.options as string[] };
   if (schema instanceof z.ZodArray) {
-    const out: Json = { type: 'array', items: toJsonSchema(schema._def.type as z.ZodTypeAny) };
-    if (schema._def.minLength) out.minItems = schema._def.minLength.value;
-    if (schema._def.maxLength) out.maxItems = schema._def.maxLength.value;
+    const out: Json = { type: 'array', items: toJsonSchema(schema.element as z.ZodTypeAny) };
+    for (const check of schema.def.checks ?? []) {
+      const def = check._zod.def as { check: string; minimum?: number; maximum?: number };
+      if (def.check === 'min_length' && def.minimum) out.minItems = def.minimum;
+      else if (def.check === 'max_length' && def.maximum !== undefined) out.maxItems = def.maximum;
+    }
     return out;
   }
   if (schema instanceof z.ZodObject) {
@@ -59,7 +76,11 @@ export function toJsonSchema(schema: z.ZodTypeAny): Json {
     const required: string[] = [];
     for (const [key, value] of Object.entries(shape)) {
       properties[key] = toJsonSchema(value);
-      if (!value.isOptional() && !(value instanceof z.ZodDefault)) required.push(key);
+      const optional =
+        value._zod.optin === 'optional' ||
+        value instanceof z.ZodDefault ||
+        value instanceof z.ZodPrefault;
+      if (!optional) required.push(key);
     }
     return {
       type: 'object',

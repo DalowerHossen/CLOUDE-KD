@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { dayText } from '@/services/accounting/journal-rules';
 import { MAX_STATEMENT_BYTES } from './statement-parsers';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

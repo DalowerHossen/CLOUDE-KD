@@ -18,7 +18,7 @@ export function parseServerEnv(
     result.error.issues.map((issue) => ({
       name: String(issue.path[0] ?? 'unknown'),
       problem:
-        issue.code === 'invalid_type' && issue.received === 'undefined'
+        issue.code === 'invalid_type' && source[String(issue.path[0])] === undefined
           ? 'missing'
           : issue.code === 'custom'
             ? `invalid (${issue.message})`

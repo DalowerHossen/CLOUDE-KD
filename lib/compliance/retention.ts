@@ -54,7 +54,7 @@ export async function runRetention(): Promise<RetentionReport> {
     .is('deleted_at', null);
   if (policies.error) throw new InternalError(policies.error);
   const report: RetentionReport = {
-    core: z.record(z.number()).parse(core.data ?? {}),
+    core: z.record(z.string(), z.number()).parse(core.data ?? {}),
     handled: {},
     missingHandlers: [],
   };

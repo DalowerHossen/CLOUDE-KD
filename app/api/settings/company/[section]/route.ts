@@ -41,7 +41,10 @@ export const PUT = withApi(
     permission: { action: 'company.manage', resourceType: 'company' },
     params,
     body: z
-      .object({ value: z.record(z.unknown()), expectedVersion: z.number().int().min(0) })
+      .object({
+        value: z.record(z.string(), z.unknown()),
+        expectedVersion: z.number().int().min(0),
+      })
       .strict(),
     auditExempt: 'The settings service writes the audit entry.',
   },

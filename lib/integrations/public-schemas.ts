@@ -6,13 +6,13 @@ import { z } from 'zod';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/config/s16-api';
 import { base64UrlDecode, base64UrlEncode } from '@/lib/utils/hash';
 
-const text = (max: number): z.ZodEffects<z.ZodString, string, string> =>
+const text = (max: number): z.ZodString =>
   z
     .string()
     .trim()
     .max(max)
     .refine((v) => !/[<>]/.test(v), { message: 'Angle brackets are not allowed.' });
-const name = (max: number): z.ZodEffects<ReturnType<typeof text>, string, string> =>
+const name = (max: number): z.ZodString =>
   text(max).refine((v) => v.length > 0, { message: 'A value is needed.' });
 const money = z.string().regex(/^\d{1,14}(\.\d{1,4})?$/, 'Use an amount like 12.5000.');
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-01-31.');
@@ -225,7 +225,7 @@ export const clientCreate = z
     tax_id: text(40).default(''),
     payment_terms_days: z.number().int().min(0).max(365).nullable().default(null),
     tags: z.array(name(40)).max(20).default([]),
-    billing_address: addressIn.default({}),
+    billing_address: addressIn.prefault({}),
   })
   .strict();
 export const clientUpdate = z

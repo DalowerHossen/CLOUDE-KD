@@ -55,7 +55,7 @@ const riskRow = z
     subject_type: z.string(),
     subject_ref: z.string(),
     score: z.coerce.number(),
-    factors: z.record(z.coerce.number()),
+    factors: z.record(z.string(), z.coerce.number()),
     scored_at: z.string(),
   })
   .strip();

@@ -3,10 +3,11 @@
 // extra seats, the monthly equivalent used by the reports, MRR, churn and lifetime value, and how a pause moves the next
 // billing date. No database here.
 import { z } from 'zod';
+import { partialPatch } from '@/lib/security/zod-strict';
 import { Money } from '@/lib/utils/currency';
 
 const moneyText = z.string().regex(/^\d{1,12}(\.\d{1,4})?$/, 'Enter a price like 49 or 49.50.');
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()
@@ -31,7 +32,7 @@ export const clientPlanInput = z
 export type ClientPlanInput = z.infer<typeof clientPlanInput>;
 
 /** What may change on a plan later. A change does not change what clients who already joined pay. */
-export const clientPlanUpdate = clientPlanInput.omit({ interval: true }).partial().strict();
+export const clientPlanUpdate = partialPatch(clientPlanInput.omit({ interval: true })).strict();
 
 export interface Priced {
   price: string;

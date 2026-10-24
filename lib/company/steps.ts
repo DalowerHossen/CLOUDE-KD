@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { DUE_DAYS, FONT_KEYS, INDUSTRIES } from './sections';
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
-const plain = (max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (max: number): z.ZodString =>
   z
     .string()
     .trim()

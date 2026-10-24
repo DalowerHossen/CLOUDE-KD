@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { MAX_SLOTS_PER_SCHEDULE_RUN } from '@/config/s16-social';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

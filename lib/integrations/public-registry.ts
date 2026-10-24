@@ -43,9 +43,9 @@ export interface EndpointSpec {
   tag: string;
   /** The scope the key needs; null for the open endpoints. */
   scope: string | null;
-  params?: z.AnyZodObject;
-  query?: z.AnyZodObject;
-  body?: z.AnyZodObject;
+  params?: z.ZodObject;
+  query?: z.ZodObject;
+  body?: z.ZodObject;
   bodyName?: string;
   response: z.ZodTypeAny;
   responseName: string;
@@ -64,7 +64,7 @@ const read = (
   resource: string,
   response: z.ZodTypeAny,
   responseName: string,
-  query: z.AnyZodObject,
+  query: z.ZodObject,
 ): EndpointSpec[] => [
   {
     method: 'get',

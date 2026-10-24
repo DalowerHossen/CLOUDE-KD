@@ -44,6 +44,6 @@ export const paginationSchema = z
 
 export const isoTimestampSchema = z.string().datetime({ offset: true });
 
-export function strictObject<T extends z.ZodRawShape>(shape: T): z.ZodObject<T, 'strict'> {
+export function strictObject<T extends z.ZodRawShape>(shape: T): z.ZodObject<T, z.core.$strict> {
   return z.object(shape).strict();
 }

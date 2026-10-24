@@ -33,7 +33,7 @@ export const DEFAULT_BILLING: BillingSettings = {
   operatorCompanyId: null,
 };
 
-const plain = (max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (max: number): z.ZodString =>
   z
     .string()
     .trim()

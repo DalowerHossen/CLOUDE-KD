@@ -4,6 +4,7 @@
 // permission -> sanitize and strict validation -> idempotency -> handler -> audit -> response.
 // Any failure becomes the standard error response { error: { code, message, details, correlation_id } }.
 import { z } from 'zod';
+import { isStrictObject } from '@/lib/security/zod-strict';
 import type { NextRequest } from 'next/server';
 import { getService } from '@/lib/container';
 import {
@@ -98,7 +99,7 @@ export interface RouteContext {
 }
 
 function assertStrict(schema: z.ZodTypeAny | undefined, label: string, id: string): void {
-  if (schema instanceof z.ZodObject && schema._def.unknownKeys !== 'strict') {
+  if (schema instanceof z.ZodObject && !isStrictObject(schema)) {
     throw new Error(
       `API route "${id}": ${label} schema must be strict (use .strict() or strictObject).`,
     );
@@ -213,7 +214,9 @@ export function withApi<
             : undefined
         ) as z.output<Q>;
         const params = (
-          options.params ? options.params.parse(clean((await routeContext.params) ?? {})) : undefined
+          options.params
+            ? options.params.parse(clean((await routeContext.params) ?? {}))
+            : undefined
         ) as z.output<P>;
 
         if (options.idempotent) {

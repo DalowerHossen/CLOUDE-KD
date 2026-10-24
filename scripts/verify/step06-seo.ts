@@ -143,7 +143,7 @@ async function main(): Promise<void> {
 
   await check('crawler rules: every product route group is disallowed, no public page is', () => {
     const covered = (path: string): boolean =>
-      PRIVATE_PREFIXES.some((p) => path === p || path.startsWith(p));
+      PRIVATE_PREFIXES.some((p) => path === p || path.startsWith(p) || p === `${path}/`);
     for (const group of ['(auth)', '(client-portal)', '(dashboard)']) {
       for (const name of readdirSync(`app/${group}`)) {
         if (

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { portalTokenSchema } from '@/services/portal/schemas';
 import type { TaxInfo } from './payroll-rules';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

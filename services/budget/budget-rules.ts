@@ -11,7 +11,7 @@ export const PERIOD_KINDS = ['monthly', 'quarterly', 'yearly'] as const;
 export type PeriodKind = (typeof PERIOD_KINDS)[number];
 const PERIODS_IN_YEAR: Record<PeriodKind, number> = { monthly: 12, quarterly: 4, yearly: 1 };
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

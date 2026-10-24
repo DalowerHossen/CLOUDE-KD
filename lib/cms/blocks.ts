@@ -117,7 +117,7 @@ export const blockSchema = z.discriminatedUnion('type', [
       heading: text(120),
       intro: optionalText(400),
       /** Price text per plan, for example "$29 per month". Shown only when set. */
-      prices: z.record(z.string().max(60)).default({}),
+      prices: z.record(z.string(), z.string().max(60)).default({}),
       footnote: optionalText(300),
     })
     .strict(),

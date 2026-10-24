@@ -67,7 +67,7 @@ export const viewCreateSchema = z
   .object({
     listKey: z.enum(['clients', 'products', 'suppliers', 'purchase_orders']),
     name: plain(1, 60),
-    filters: z.record(z.string().max(80)),
+    filters: z.record(z.string(), z.string().max(80)),
   })
   .strict();
 export const viewDeleteSchema = z.object({ id: z.string().uuid() }).strict();

@@ -200,7 +200,7 @@ export const validateInput = z
     duplicateMode: z.enum(['skip', 'create']),
     /** A value for rows that have none in the file (for example the country of every client). */
     defaults: z
-      .record(
+      .partialRecord(
         z.enum(DEFAULT_KEYS),
         z
           .string()

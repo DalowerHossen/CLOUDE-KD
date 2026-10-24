@@ -31,7 +31,7 @@ export function contractStatus(status: SubmissionStatus | null, expired: boolean
   return status === 'in_review' ? 'in_review' : 'submitted';
 }
 
-const plain = (max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (max: number): z.ZodString =>
   z
     .string()
     .trim()

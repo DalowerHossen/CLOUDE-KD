@@ -52,7 +52,7 @@ export const eventRowSchema = z
     ip_masked: z.string().nullable(),
     ip_hash: z.string().nullable(),
     correlation_id: z.string().nullable(),
-    details: z.record(z.unknown()).nullable(),
+    details: z.record(z.string(), z.unknown()).nullable(),
   })
   .strip();
 

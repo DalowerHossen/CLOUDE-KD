@@ -48,7 +48,7 @@ export function firstResponseState(
   return dueAt.getTime() - now.getTime() <= total / 4 ? 'at_risk' : 'ok';
 }
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

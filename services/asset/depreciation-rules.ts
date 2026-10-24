@@ -3,6 +3,7 @@
 // production, the schedule over the whole life, the entries for buying, depreciating and disposing of an asset, the CSV import
 // of assets and the input shapes. The last month always depreciates what is left down to the salvage value. No database here.
 import { z } from 'zod';
+import { partialPatch } from '@/lib/security/zod-strict';
 import { toInt } from '@/lib/reports/numbers';
 import { Money } from '@/lib/utils/currency';
 import { columnOf, csvTable } from '@/services/accounting/accounting-csv';
@@ -17,7 +18,7 @@ export const METHODS = [
 ] as const;
 export type Method = (typeof METHODS)[number];
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()
@@ -101,8 +102,7 @@ export const categoryInput = z
   })
   .strict();
 
-export const categoryUpdate = categoryInput
-  .partial()
+export const categoryUpdate = partialPatch(categoryInput)
   .extend({ version: z.number().int().min(1), status: z.enum(['active', 'inactive']).optional() })
   .strict();
 

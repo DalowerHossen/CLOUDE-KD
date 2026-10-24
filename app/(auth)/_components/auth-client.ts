@@ -34,8 +34,9 @@ export async function postJson<S extends z.ZodTypeAny>(
     });
     const json: unknown = await response.json().catch(() => null);
     if (response.ok) {
-      const parsed = z.object({ data: schema }).safeParse(json);
-      if (parsed.success) return { ok: true, status: response.status, data: parsed.data.data };
+      const envelope = z.object({ data: z.unknown() }).safeParse(json);
+      const parsed = envelope.success ? schema.safeParse(envelope.data.data) : null;
+      if (parsed?.success) return { ok: true, status: response.status, data: parsed.data };
       return { ok: false, status: response.status, code: 'bad_response', message: '', issues: [] };
     }
     const err = errorShape.safeParse(json);

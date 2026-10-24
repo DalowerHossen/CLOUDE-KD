@@ -5,6 +5,7 @@
 // The tenant is the company of the key; a session is never used.
 import 'server-only';
 import { z } from 'zod';
+import { isStrictObject } from '@/lib/security/zod-strict';
 import type { NextRequest } from 'next/server';
 import { API_VERSION, type ApiResource } from '@/config/s16-api';
 import { getClientIp } from '@/lib/api/client-ip';
@@ -83,7 +84,7 @@ export interface RouteContext {
 }
 
 function assertStrict(schema: z.ZodTypeAny | undefined, label: string, id: string): void {
-  if (schema instanceof z.ZodObject && schema._def.unknownKeys !== 'strict') {
+  if (schema instanceof z.ZodObject && !isStrictObject(schema)) {
     throw new Error(
       `Public API route "${id}": ${label} schema must be strict (use .strict() or strictObject).`,
     );

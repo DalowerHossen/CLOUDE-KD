@@ -24,7 +24,7 @@ export const settingsRow = z
     priority: z.number().int(),
     provider: z.enum(['platform', ...EMAIL_PROVIDERS]),
     preset: z.string().nullable(),
-    config: z.record(z.unknown()),
+    config: z.record(z.string(), z.unknown()),
     credential: z.unknown().nullable(),
     from_email: z.string().nullable(),
     from_name: z.string(),

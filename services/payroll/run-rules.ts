@@ -12,7 +12,7 @@ import type { Frequency } from './payroll-rules';
 
 const hours = z.string().regex(/^\d{1,4}(\.\d{1,2})?$/, 'Enter hours like 160 or 7.5.');
 const amount = z.string().regex(/^\d{1,14}(\.\d{1,4})?$/, 'Enter an amount like 1000 or 1000.50.');
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

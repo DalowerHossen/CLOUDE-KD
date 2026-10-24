@@ -17,7 +17,7 @@ import { checkWebhookUrl } from '@/lib/integrations/ssrf';
 import { randomBase62 } from '@/lib/integrations/api-key-rules';
 import { checkTimestamp, signPayload, verifyHmacSignature } from '@/lib/webhook';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

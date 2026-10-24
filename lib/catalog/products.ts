@@ -57,7 +57,7 @@ export const percentText = z
     { message: 'Enter a percentage from 0 to 100.' },
   );
 
-const code = (label: string): z.ZodType<string | null, z.ZodTypeDef, string> =>
+const code = (label: string): z.ZodType<string | null, string> =>
   z
     .string()
     .trim()

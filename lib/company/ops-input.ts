@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { ADMIN_SUB_ROLES } from '@/types/contracts/common';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

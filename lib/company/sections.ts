@@ -4,7 +4,7 @@
 // an older row. Text is plain text: angle brackets are refused, so nothing stored can ever be read as markup.
 import { z } from 'zod';
 
-const text = (max: number): z.ZodEffects<z.ZodString, string, string> =>
+const text = (max: number): z.ZodString =>
   z
     .string()
     .trim()

@@ -2,7 +2,7 @@
 // Input of the platform screens for users and tenants. Safe to import in the browser.
 import { z } from 'zod';
 
-const plain = (max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (max: number): z.ZodString =>
   z
     .string()
     .trim()

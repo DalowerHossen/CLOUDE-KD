@@ -14,7 +14,7 @@ import {
 } from '@/config/s16-whatsapp';
 import { Money } from '@/lib/utils/currency';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()
@@ -73,7 +73,7 @@ export function fillValues(
 /* ---------- inputs ---------- */
 
 const valueMap = z
-  .record(plain(0, 500))
+  .record(z.string(), plain(0, 500))
   .refine((v) => Object.keys(v).length <= 30, { message: 'Too many values.' });
 
 const ruleBase = z.object({
@@ -150,7 +150,7 @@ export const campaignInput = z
     name: plain(1, 100),
     templateId: z.string().uuid(),
     values: valueMap.default({}),
-    segment: segmentInput.default({}),
+    segment: segmentInput.prefault({}),
     dryRun: z.boolean().default(true),
     scheduledAt: z.string().datetime({ offset: true }).nullable().default(null),
   })

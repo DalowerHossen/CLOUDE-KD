@@ -7,7 +7,7 @@ import { toInt } from '@/lib/reports/numbers';
 import { Money } from '@/lib/utils/currency';
 import { dayText } from '@/services/accounting/journal-rules';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()
@@ -103,7 +103,10 @@ export const templateInput = z
       z
         .array(
           z
-            .object({ title: plain(1, 200), daysAfter: z.number().int().min(0).max(365).default(0) })
+            .object({
+              title: plain(1, 200),
+              daysAfter: z.number().int().min(0).max(365).default(0),
+            })
             .strict(),
         )
         .min(1)

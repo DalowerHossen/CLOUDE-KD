@@ -18,7 +18,7 @@ import type { Actor, EncryptedPayload } from '@/types/contracts';
 
 export const MAX_METHODS = 5;
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

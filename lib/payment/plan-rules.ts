@@ -3,6 +3,7 @@
 // which are limits, how the database values are laid over the built-in ones, how full a quota bar is, which plan to
 // offer when a feature is locked, and what a downgrade would leave over the limit. No database here.
 import { z } from 'zod';
+import { partialPatch } from '@/lib/security/zod-strict';
 import {
   ENTITLEMENT_KEYS,
   PLANS,
@@ -57,7 +58,7 @@ export const planInput = z
 export type PlanInput = z.infer<typeof planInput>;
 
 /** The fields that can be changed later (the slug never changes: stored plan keys point to it). */
-export const planUpdateInput = planInput.omit({ slug: true }).partial().strict();
+export const planUpdateInput = partialPatch(planInput.omit({ slug: true })).strict();
 
 export const entitlementValueSchema = z.union([
   z.boolean(),

@@ -7,7 +7,7 @@ export const NPS_REPEAT_DAYS = 90;
 export const NPS_DISMISS_DAYS = 30;
 const DAY = 86_400_000;
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()

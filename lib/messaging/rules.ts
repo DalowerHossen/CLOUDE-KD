@@ -8,7 +8,7 @@ import { floorDiv, toInt } from '@/lib/reports/numbers';
 import { addDays, isTimeZone, localDay, zonedToUtc } from '@/lib/social/schedule';
 import { Money } from '@/lib/utils/currency';
 
-const plain = (min: number, max: number): z.ZodEffects<z.ZodString, string, string> =>
+const plain = (min: number, max: number): z.ZodString =>
   z
     .string()
     .trim()
@@ -137,7 +137,7 @@ export const variantInput = z
 export const campaignInput = z
   .object({
     name: plain(1, 100),
-    audience: audienceInput.default({}),
+    audience: audienceInput.prefault({}),
     variants: z.array(variantInput).min(1).max(4),
     abEnabled: z.boolean().default(false),
     testPercent: z.number().int().min(5).max(50).default(20),

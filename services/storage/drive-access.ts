@@ -25,7 +25,7 @@ const connection = z
     refresh_token: payload,
     access_token: payload.nullable(),
     access_expires_at: z.string().nullable(),
-    folder_cache: z.record(z.string()).nullable(),
+    folder_cache: z.record(z.string(), z.string()).nullable(),
     status: z.enum(['connected', 'revoked', 'error']),
   })
   .strip();
