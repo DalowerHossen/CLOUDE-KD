@@ -170,3 +170,21 @@ A main merchant verifies its own sub-merchants before they may call the gateway.
 
 ### 16.13.d Closure
 - Goal: `docs/integrations/gateway-kyc.md`, VERIFY, HANDOFF, PROGRESS.
+
+## 16.14 Sub-merchant settlement ledger (owner request, 2026-10-24)
+
+The records of what a main merchant owes each of its sub-merchants: terms (commission, fixed fee, hold days, minimum payout), the entries of sales, refunds, chargebacks and adjustments with the commission worked out and kept, the balance (available, pending, paid), payouts that the main merchant made and recorded, and statements. The platform keeps the books; it does not hold, receive or send money. Design decisions are D24 in `DECISIONS.md`.
+
+### 16.14.a Tables and functions
+- Goal: `settlement_terms` (versions), `settlement_entries` (append-only), `settlement_payouts`, `kd_settlement_balance`, `kd_settlement_record_payout` (atomic, idempotent), `kd_settlement_entries_text` (amounts as text).
+- Files: `migrations/S16_021_settlement.sql` (+ `_down`), `sql/assertions/s16_021_settlement.sql`.
+
+### 16.14.b Rules and services
+- Goal: inputs, the working out of one entry with `Money`, terms lookup, posting in batches with duplicate detection, balance, payouts (record, void), statement as CSV.
+- Files: `lib/gateway/split-rules.ts`, `services/gateway/{terms,entries,balances,transfers}.ts`, `scripts/verify/step16-settlement.ts`.
+
+### 16.14.c Routes and page
+- Goal: `app/api/integrations/settlement/**`, `(dashboard)/integrations/settlement`, strings, permissions `settlement.read` and `settlement.manage`, navigation.
+
+### 16.14.d Closure
+- Goal: `docs/integrations/settlement.md`, VERIFY, HANDOFF, PROGRESS.
