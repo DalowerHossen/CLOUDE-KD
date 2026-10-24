@@ -2,7 +2,7 @@
 // Logic checks of the sub-merchant gateway (16.12) that need no database or network: path templates and what they must refuse,
 // route choice, the query string, the address of the app, the inputs, keys and their address allow list, the signature and how the
 // app checks it (also while a rotated secret overlaps), the headers in both directions and the mapping of the app's status.
-// The tables are tested in sql/assertions/s16_019_gateway.sql. The forwarding service is tested with fakes below once added.
+// The tables are tested in sql/assertions/s16_019_gateway.sql. The forwarding pipeline is tested at the end with fake ports.
 // Run: SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-gateway.ts
 import assert from 'node:assert/strict';
 import {
@@ -31,6 +31,16 @@ import {
   upstreamUrl,
   verifyGatewaySignature,
 } from '@/lib/gateway/rules';
+import {
+  forward,
+  type CallLog,
+  type ForwardPorts,
+  type ForwardRequest,
+  type SentRequest,
+  type SentResponse,
+} from '@/services/gateway/forward';
+import type { SubKeyAuth } from '@/services/gateway/keys';
+import type { UpstreamTarget } from '@/services/gateway/upstream';
 
 let checks = 0;
 const check = async (name: string, fn: () => void | Promise<void>): Promise<void> => {
@@ -133,6 +143,7 @@ async function main(): Promise<void> {
         'https://user:pw@app.example.com',
         'https://platform.example.org/api',
         'https://10.0.0.5/x',
+        'https://app.example.com:8443/x',
       ])
         assert.equal(checkUpstreamBase(bad, 'platform.example.org').ok, false, bad);
       assert.equal(
@@ -303,6 +314,380 @@ async function main(): Promise<void> {
     assert.deepEqual(mapStatus(429), { pass: true, status: 429, outcome: 'client_error' });
     assert.deepEqual(mapStatus(302), { pass: false, status: 502, outcome: 'upstream_error' });
     assert.deepEqual(mapStatus(503), { pass: false, status: 502, outcome: 'upstream_error' });
+  });
+
+  // ---------- the forwarding service with fakes ----------
+  const SECRET = makeGatewaySecret();
+  const OLD_SECRET = makeGatewaySecret();
+  const NOW = new Date('2026-10-24T10:00:00Z');
+  const authOk: SubKeyAuth = {
+    keyId: 'k1',
+    companyId: 'c1',
+    subMerchantId: 's1',
+    reference: 'shop-1',
+    status: 'active',
+    routeIds: null,
+    rateLimitPerMinute: 5,
+    allowedIps: null,
+    lastUsedAt: null,
+  };
+  const routes = [
+    { id: 'r1', name: 'Get order', method: 'GET', pathTemplate: '/orders/{id}', enabled: true },
+    { id: 'r2', name: 'Create order', method: 'POST', pathTemplate: '/orders', enabled: true },
+    { id: 'r3', name: 'Reports', method: 'GET', pathTemplate: '/reports', enabled: true },
+  ];
+  interface Rig {
+    ports: ForwardPorts;
+    sent: { url: string; request: SentRequest }[];
+    logs: CallLog[];
+    notes: boolean[];
+    attempts: string[];
+    events: string[];
+  }
+  function rig(
+    opts: {
+      auth?: SubKeyAuth | null;
+      answer?: SentResponse | Error;
+      upstream?: UpstreamTarget | null;
+      hits?: number;
+      limited?: boolean;
+    } = {},
+  ): Rig {
+    const r: Rig = {
+      ports: undefined as never,
+      sent: [],
+      logs: [],
+      notes: [],
+      attempts: [],
+      events: [],
+    };
+    const auth = opts.auth === undefined ? authOk : opts.auth;
+    const upstream =
+      opts.upstream === undefined
+        ? {
+            id: 'u1',
+            base: 'https://app.example.com/api',
+            timeoutMs: 5000,
+            enabled: true,
+            secrets: [SECRET],
+          }
+        : opts.upstream;
+    const answer = opts.answer ?? {
+      status: 200,
+      headers: { 'content-type': 'application/json', 'set-cookie': 'a=1', server: 'x' },
+      body: new TextEncoder().encode('{"ok":true}'),
+    };
+    r.ports = {
+      now: () => NOW,
+      platformHost: 'platform.example.org',
+      authenticate: async () => auth,
+      failedAttempt: async (ip) => {
+        r.attempts.push(ip);
+        return opts.limited === true
+          ? { allowed: false, retryAfterSeconds: 30 }
+          : { allowed: true, retryAfterSeconds: 0 };
+      },
+      hit: async () => ({
+        allowed: (opts.hits ?? 1) <= 5,
+        limit: 5,
+        remaining: 4,
+        reset: 1,
+        retryAfterSeconds: 12,
+      }),
+      loadRoutes: async () => routes,
+      loadUpstream: async () => upstream,
+      send: async (url, request) => {
+        r.sent.push({ url, request });
+        if (answer instanceof Error) throw answer;
+        return answer;
+      },
+      logCall: async (e) => void r.logs.push(e),
+      noteUpstream: async (_c, _u, ok) => void r.notes.push(ok),
+      markUsed: async () => undefined,
+      securityEvent: async (kind) => void r.events.push(kind),
+    };
+    return r;
+  }
+  const req = (over: Partial<ForwardRequest> = {}): ForwardRequest => ({
+    authorization: 'Bearer kd_sub_' + 'a'.repeat(32),
+    ip: '203.0.113.7',
+    method: 'GET',
+    path: '/orders/42',
+    search: '?expand=items',
+    body: '',
+    accept: null,
+    idempotencyKey: null,
+    correlationId: 'corr-1',
+    ...over,
+  });
+  const text = (b: Uint8Array | string): string =>
+    typeof b === 'string' ? b : new TextDecoder().decode(b);
+
+  await check(
+    'forward: a good call is signed, sent without the key and answered with filtered headers',
+    async () => {
+      const r = rig();
+      const res = await forward(r.ports, req());
+      assert.equal(res.status, 200);
+      assert.equal(text(res.body), '{"ok":true}');
+      assert.equal(res.headers['set-cookie'], undefined);
+      assert.equal(res.headers.server, undefined);
+      assert.equal(res.headers['x-correlation-id'], 'corr-1');
+      assert.equal(res.headers['x-ratelimit-limit'], '5');
+      const call = r.sent[0];
+      assert.ok(call);
+      assert.equal(call.url, 'https://app.example.com/api/orders/42?expand=items');
+      assert.equal(call.request.method, 'GET');
+      assert.equal(call.request.body, undefined);
+      assert.equal(call.request.headers['x-kd-sub-merchant'], 'shop-1');
+      assert.ok(
+        !Object.keys(call.request.headers).some((k) =>
+          /authorization|cookie|forwarded|host/.test(k),
+        ),
+      );
+      const url = new URL(call.url);
+      assert.ok(
+        await verifyGatewaySignature({
+          secret: SECRET,
+          header: call.request.headers['x-kd-signature'] ?? '',
+          method: 'GET',
+          pathAndQuery: url.pathname + url.search,
+          body: '',
+          now: NOW,
+        }),
+      );
+      assert.equal(r.logs[0]?.outcome, 'ok');
+      assert.equal(r.logs[0]?.pathTemplate, '/orders/{id}');
+      assert.deepEqual(r.notes, [true]);
+    },
+  );
+
+  await check(
+    'forward: a body is signed, the idempotency key travels, a rotated secret signs too',
+    async () => {
+      const r = rig({
+        upstream: {
+          id: 'u1',
+          base: 'https://app.example.com',
+          timeoutMs: 5000,
+          enabled: true,
+          secrets: [SECRET, OLD_SECRET],
+        },
+      });
+      const body = '{"amount":"12.5000"}';
+      const res = await forward(
+        r.ports,
+        req({
+          method: 'POST',
+          path: '/orders',
+          search: '',
+          body,
+          idempotencyKey: 'abcdefghijklmnop1234',
+        }),
+      );
+      assert.equal(res.status, 200);
+      const call = r.sent[0];
+      assert.ok(call);
+      assert.equal(call.request.body, body);
+      assert.equal(call.request.headers['idempotency-key'], 'abcdefghijklmnop1234');
+      const header = call.request.headers['x-kd-signature'] ?? '';
+      for (const secret of [SECRET, OLD_SECRET])
+        assert.ok(
+          await verifyGatewaySignature({
+            secret,
+            header,
+            method: 'POST',
+            pathAndQuery: '/orders',
+            body,
+            now: NOW,
+          }),
+        );
+      assert.ok(
+        !(await verifyGatewaySignature({
+          secret: SECRET,
+          header,
+          method: 'POST',
+          pathAndQuery: '/orders',
+          body: '{"amount":"1.0000"}',
+          now: NOW,
+        })),
+      );
+    },
+  );
+
+  await check(
+    'forward: unknown, revoked and expired keys give the same 401, repeated attempts are limited',
+    async () => {
+      const r = rig({ auth: null });
+      const res = await forward(r.ports, req());
+      assert.equal(res.status, 401);
+      assert.equal(r.sent.length, 0);
+      assert.deepEqual(r.attempts, ['203.0.113.7']);
+      assert.equal(
+        r.logs.every((l) => l.companyId === ''),
+        true,
+      );
+      const bad = await forward(r.ports, req({ authorization: 'Bearer nonsense' }));
+      assert.equal(bad.status, 401);
+      const limited = rig({ auth: null, limited: true });
+      const lim = await forward(limited.ports, req());
+      assert.equal(lim.status, 429);
+      assert.equal(lim.headers['retry-after'], '30');
+      assert.deepEqual(limited.events, ['token_abuse']);
+    },
+  );
+
+  await check(
+    'forward: a wrong address, a suspended sub-merchant and a used-up limit stop the call before the app',
+    async () => {
+      const wrongIp = rig({ auth: { ...authOk, allowedIps: ['198.51.100.0/24'] } });
+      assert.equal((await forward(wrongIp.ports, req())).status, 403);
+      const suspended = rig({ auth: { ...authOk, status: 'suspended' } });
+      assert.equal((await forward(suspended.ports, req())).status, 403);
+      const limited = rig({ hits: 6 });
+      const res = await forward(limited.ports, req());
+      assert.equal(res.status, 429);
+      assert.equal(res.headers['retry-after'], '12');
+      for (const x of [wrongIp, suspended, limited]) assert.equal(x.sent.length, 0);
+      assert.equal(wrongIp.logs[0]?.outcome, 'blocked');
+      assert.equal(limited.logs[0]?.outcome, 'rate_limited');
+    },
+  );
+
+  await check(
+    'forward: only listed routes, only the sub-merchant subset, nothing odd in the path',
+    async () => {
+      const none = rig();
+      assert.equal((await forward(none.ports, req({ path: '/secret' }))).status, 404);
+      assert.equal(
+        (await forward(none.ports, req({ method: 'DELETE', path: '/orders/42' }))).status,
+        404,
+      );
+      assert.equal((await forward(none.ports, req({ path: '/orders/../reports' }))).status, 404);
+      assert.equal((await forward(none.ports, req({ path: '/orders/%2e%2e' }))).status, 404);
+      assert.equal((await forward(none.ports, req({ method: 'TRACE' }))).status, 405);
+      const subset = rig({ auth: { ...authOk, routeIds: ['r3'] } });
+      assert.equal((await forward(subset.ports, req())).status, 404);
+      assert.equal(
+        (await forward(subset.ports, req({ path: '/reports', search: '' }))).status,
+        200,
+      );
+      assert.equal(none.sent.length, 0);
+    },
+  );
+
+  await check(
+    'forward: bad query, bad body, a body on GET and a too large body are refused',
+    async () => {
+      const r = rig();
+      assert.equal((await forward(r.ports, req({ search: '?a=1#x' }))).status, 400);
+      assert.equal(
+        (await forward(r.ports, req({ method: 'POST', path: '/orders', search: '', body: '{bad' })))
+          .status,
+        400,
+      );
+      assert.equal((await forward(r.ports, req({ body: '{}' }))).status, 400);
+      assert.equal(
+        (
+          await forward(
+            r.ports,
+            req({
+              method: 'POST',
+              path: '/orders',
+              search: '',
+              body: JSON.stringify({ x: 'y'.repeat(1_100_000) }),
+            }),
+          )
+        ).status,
+        413,
+      );
+      assert.equal(r.sent.length, 0);
+    },
+  );
+
+  await check(
+    'forward: no upstream, a switched-off upstream or one on the platform host is unavailable',
+    async () => {
+      assert.equal((await forward(rig({ upstream: null }).ports, req())).status, 503);
+      assert.equal(
+        (
+          await forward(
+            rig({
+              upstream: {
+                id: 'u',
+                base: 'https://app.example.com',
+                timeoutMs: 5000,
+                enabled: false,
+                secrets: [SECRET],
+              },
+            }).ports,
+            req(),
+          )
+        ).status,
+        503,
+      );
+      const self = rig({
+        upstream: {
+          id: 'u',
+          base: 'https://platform.example.org/api',
+          timeoutMs: 5000,
+          enabled: true,
+          secrets: [SECRET],
+        },
+      });
+      assert.equal((await forward(self.ports, req())).status, 503);
+      assert.equal(self.sent.length, 0);
+    },
+  );
+
+  await check(
+    'forward: the status of the app is mapped and its detail never reaches the sub-merchant',
+    async () => {
+      const json = (status: number, extra: Record<string, string> = {}): SentResponse => ({
+        status,
+        headers: { 'content-type': 'application/json', ...extra },
+        body: new TextEncoder().encode('{"error":"stack trace here"}'),
+      });
+      const notFound = await forward(rig({ answer: json(404) }).ports, req());
+      assert.equal(notFound.status, 404);
+      assert.match(text(notFound.body), /stack trace here/);
+      const tooMany = await forward(
+        rig({ answer: json(429, { 'retry-after': '9' }) }).ports,
+        req(),
+      );
+      assert.equal(tooMany.status, 429);
+      assert.equal(tooMany.headers['retry-after'], '9');
+      for (const answer of [
+        json(500),
+        json(302, { location: 'https://evil.example' }),
+        {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+          body: new TextEncoder().encode('<html></html>'),
+        },
+      ]) {
+        const r = rig({ answer });
+        const res = await forward(r.ports, req());
+        assert.equal(res.status, 502);
+        assert.doesNotMatch(text(res.body), /stack trace|html|evil/);
+        assert.equal(res.headers.location, undefined);
+        assert.deepEqual(r.notes, [false]);
+      }
+      const empty = await forward(
+        rig({ answer: { status: 204, headers: {}, body: new Uint8Array() } }).ports,
+        req({ method: 'GET' }),
+      );
+      assert.equal(empty.status, 204);
+    },
+  );
+
+  await check('forward: a slow or unreachable app gives 504 or 502 and is counted', async () => {
+    const slow = rig({ answer: new Error('timeout') });
+    assert.equal((await forward(slow.ports, req())).status, 504);
+    assert.equal(slow.logs[0]?.outcome, 'timeout');
+    const down = rig({ answer: new Error('connect refused') });
+    assert.equal((await forward(down.ports, req())).status, 502);
+    assert.deepEqual([...slow.notes, ...down.notes], [false, false]);
   });
 
   process.stdout.write(`step16-gateway: ${checks} checks passed\n`);

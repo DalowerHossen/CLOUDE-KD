@@ -139,6 +139,8 @@ export function checkUpstreamBase(raw: string, platformHost: string | null): Ups
   if (!check.ok) return check;
   const url = check.url;
   if (url.search !== '') return { ok: false, reason: 'The address must not contain a query.' };
+  if (url.port !== '' && url.port !== '443')
+    return { ok: false, reason: 'Use the standard https port (443).' };
   const host = url.hostname.toLowerCase().replace(/\.$/, '');
   if (platformHost !== null && host === platformHost.toLowerCase())
     return { ok: false, reason: 'The address must not be the address of this platform.' };

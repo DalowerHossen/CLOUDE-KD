@@ -17,6 +17,6 @@
 - [x] 16.11 Cron jobs, workers and closure (2026-10-23; commerce and bank feed jobs wait for 16.5 and 16.7)
 - [x] 16.12.a Sub-merchant gateway: tables (2026-10-24)
 - [x] 16.12.b Sub-merchant gateway: rules (2026-10-24)
-- [ ] 16.12.c Sub-merchant gateway: services
+- [x] 16.12.c Sub-merchant gateway: services (2026-10-24)
 - [ ] 16.12.d Sub-merchant gateway: routes and pages
 - [ ] 16.12.e Sub-merchant gateway: closure

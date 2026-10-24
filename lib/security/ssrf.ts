@@ -83,7 +83,7 @@ export interface SafeResponse {
 }
 
 export interface SafeRequestOptions {
-  method?: 'GET' | 'POST' | 'HEAD';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
   headers?: Record<string, string>;
   body?: string | Buffer;
   maxBytes?: number;
@@ -107,7 +107,13 @@ export async function safeHttpsRequest(
         port: url.port === '' ? 443 : Number(url.port),
         path: `${url.pathname}${url.search}`,
         method: options.method ?? 'GET',
-        headers: options.headers,
+        headers:
+          options.body === undefined
+            ? options.headers
+            : {
+                ...options.headers,
+                'content-length': String(Buffer.byteLength(options.body)),
+              },
         timeout: options.timeoutMs ?? SSRF_TIMEOUT_MS,
         // The address is validated again here, at the moment the socket is opened.
         lookup: (hostname, _opts, callback) => {
