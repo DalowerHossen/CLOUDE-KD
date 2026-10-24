@@ -14,7 +14,8 @@ export async function POST(request: Request): Promise<Response> {
   const correlationId = resolveCorrelationId(request.headers.get('x-correlation-id'));
   try {
     const text = await request.text();
-    if (text.length > 512) throw new ValidationError('The request is too large.');
+    if (new TextEncoder().encode(text).byteLength > 512)
+      throw new ValidationError('The request is too large.');
     const parsed = tokenOnlyBody.safeParse(JSON.parse(text) as unknown);
     if (!parsed.success) throw new ValidationError('Invalid request.');
     const access = await resolvePortalAccess(parsed.data.token, PDF_DOC_TYPES);

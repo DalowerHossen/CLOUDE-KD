@@ -36,7 +36,8 @@ const fetchTransport: HttpTransport = async (request) => {
       cache: 'no-store',
     });
     const text = await response.text();
-    if (text.length > MAX_RESPONSE_BYTES) throw new Error('response too large');
+    if (new TextEncoder().encode(text).byteLength > MAX_RESPONSE_BYTES)
+      throw new Error('response too large');
     const headers: Record<string, string> = {};
     response.headers.forEach((value, key) => {
       headers[key.toLowerCase()] = value;

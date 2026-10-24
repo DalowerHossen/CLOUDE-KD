@@ -18,7 +18,8 @@ export async function refreshTorList(): Promise<{ count: number }> {
     const response = await fetch(TOR_LIST_URL, { signal: controller.signal });
     if (!response.ok) throw new InternalError(new Error(`Tor list answered ${response.status}`));
     const text = await response.text();
-    if (text.length > MAX_BYTES) throw new InternalError(new Error('Tor list too large'));
+    if (new TextEncoder().encode(text).byteLength > MAX_BYTES)
+      throw new InternalError(new Error('Tor list too large'));
     const ips = parseTorList(text);
     if (ips.length < MIN_EXPECTED)
       throw new InternalError(new Error(`Tor list has only ${ips.length} entries`));
