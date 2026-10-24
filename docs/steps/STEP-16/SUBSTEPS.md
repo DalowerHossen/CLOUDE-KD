@@ -126,3 +126,29 @@ Contracts consumed (present in `types/contracts/`): events, audit, permissions, 
 - Files: `cron/jobs/s16-*.ts`, `workers/integrations/*`, `docs/steps/STEP-16/{VERIFY,HANDOFF}.md`.
 - FEATURE_LIST: Part 10 B (3476-3495).
 - Done when: every job in the list exists, is idempotent and appears in the generated cron list; the whole-STEP verification of SCOPE.md is recorded in `VERIFY.md`.
+
+## 16.12 Sub-merchant gateway (owner request, 2026-10-24)
+
+A main merchant (a company) lets its own sub-merchants call the main merchant's app through the platform. A sub-merchant holds a key made by the platform; the platform checks it, limits it, signs the request with the main merchant's signing secret and calls the main merchant's app at a fixed address. The sub-merchant never sees the address or the secret of the main merchant's app. Design decisions are D22 in `DECISIONS.md`.
+
+### 16.12.a Tables
+- Goal: `gateway_upstreams` (one per company: base address, sealed signing secret and its rotation, state), `gateway_routes` (the allowed method and path templates), `sub_merchants`, `sub_merchant_keys` (hashed, with address allow list), `gateway_calls` (append-only log, no bodies), `gateway_key_windows` and `kd_gateway_hit` (per-key limit).
+- Files: `migrations/S16_019_gateway.sql` (+ `_down`), `sql/assertions/s16_019_gateway.sql`.
+- Done when: RLS is on, the company of every child row matches its parent, a key hash is unique, the call log cannot change, the hit counter counts.
+
+### 16.12.b Rules (pure)
+- Goal: inputs, path templates and matching (no traversal, no encoded slashes), the request signature, header filters for both directions, the address allow list, the key format, the answer mapping.
+- Files: `config/s16-gateway.ts`, `lib/gateway/rules.ts`, `scripts/verify/step16-gateway.ts`.
+- Done when: the verify script checks every rule with a fake transport.
+
+### 16.12.c Services
+- Goal: manage upstream, routes, sub-merchants and keys (audited, optimistic lock, step-up for secrets); the forwarding service.
+- Files: `services/gateway/{upstream,routes,sub-merchants,keys,forward,db}.ts`, `lib/security/ssrf.ts` (methods PUT, PATCH, DELETE added to the guarded request).
+- Done when: the forwarding service passes the verify script with fake storage and a fake transport.
+
+### 16.12.d Routes and pages
+- Goal: the gateway entry `app/api/gateway/v1/[...path]/route.ts`, the management routes `app/api/integrations/gateway/**`, the page `(dashboard)/integrations/gateway`, strings, permissions `gateway.read` and `gateway.manage`, navigation.
+- Done when: lint, types and guards are clean.
+
+### 16.12.e Closure
+- Goal: `docs/integrations/gateway.md` (how a sub-merchant calls, how the main merchant verifies the signature), VERIFY, HANDOFF, PROGRESS.
