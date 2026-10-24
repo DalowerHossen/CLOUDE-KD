@@ -23,6 +23,7 @@ import {
   type DnsRecord,
 } from '@/lib/domain/hostnames';
 import { getPublicEnv } from '@/lib/env/public';
+import { safeHttpsRequest } from '@/lib/security/ssrf';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { randomHex } from '@/lib/utils/hash';
 import { planHas } from '@/services/company/plan';
@@ -166,12 +167,12 @@ async function probeHttps(hostname: string): Promise<'pending' | 'active' | 'err
   ];
   if (addresses.length === 0 || addresses.some((a) => !isPublicAddress(a))) return 'error';
   try {
-    const response = await fetch(`https://${hostname}/api/health`, {
+    // The guarded request checks the addresses again when the socket opens, so the name cannot change between check and call.
+    const response = await safeHttpsRequest(`https://${hostname}/api/health`, {
       method: 'GET',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(4000),
+      timeoutMs: 4000,
+      maxBytes: 65_536,
     });
-    await response.body?.cancel();
     return response.status < 500 ? 'active' : 'pending';
   } catch {
     return 'error';
