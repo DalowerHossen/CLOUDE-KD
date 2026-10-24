@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>KD SOLUTION IT</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <h1>KD SOLUTION IT</h1>
+      <p id="status" role="status"></p>
+
+      <section id="connect">
+        <label for="key">API key</label>
+        <input id="key" type="password" autocomplete="off" spellcheck="false" />
+        <button id="save" type="button">Save key</button>
+        <button id="forget" type="button" class="secondary">Forget key</button>
+        <p class="hint">
+          The key stays in this browser only. Give it the scopes read:clients, read:invoices and
+          write:invoices.
+        </p>
+      </section>
+
+      <section>
+        <h2>Summary</h2>
+        <dl id="summary"></dl>
+      </section>
+
+      <section>
+        <h2>Find a client</h2>
+        <input id="search" type="search" placeholder="Name or e-mail" autocomplete="off" />
+        <ul id="results"></ul>
+      </section>
+
+      <section>
+        <h2>Quick invoice (draft)</h2>
+        <select id="client" aria-label="Client"></select>
+        <input id="description" type="text" placeholder="What is it for" maxlength="200" />
+        <input
+          id="amount"
+          type="text"
+          inputmode="decimal"
+          placeholder="Amount, for example 120.50"
+        />
+        <button id="create" type="button">Create draft</button>
+        <p class="hint">
+          Live keys cannot create invoices through the API yet. Use a sandbox key to try it.
+        </p>
+      </section>
+    </main>
+    <script src="config.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,43 @@
+# STEP 11 - Progress
+
+- [x] 11.1.a stripe: doc record (6436128)
+- [x] 11.1.b stripe: adapter (d03af9b)
+- [x] 11.1.c stripe: webhook route (d03af9b)
+- [x] 11.1.d stripe: secure form (d03af9b)
+- [ ] 11.1.e stripe: verification - local checks done (d03af9b), sandbox scenarios pending (no sandbox keys)
+- [x] 11.2.a paypal: doc record (fae7525)
+- [x] 11.2.b paypal: adapter
+- [x] 11.2.c paypal: webhook route
+- [x] 11.2.d paypal: secure form
+- [ ] 11.2.e paypal: verification - local checks done, sandbox scenarios pending (no sandbox credentials)
+- [x] 11.3.a braintree: doc record (5937478)
+- [x] 11.3.b braintree: adapter
+- [x] 11.3.c braintree: webhook route (POST; GET destination check waits for request R1)
+- [x] 11.3.d braintree: secure form
+- [ ] 11.3.e braintree: verification - local checks done, sandbox scenarios pending (no sandbox keys)
+- [x] 11.4.a square: doc record (3795743)
+- [x] 11.4.b square: adapter
+- [x] 11.4.c square: webhook route
+- [x] 11.4.d square: secure form
+- [ ] 11.4.e square: verification - local checks done, sandbox scenarios pending (no sandbox credentials)
+- [x] 11.5.a authorizenet: doc record (41aad42)
+- [x] 11.5.b authorizenet: adapter
+- [x] 11.5.c authorizenet: webhook route
+- [x] 11.5.d authorizenet: secure form
+- [ ] 11.5.e authorizenet: verification - local checks done, sandbox scenarios pending (no credentials; API hosts not reachable from this environment)
+- [x] 11.6.a bluesnap: doc record (aaeae5a)
+- [x] 11.6.b bluesnap: adapter
+- [ ] 11.6.c bluesnap: webhook route - route exists, verification fails closed; BLOCKED by B1 (webhook authentication page unreachable, see BLOCKERS.md)
+- [x] 11.6.d bluesnap: secure form
+- [ ] 11.6.e bluesnap: verification - local checks done, sandbox scenarios pending (no credentials)
+- [x] 11.7.a verifone: doc record
+- [x] 11.7.b verifone: adapter
+- [x] 11.7.c verifone: webhook route (signature needs the public key file; fails closed when unreachable)
+- [x] 11.7.d verifone: secure form
+- [ ] 11.7.e verifone: verification - local checks done (27), sandbox scenarios pending (no sandbox credentials)
+- [x] 11.8.a payarc: doc record
+- [x] 11.8.b payarc: adapter
+- [ ] 11.8.c payarc: webhook route - route exists, verification fails closed; BLOCKED by B2 (no webhook authentication documented)
+- [x] 11.8.d payarc: secure form (sandbox script only; live address blocked by B3)
+- [ ] 11.8.e payarc: verification - local checks done (16), sandbox scenarios pending (no sandbox credentials)
+- [x] 11.9 handoff with status table (gen-processor-status.sh does not exist and is not a STEP 11 path: request R3)

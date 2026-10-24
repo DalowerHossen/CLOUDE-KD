@@ -1,0 +1,57 @@
+{
+  "comment": "Regular expressions that safe-regex reports but that were reviewed as linear. Add an entry only after the review.",
+  "reviewed": [
+    {
+      "expression": "^(?:\\d{1,3}\\.){3}\\d{1,3}$",
+      "reason": "Bounded repetition (3 x 1-3 digits), anchored."
+    },
+    {
+      "expression": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "reason": "Segments are separated by a dot that the character class cannot match, so there is one way to split the input."
+    },
+    {
+      "expression": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*(\\.\\*)?$",
+      "reason": "Same as above; the optional suffix starts with a dot and a star that the segments cannot contain."
+    },
+    {
+      "expression": "\\b(?:\\d[ -]?){13,19}\\b",
+      "reason": "Bounded count (13-19); used by the log redactor on short strings."
+    },
+    {
+      "expression": "^-?\\d+(\\.\\d+)?$",
+      "reason": "Anchored; the dot separates two digit runs, no ambiguity."
+    },
+    {
+      "expression": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$",
+      "reason": "Anchored fixed-width date format, optional groups are separated by fixed characters."
+    },
+    {
+      "expression": "\\B(?=(\\d{3})+(?!\\d))",
+      "reason": "Digit grouping on formatted numbers; groups are fixed width and the lookahead is anchored at a boundary."
+    },
+    {
+      "expression": "^(.*_)?(amount|price|total|balance|fee|cost|subtotal|discount|salary|wage|debit|credit)(_.*)?$",
+      "reason": "Developer script that runs on column names in migration files, not on user input."
+    },
+    {
+      "expression": "create\\s+(unique\\s+)?index\\s+(?!if\\s+not\\s+exists)",
+      "reason": "Developer script that runs on repository migration files."
+    },
+    {
+      "expression": "create\\s+table\\s+(if\\s+not\\s+exists\\s+)?([a-z0-9_.\"]+)\\s*\\(",
+      "reason": "Developer script that runs on repository migration files."
+    },
+    {
+      "expression": "^\"?([a-z0-9_]+)\"?\\s+([a-z]+(?:\\s*\\([^)]*\\))?)",
+      "reason": "Developer script that runs on repository migration files."
+    },
+    {
+      "expression": "(?:^|[=(,:;!&|?{}\\[\\s])\\/((?![*\\/])(?:\\\\.|\\[(?:\\\\.|[^\\]\\\\\\n])*\\]|[^\\/\\\\\\n\\[])+)\\/([dgimsuvy]*)(?=\\s*[.,;)\\]}]|\\s*$)",
+      "reason": "The scanner itself; runs on repository source lines only."
+    },
+    {
+      "expression": "^[a-z][a-z0-9_]*(\\.[a-z0-9_-]+)+$",
+      "reason": "Segments are separated by a dot that the character class cannot match; job names are checked before use."
+    }
+  ]
+}

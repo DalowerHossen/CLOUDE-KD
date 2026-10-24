@@ -1,8 +1,6 @@
 {
   "comment": "Machine-readable copy of docs/execution/OWNERSHIP_MAP.md. The most specific matching pattern decides the owner.",
-  "anyStepMayCreate": [
-    "**/.gitkeep"
-  ],
+  "anyStepMayCreate": ["**/.gitkeep"],
   "steps": {
     "01": {
       "owns": [
@@ -124,6 +122,7 @@
         "lib/auth/approval-rules.ts",
         "lib/middleware/tenant.ts",
         "lib/providers/presence-provider.tsx",
+        "lib/providers/presence-logic.ts",
         "lib/compliance/**",
         "services/{base,audit,approval,compliance,jobs,events}/**",
         "workers/runner.ts",
@@ -133,7 +132,7 @@
         "app/api/admin/{audit,compliance}/**",
         "app/(admin)/admin/{approvals,audit,compliance}/**",
         "app/(dashboard)/approvals/**",
-        "components/admin/{approvals,audit,compliance}/**",
+        "components/admin/{approvals,audit,compliance,shared}/**",
         "lib/i18n/strings/en/s02-*",
         "config/nav/s02.ts",
         "config/permissions/s02-*",
@@ -181,7 +180,9 @@
       "owns": [
         "proxy.ts",
         "lib/security/**",
-        "lib/middleware/{rate-limit,bot-detector,vpn-detector,csrf,auth,idempotency,headers}.ts",
+        "lib/middleware/{rate-limit,bot-detector,vpn-detector,csrf,auth,idempotency,headers,shield}.ts",
+        "app/api/security/**",
+        "emails/security/**",
         "lib/auth/tokens.ts",
         "lib/webhook/**",
         "services/{security,fraud,incident,alerting,siem}/**",
@@ -232,7 +233,13 @@
         "sql/assertions/s05_*",
         "scripts/verify/step05-*",
         "docs/steps/STEP-05/**",
-        "lib/env/s05-public.ts"
+        "lib/env/s05-public.ts",
+        "workers/notifications/**",
+        "services/encryption/**",
+        "components/storage/**",
+        "lib/notifications/**",
+        "config/{email,notifications,storage}.ts",
+        "app/api/admin/{storage,emails}/**"
       ]
     },
     "06": {
@@ -261,7 +268,14 @@
         "sql/assertions/s06_*",
         "scripts/verify/step06-*",
         "docs/steps/STEP-06/**",
-        "lib/env/s06-public.ts"
+        "lib/env/s06-public.ts",
+        "lib/cms/**",
+        "config/seo.ts",
+        "config/marketing.ts",
+        "lib/{blog,marketing,support}/**",
+        "services/{analytics,help}/**",
+        "app/api/{analytics,marketing}/**",
+        "app/.well-known/**"
       ]
     },
     "07": {
@@ -287,15 +301,24 @@
         "scripts/verify/step07-*",
         "docs/steps/STEP-07/**",
         "lib/env/s07-public.ts",
-        "app/(admin)/admin/page.tsx"
+        "app/(admin)/admin/page.tsx",
+        "lib/{company,team,kyc,support,lifecycle,domain,helpdesk}/**",
+        "app/(dashboard)/{announcements,feedback}/**",
+        "app/api/{announcements,feedback}/**",
+        "app/(admin)/admin/{announcements,feedback,_components}/**",
+        "app/(auth)/join/**",
+        "components/{support,feedback}/**",
+        "workers/onboarding/**",
+        "workers/support/**",
+        "config/{kyc,support,company}.ts"
       ]
     },
     "08": {
       "owns": [
-        "app/(dashboard)/{clients,products,inventory,suppliers,purchase-orders,imports}/**",
+        "app/(dashboard)/{clients,products,inventory,suppliers,purchase-orders,imports,bills}/**",
         "services/{client,product,inventory,supplier,purchase,import,export}/**",
-        "app/api/{clients,products,inventory,suppliers,purchase-orders,import,export}/**",
-        "components/{crm,inventory}/**",
+        "app/api/{clients,products,inventory,suppliers,purchase-orders,import,export,bills,remittances}/**",
+        "components/{crm,inventory,transfer}/**",
         "lib/i18n/strings/en/s08-*",
         "config/nav/s08.ts",
         "config/permissions/s08-*",
@@ -309,7 +332,10 @@
         "sql/assertions/s08_*",
         "scripts/verify/step08-*",
         "docs/steps/STEP-08/**",
-        "lib/env/s08-public.ts"
+        "lib/env/s08-public.ts",
+        "lib/{crm,catalog,stock,procurement,transfer}/**",
+        "emails/crm/**",
+        "workers/{crm,inventory,transfer}/**"
       ]
     },
     "09": {
@@ -335,13 +361,24 @@
         "sql/assertions/s09_*",
         "scripts/verify/step09-*",
         "docs/steps/STEP-09/**",
-        "lib/env/s09-public.ts"
+        "lib/env/s09-public.ts",
+        "lib/{invoice,billing,tax,reports}/**",
+        "workers/{invoice,billing}/**",
+        "lib/pdf/{invoice,shared}/**",
+        "lib/{schedule,credit,estimate,project,export}/**",
+        "components/{estimate,credit,dunning,project,reports}/**",
+        "services/{credit,estimate,project,report}/**",
+        "app/api/{credit-notes,time}/**",
+        "app/(dashboard)/{credit-notes,timesheets}/**"
       ]
     },
     "10": {
       "owns": [
         "lib/payment/{registry,routing,card-rules,verification,credentials,modes}.ts",
         "lib/payment/adapters/base.ts",
+        "lib/payment/*.ts",
+        "schemas/payment/**",
+        "components/payment/**",
         "config/processors.ts",
         "config/payment-risk.ts",
         "services/payment/**",

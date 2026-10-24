@@ -254,6 +254,43 @@ arrayBarrel({
   emit(out, lines.join('\n'));
 }
 
+// 9b. Worker handlers: workers/<step>/<name>.job.ts exports `jobHandler`, workers/<step>/<name>.event.ts exports `eventHandler`
+{
+  const out = 'services/jobs/handlers.generated.ts';
+  const workersDir = path.join(root, 'workers');
+  const jobs = [];
+  const events = [];
+  if (fs.existsSync(workersDir)) {
+    for (const d of fs
+      .readdirSync(workersDir, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort()) {
+      for (const f of list(`workers/${d}`, (n) => /^[a-z0-9-]+\.(job|event)\.ts$/.test(n))) {
+        (f.endsWith('.job.ts') ? jobs : events).push({ dir: d, file: base(f) });
+      }
+    }
+  }
+  const lines = [
+    header(out, 'workers/<step>/*.job.ts and *.event.ts'),
+    "import type { EventHandlerDefinition, JobHandlerDefinition } from './handler-types';",
+  ];
+  const id = (x) => camel(`${x.dir}-${x.file}`.replace(/\./g, '-'));
+  jobs.forEach((x) =>
+    lines.push(`import { jobHandler as ${id(x)} } from '@/workers/${x.dir}/${x.file}';`),
+  );
+  events.forEach((x) =>
+    lines.push(`import { eventHandler as ${id(x)} } from '@/workers/${x.dir}/${x.file}';`),
+  );
+  lines.push(
+    '',
+    `export const jobHandlers: JobHandlerDefinition[] = [${jobs.map(id).join(', ')}];`,
+    `export const eventHandlers: EventHandlerDefinition[] = [${events.map(id).join(', ')}];`,
+    '',
+  );
+  emit(out, lines.join('\n'));
+}
+
 // 10. Payment adapters index
 {
   const out = 'lib/payment/adapters/index.generated.ts';
