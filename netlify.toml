@@ -8,6 +8,8 @@
 [build.environment]
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
+  # The TypeScript check of the build needs more than the default 2 GB of Node memory.
+  NODE_OPTIONS = "--max-old-space-size=6144"
   # Build-time only: the application validates its real environment when the server starts.
   SKIP_ENV_VALIDATION = "1"
 
