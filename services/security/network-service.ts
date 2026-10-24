@@ -19,6 +19,7 @@ import { getAdminSupabase } from '@/lib/supabase/admin';
 import { maskIp } from '@/services/audit/mask-ip';
 import { hashIp } from '@/services/audit/request-meta';
 import type { NetworkCheckResult, NetworkContext } from '@/types/contracts';
+import { blockedCountryCodes } from '@/services/compliance/countries';
 import { raiseEvent } from './events';
 import { isIpBlocked } from './rate-limit';
 
@@ -140,6 +141,7 @@ export async function checkNetwork(
     ipBlocked: blocked,
     providerFailed: looked.failed,
     failClosedContexts: NETWORK_FAIL_CLOSED,
+    extraBlockedCountries: await blockedCountryCodes(),
   });
   if (!result.allowed)
     await raiseEvent('network_blocked', {

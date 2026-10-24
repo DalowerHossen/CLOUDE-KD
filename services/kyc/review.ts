@@ -23,6 +23,7 @@ import {
 } from '@/lib/kyc/rules';
 import type { ReviewAction } from '@/lib/kyc/review-input';
 import { runScreening, type ScreeningSubject } from '@/lib/kyc/screening';
+import { ensureSanctionsProvider } from '@/services/compliance/sanctions';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 
@@ -199,6 +200,7 @@ async function screen(detail: ReviewDetail): Promise<{ status: string; summary: 
       kind: 'person' as const,
     })),
   ];
+  ensureSanctionsProvider();
   const result = await runScreening(subjects);
   return (
     result ?? {

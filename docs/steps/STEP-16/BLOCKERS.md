@@ -56,3 +56,6 @@ Found in: 16.7 (2026-10-23, tested again after the owner allowed more hosts).
 The rule of this STEP is to read each provider's latest official documentation in the session before writing its adapter, and to stop when it cannot be reached. `plaid.com`, `api.plaid.com`, `docs.saltedge.com` and `www.saltedge.com` all fail through the session proxy with `CONNECT tunnel failed, response 403` (the hosts of Shopify and WooCommerce, tested in the same session, answered 200). So the bank feed sub-step (Plaid and Salt Edge adapters, account linking, transaction import into the STEP 15 reconciliation, smart matching suggestions) is not started.
 
 What unblocks it: allow `plaid.com`, `api.plaid.com`, `docs.saltedge.com` and `www.saltedge.com` in the environment's network settings and run 16.7 again. The plan for the sub-step stays as in SCOPE.md; the hand-over to STEP 15 goes through `services/bankfeed/ports.ts` (request R2).
+
+## B9 Official readers for the OFAC and United Nations sanctions files
+The hosts of both publishers did not resolve from the build environment, so the official documentation and file formats could not be read. The import route takes normalized entries (`docs/compliance/sanctions.md`); the two readers and the scheduled refresh stay open until a session can reach the hosts.

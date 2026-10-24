@@ -83,4 +83,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 93,
   },
+  {
+    id: 'admin-restrictions',
+    labelKey: 's16Compliance.nav.compliance',
+    href: '/admin/compliance/restrictions',
+    icon: 'shield',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 71,
+  },
 ];

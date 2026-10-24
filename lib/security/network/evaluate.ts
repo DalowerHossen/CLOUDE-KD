@@ -23,6 +23,8 @@ export interface EvaluateInput {
   /** True when no provider answer could be obtained (provider down or not configured and no cache). */
   providerFailed: boolean;
   failClosedContexts: readonly NetworkContext[];
+  /** Countries a platform admin switched on at run time (config COUNTRY_BLOCKLIST is the fixed part). */
+  extraBlockedCountries?: readonly string[];
 }
 
 function result(
@@ -47,7 +49,10 @@ export function evaluateNetwork(input: EvaluateInput): NetworkCheckResult {
   if (input.whitelisted) return result(signals, true, 'whitelisted');
   if (input.ipBlocked) return result(signals, false, 'address_blocked');
   const country = signals.countryCode;
-  if (country && COUNTRY_BLOCKLIST.includes(country))
+  if (
+    country &&
+    (COUNTRY_BLOCKLIST.includes(country) || input.extraBlockedCountries?.includes(country))
+  )
     return result(signals, false, 'country_blocked');
   const fence = GEO_FENCE[context];
   if (fence && fence.length > 0 && (!country || !fence.includes(country)))
