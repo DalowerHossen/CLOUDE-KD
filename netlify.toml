@@ -13,6 +13,10 @@
   # Build-time only: the application validates its real environment when the server starts.
   SKIP_ENV_VALIDATION = "1"
 
+# Next.js runtime: serves the pages, API routes and middleware (proxy.ts) as Netlify Functions.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
