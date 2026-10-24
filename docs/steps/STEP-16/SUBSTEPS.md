@@ -152,3 +152,21 @@ A main merchant (a company) lets its own sub-merchants call the main merchant's 
 
 ### 16.12.e Closure
 - Goal: `docs/integrations/gateway.md` (how a sub-merchant calls, how the main merchant verifies the signature), VERIFY, HANDOFF, PROGRESS.
+
+## 16.13 Sub-merchant KYC (owner request, 2026-10-24)
+
+A main merchant verifies its own sub-merchants before they may call the gateway. The sub-merchant has no login: it gets a secure link, fills the business details and the owners, uploads the four documents and submits. The main merchant reviews and decides. The platform screens the names against the sanctions lists and the restricted countries and does not let the main merchant approve a match. Design decisions are D23 in `DECISIONS.md`.
+
+### 16.13.a Tables
+- Goal: `sub_merchant_kyc` (a submission per round), `sub_merchant_kyc_documents`, `sub_merchant_kyc_links` (hashed one-way links), `sub_merchants.kyc_approved_until`, `gateway_upstreams.kyc_required`.
+- Files: `migrations/S16_020_sub_merchant_kyc.sql` (+ `_down`), `sql/assertions/s16_020_sub_merchant_kyc.sql`.
+
+### 16.13.b Rules and services
+- Goal: inputs, link tokens, readiness, review actions; services for the link, the applicant (view, business, owners, documents, submit) and the reviewer (queue, detail, document view logged, start with screening, documents, note and risk, approve, request changes, reject); the gateway refuses a sub-merchant that is not verified when the upstream asks for it.
+- Files: `lib/gateway/kyc-rules.ts`, `services/gateway/{kyc-links,kyc-applicant,kyc-review}.ts`, the gate in `services/gateway/{forward,keys,upstream}.ts`, `scripts/verify/step16-gateway-kyc.ts`.
+
+### 16.13.c Routes and pages
+- Goal: public tokenised routes `app/api/gateway-kyc/[token]/**`, management routes `app/api/integrations/gateway/kyc/**`, the applicant page `(client-portal)/skyc/[token]`, the review area on the gateway page, strings, permission `gateway.kyc.review`.
+
+### 16.13.d Closure
+- Goal: `docs/integrations/gateway-kyc.md`, VERIFY, HANDOFF, PROGRESS.
