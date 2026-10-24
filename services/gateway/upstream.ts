@@ -19,7 +19,7 @@ import { mapIntegrationError } from '@/services/publicapi/db-errors';
 import { need, open, record, seal } from './db';
 
 const COLUMNS =
-  'id, company_id, base_url, secret_enc, secret_last4, previous_secret_enc, previous_secret_expires_at, timeout_ms, enabled, consecutive_failures, last_success_at, last_failure_at, last_error, version';
+  'id, company_id, base_url, secret_enc, secret_last4, previous_secret_enc, previous_secret_expires_at, timeout_ms, enabled, kyc_required, consecutive_failures, last_success_at, last_failure_at, last_error, version';
 
 interface Row {
   id: string;
@@ -31,6 +31,7 @@ interface Row {
   previous_secret_expires_at: string | null;
   timeout_ms: number;
   enabled: boolean;
+  kyc_required: boolean;
   consecutive_failures: number;
   last_success_at: string | null;
   last_failure_at: string | null;
@@ -43,6 +44,7 @@ export interface UpstreamView {
   baseUrl: string;
   timeoutMs: number;
   enabled: boolean;
+  kycRequired: boolean;
   secretLast4: string;
   previousSecretExpiresAt: string | null;
   consecutiveFailures: number;
@@ -57,6 +59,7 @@ const toView = (r: Row): UpstreamView => ({
   baseUrl: r.base_url,
   timeoutMs: r.timeout_ms,
   enabled: r.enabled,
+  kycRequired: r.kyc_required,
   secretLast4: r.secret_last4,
   previousSecretExpiresAt: r.previous_secret_expires_at,
   consecutiveFailures: r.consecutive_failures,
@@ -139,6 +142,7 @@ export async function updateUpstream(actor: Actor, input: unknown): Promise<Upst
   if (d.baseUrl !== undefined) patch.base_url = checkedBase(d.baseUrl);
   if (d.timeoutMs !== undefined) patch.timeout_ms = d.timeoutMs;
   if (d.enabled !== undefined) patch.enabled = d.enabled;
+  if (d.kycRequired !== undefined) patch.kyc_required = d.kycRequired;
   const { data, error } = await getAdminSupabase()
     .from('gateway_upstreams')
     .update(patch)
@@ -196,6 +200,7 @@ export interface UpstreamTarget {
   base: string;
   timeoutMs: number;
   enabled: boolean;
+  kycRequired: boolean;
   secrets: string[];
 }
 
@@ -213,6 +218,7 @@ export async function loadUpstreamTarget(
     base: row.base_url,
     timeoutMs: row.timeout_ms,
     enabled: row.enabled,
+    kycRequired: row.kyc_required,
     secrets,
   };
 }

@@ -175,7 +175,7 @@ async function startAgain(
   return { id: String(data.id), status: 'draft', round };
 }
 
-async function checkImage(bytes: Uint8Array, mime: string): Promise<void> {
+export async function checkImage(bytes: Uint8Array, mime: string): Promise<void> {
   if (mime === 'application/pdf') return;
   const meta = await sharp(Buffer.from(bytes))
     .metadata()

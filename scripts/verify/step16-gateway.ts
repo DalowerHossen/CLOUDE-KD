@@ -327,6 +327,7 @@ async function main(): Promise<void> {
     reference: 'shop-1',
     status: 'active',
     routeIds: null,
+    kycApprovedUntil: null,
     rateLimitPerMinute: 5,
     allowedIps: null,
     lastUsedAt: null,
@@ -369,6 +370,7 @@ async function main(): Promise<void> {
             base: 'https://app.example.com/api',
             timeoutMs: 5000,
             enabled: true,
+            kycRequired: false,
             secrets: [SECRET],
           }
         : opts.upstream;
@@ -471,6 +473,7 @@ async function main(): Promise<void> {
           base: 'https://app.example.com',
           timeoutMs: 5000,
           enabled: true,
+          kycRequired: false,
           secrets: [SECRET, OLD_SECRET],
         },
       });
@@ -606,6 +609,37 @@ async function main(): Promise<void> {
   );
 
   await check(
+    'forward: a sub-merchant that is not verified is refused when the app asks for verification',
+    async () => {
+      const gate = {
+        id: 'u1',
+        base: 'https://app.example.com',
+        timeoutMs: 5000,
+        enabled: true,
+        kycRequired: true,
+        secrets: [SECRET],
+      };
+      const open = rig({ upstream: gate });
+      const refused = await forward(open.ports, req());
+      assert.equal(refused.status, 403);
+      assert.match(text(refused.body), /not been verified/);
+      assert.equal(open.sent.length, 0);
+      assert.equal(open.logs[0]?.outcome, 'blocked');
+      const past = rig({
+        upstream: gate,
+        auth: { ...authOk, kycApprovedUntil: '2026-10-01T00:00:00Z' },
+      });
+      assert.equal((await forward(past.ports, req())).status, 403);
+      const verified = rig({
+        upstream: gate,
+        auth: { ...authOk, kycApprovedUntil: '2027-10-01T00:00:00Z' },
+      });
+      assert.equal((await forward(verified.ports, req())).status, 200);
+      assert.equal(verified.sent.length, 1);
+    },
+  );
+
+  await check(
     'forward: no upstream, a switched-off upstream or one on the platform host is unavailable',
     async () => {
       assert.equal((await forward(rig({ upstream: null }).ports, req())).status, 503);
@@ -618,6 +652,7 @@ async function main(): Promise<void> {
                 base: 'https://app.example.com',
                 timeoutMs: 5000,
                 enabled: false,
+                kycRequired: false,
                 secrets: [SECRET],
               },
             }).ports,
@@ -632,6 +667,7 @@ async function main(): Promise<void> {
           base: 'https://platform.example.org/api',
           timeoutMs: 5000,
           enabled: true,
+          kycRequired: false,
           secrets: [SECRET],
         },
       });

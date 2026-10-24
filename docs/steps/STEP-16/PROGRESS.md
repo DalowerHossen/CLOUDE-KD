@@ -21,6 +21,6 @@
 - [x] 16.12.d Sub-merchant gateway: routes and pages (2026-10-24)
 - [x] 16.12.e Sub-merchant gateway: closure (2026-10-24)
 - [x] 16.13.a Sub-merchant KYC: tables (2026-10-24)
-- [ ] 16.13.b Sub-merchant KYC: rules and services
+- [x] 16.13.b Sub-merchant KYC: rules and services (2026-10-24)
 - [ ] 16.13.c Sub-merchant KYC: routes and pages
 - [ ] 16.13.d Sub-merchant KYC: closure

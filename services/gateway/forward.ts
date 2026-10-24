@@ -8,6 +8,7 @@ import {
   GATEWAY_MAX_RESPONSE_BYTES,
   GATEWAY_METHODS,
 } from '@/config/s16-gateway';
+import { verifiedUntil } from '@/lib/gateway/kyc-rules';
 import {
   checkUpstreamBase,
   cleanQuery,
@@ -257,6 +258,11 @@ export async function forward(ports: ForwardPorts, req: ForwardRequest): Promise
           req.correlationId,
         ),
         'upstream_error',
+      );
+    if (upstream.kycRequired && !verifiedUntil(auth.kycApprovedUntil, now))
+      return finish(
+        fail(403, 'forbidden', 'This account has not been verified.', req.correlationId),
+        'blocked',
       );
     const url = upstreamUrl(target.base, req.path, query);
     const parsed = new URL(url);

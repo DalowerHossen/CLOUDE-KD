@@ -172,12 +172,18 @@ export const upstreamUpdate = z
     baseUrl: baseUrl.optional(),
     timeoutMs: z.number().int().min(1000).max(30_000).optional(),
     enabled: z.boolean().optional(),
+    kycRequired: z.boolean().optional(),
     version: z.number().int().min(1),
   })
   .strict()
-  .refine((v) => v.baseUrl !== undefined || v.timeoutMs !== undefined || v.enabled !== undefined, {
-    message: 'Nothing to change.',
-  });
+  .refine(
+    (v) =>
+      v.baseUrl !== undefined ||
+      v.timeoutMs !== undefined ||
+      v.enabled !== undefined ||
+      v.kycRequired !== undefined,
+    { message: 'Nothing to change.' },
+  );
 
 export const routeInput = z
   .object({

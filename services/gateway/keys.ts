@@ -151,6 +151,8 @@ export interface SubKeyAuth {
   reference: string;
   status: 'active' | 'suspended' | 'closed';
   routeIds: string[] | null;
+  /** Until when the sub-merchant counts as verified (KYC), or null. */
+  kycApprovedUntil: string | null;
   rateLimitPerMinute: number;
   allowedIps: string[] | null;
   lastUsedAt: string | null;
@@ -171,7 +173,7 @@ export async function authenticateSubKey(secret: string, now: Date): Promise<Sub
   if (keyState({ expiresAt: r.expires_at, revokedAt: r.revoked_at }, now) !== 'active') return null;
   const sub = await admin
     .from('sub_merchants')
-    .select('id, reference, status, route_ids')
+    .select('id, reference, status, route_ids, kyc_approved_until')
     .eq('company_id', r.company_id)
     .eq('id', r.sub_merchant_id)
     .is('deleted_at', null)
@@ -183,6 +185,7 @@ export async function authenticateSubKey(secret: string, now: Date): Promise<Sub
     reference: string;
     status: string;
     route_ids: string[] | null;
+    kyc_approved_until: string | null;
   };
   return {
     keyId: r.id,
@@ -191,6 +194,7 @@ export async function authenticateSubKey(secret: string, now: Date): Promise<Sub
     reference: s.reference,
     status: s.status === 'suspended' ? 'suspended' : s.status === 'closed' ? 'closed' : 'active',
     routeIds: s.route_ids,
+    kycApprovedUntil: s.kyc_approved_until,
     rateLimitPerMinute: r.rate_limit_per_minute,
     allowedIps: r.allowed_ips,
     lastUsedAt: r.last_used_at,
