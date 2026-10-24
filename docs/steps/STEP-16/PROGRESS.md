@@ -25,6 +25,6 @@
 - [x] 16.13.c Sub-merchant KYC: routes and pages (2026-10-24)
 - [x] 16.13.d Sub-merchant KYC: closure (2026-10-24)
 - [x] 16.14.a Settlement ledger: tables and functions (2026-10-24)
-- [ ] 16.14.b Settlement ledger: rules and services
+- [x] 16.14.b Settlement ledger: rules and services (2026-10-24)
 - [ ] 16.14.c Settlement ledger: routes and page
 - [ ] 16.14.d Settlement ledger: closure
