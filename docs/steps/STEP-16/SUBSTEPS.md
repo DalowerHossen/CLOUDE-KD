@@ -188,3 +188,18 @@ The records of what a main merchant owes each of its sub-merchants: terms (commi
 
 ### 16.14.d Closure
 - Goal: `docs/integrations/settlement.md`, VERIFY, HANDOFF, PROGRESS.
+
+## 16.15 Automatic settlement entries (owner request, 2026-10-24)
+
+The main merchant's app posts sales, refunds and chargebacks of its sub-merchants to the platform by itself, with a key made for that purpose, instead of the owner typing them. Design decisions are D25 in `DECISIONS.md`.
+
+### 16.15.a Table
+- Goal: `settlement_ingest_keys` (hashed, limit, optional address list, expiry, revoke).
+- Files: `migrations/S16_022_settlement_ingest.sql` (+ `_down`), `sql/assertions/s16_022_settlement_ingest.sql`.
+
+### 16.15.b Rules and services
+- Goal: key format and header, the batch input by sub-merchant reference, key management (audited), authentication, the entry posting made reusable for the owner and for a key.
+- Files: `lib/gateway/ingest-rules.ts`, `services/gateway/ingest-keys.ts`, `services/gateway/entries.ts`, `scripts/verify/step16-settlement-ingest.ts`.
+
+### 16.15.c Route, page and closure
+- Goal: `POST /api/gateway/settlement/v1/entries`, key management routes and the section on the settlement page, docs, VERIFY, HANDOFF, PROGRESS.
