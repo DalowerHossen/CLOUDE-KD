@@ -99,3 +99,12 @@ Checked against the "Verification" list of `SCOPE.md`:
 16.11 itself: every integration job of the plan that belongs to a finished sub-step exists, appears in `cron/schedule.generated.ts` (ten `s16-*` jobs), and is safe to repeat; `sql/assertions/s16_012_housekeeping.sql` passes (the expiry notice mark does not change the identity of a key and a noticed key is not found again). The housekeeping service itself (notices, trimming, cancelling idle imports) was not run against a database.
 
 Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions of `S16_001` to `S16_015`; the fourteen `step16-*` scripts (bankfeed 15, commerce 15, social-networks 10, api-keys 12, public-api 15, webhooks-out 15, whatsapp 17, whatsapp-campaigns 15, social 15, social-schedule 9, automation 7, ocr 19, messaging 8, migration 9 checks); `npx tsc --noEmit` with a larger heap; full `eslint`; `bash scripts/check-all.sh`. See the closing commit for the results.
+
+## 16.12 Sub-merchant gateway
+
+| Check | Result | Evidence |
+|---|---|---|
+| Tables, company match, unique hash, closed stays closed, append-only log, per-minute counter | passes | `sql/assertions/s16_019_gateway.sql` |
+| Path templates and matching (no dot segments, encoding, double slashes), route choice, query, app address, inputs, keys, address list, signature and its check, headers both ways, status mapping | passes | `scripts/verify/step16-gateway.ts` (14 checks) |
+| Whole forwarding pipeline with fake ports: signed request without the key, 401 for unknown/revoked/expired, address and state blocks, limit, route subset, bad query/body, missing or self-pointing upstream, 502/504 mapping, no app detail returned | passes | `scripts/verify/step16-gateway.ts` (9 checks) |
+| A real call through the guarded transport to a real app, the pages, step-up | **not run** | needs a running app, a database and a public https test app |

@@ -18,5 +18,5 @@
 - [x] 16.12.a Sub-merchant gateway: tables (2026-10-24)
 - [x] 16.12.b Sub-merchant gateway: rules (2026-10-24)
 - [x] 16.12.c Sub-merchant gateway: services (2026-10-24)
-- [ ] 16.12.d Sub-merchant gateway: routes and pages
-- [ ] 16.12.e Sub-merchant gateway: closure
+- [x] 16.12.d Sub-merchant gateway: routes and pages (2026-10-24)
+- [x] 16.12.e Sub-merchant gateway: closure (2026-10-24)

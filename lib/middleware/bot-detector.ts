@@ -42,6 +42,7 @@ const SERVER_PREFIXES: readonly string[] = [
   '/api/webhooks/',
   '/api/cron/',
   '/api/public/',
+  '/api/gateway/',
   '/api/health',
   // E-mail providers, mail clients (one-click unsubscribe, images, links) call these without a browser session.
   '/api/email/webhooks/',

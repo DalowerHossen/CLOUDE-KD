@@ -92,4 +92,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo', 'admin_staff'],
     order: 71,
   },
+  {
+    id: 'gateway',
+    labelKey: 's16Gateway.nav.gateway',
+    href: '/integrations/gateway',
+    icon: 'plug',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 92,
+  },
 ];

@@ -38,10 +38,11 @@ import { permissions as s16Api } from './permissions/s16-api';
 import { permissions as s16Bankfeed } from './permissions/s16-bankfeed';
 import { permissions as s16Commerce } from './permissions/s16-commerce';
 import { permissions as s16Compliance } from './permissions/s16-compliance';
+import { permissions as s16Gateway } from './permissions/s16-gateway';
 import { permissions as s16Messaging } from './permissions/s16-messaging';
 import { permissions as s16Migration } from './permissions/s16-migration';
 import { permissions as s16Ocr } from './permissions/s16-ocr';
 import { permissions as s16Social } from './permissions/s16-social';
 import { permissions as s16Whatsapp } from './permissions/s16-whatsapp';
 
-export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Credits, ...s09Dunning, ...s09Estimates, ...s09Invoices, ...s09Projects, ...s09Recurring, ...s09Reports, ...s09Tax, ...s10Payments, ...s10Processors, ...s13Portal, ...s14Payouts, ...s15Accounting, ...s15Hr, ...s15Payroll, ...s16Api, ...s16Bankfeed, ...s16Commerce, ...s16Compliance, ...s16Messaging, ...s16Migration, ...s16Ocr, ...s16Social, ...s16Whatsapp];
+export const permissions: PermissionDefinition[] = [...s02Core, ...s03Auth, ...s04Security, ...s05StorageEmail, ...s06Site, ...s07Admin, ...s07Company, ...s07Data, ...s07Domain, ...s07Kyc, ...s07Support, ...s07Team, ...s08Catalog, ...s08Clients, ...s08Inventory, ...s08Purchasing, ...s08Transfer, ...s09Credits, ...s09Dunning, ...s09Estimates, ...s09Invoices, ...s09Projects, ...s09Recurring, ...s09Reports, ...s09Tax, ...s10Payments, ...s10Processors, ...s13Portal, ...s14Payouts, ...s15Accounting, ...s15Hr, ...s15Payroll, ...s16Api, ...s16Bankfeed, ...s16Commerce, ...s16Compliance, ...s16Gateway, ...s16Messaging, ...s16Migration, ...s16Ocr, ...s16Social, ...s16Whatsapp];
