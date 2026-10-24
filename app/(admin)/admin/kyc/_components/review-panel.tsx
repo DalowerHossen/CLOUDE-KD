@@ -27,6 +27,7 @@ export function ReviewPanel({
   const [note, setNote] = useState(detail.reviewNote);
   const [risk, setRisk] = useState(detail.risk ?? '');
   const [reason, setReason] = useState('');
+  const [handChecked, setHandChecked] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const reviewing = detail.status === 'in_review';
 
@@ -244,10 +245,22 @@ export function ReviewPanel({
                 />
               </label>
               <div className="flex flex-col gap-2 sm:flex-row">
+                {detail.screeningStatus !== 'clear' ? (
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={handChecked}
+                      onChange={(e) => setHandChecked(e.target.checked)}
+                    />
+                    <span>{t('s07Company.kycAdmin.handChecked')}</span>
+                  </label>
+                ) : null}
                 <Button
                   type="button"
                   disabled={busy || detail.awaitingApproval}
-                  onClick={() => void act({ action: 'recommend' })}
+                  onClick={() =>
+                    void act({ action: 'recommend', screeningCheckedByHand: handChecked })
+                  }
                 >
                   {t('s07Company.kycAdmin.recommend')}
                 </Button>

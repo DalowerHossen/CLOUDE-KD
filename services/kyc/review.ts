@@ -278,6 +278,10 @@ export async function runReviewAction(
         throw new ValidationError(
           'The screening found matches. Resolve them (reject or ask for changes) before you recommend approval.',
         );
+      if (detail.screeningStatus !== 'clear' && !input.screeningCheckedByHand)
+        throw new ValidationError(
+          'The names were not cleared by the automatic screening. Check them against the sanctions lists by hand and confirm it, or import the lists and ask for a new review.',
+        );
       if (!detail.risk) throw new ValidationError('Set a risk level first.');
       const state = await getService('approval').request({
         action: 'kyc.approve',
@@ -295,7 +299,11 @@ export async function runReviewAction(
         approval_request_id: state.requestId,
         recommended_by: actor.userId,
       });
-      await audit(actor, 'kyc.recommended', id, detail.companyId, { request: state.requestId });
+      await audit(actor, 'kyc.recommended', id, detail.companyId, {
+        request: state.requestId,
+        screening: detail.screeningStatus,
+        screeningCheckedByHand: input.screeningCheckedByHand,
+      });
       return { requestId: state.requestId };
     }
     case 'request_changes':

@@ -59,3 +59,5 @@ What unblocks it: allow `plaid.com`, `api.plaid.com`, `docs.saltedge.com` and `w
 
 ## B9 Official readers for the OFAC and United Nations sanctions files
 The hosts of both publishers did not resolve from the build environment, so the official documentation and file formats could not be read. The import route takes normalized entries (`docs/compliance/sanctions.md`); the two readers and the scheduled refresh stay open until a session can reach the hosts.
+
+Update 2026-10-24: B9 and the sandbox runs of STEP 11 and 12 were tried again; the hosts of OFAC, the United Nations and BlueSnap still do not resolve from the session, so they stay open.

@@ -75,7 +75,9 @@ async function lookupSignals(
   const cached = await readCache(ipHash);
   if (cached) return { signals: fromCache(cached), failed: false };
   const active = provider();
-  if (!active) return { signals: EMPTY_SIGNALS, failed: false };
+  // Without a provider no VPN, proxy or country signal exists. In production that is a setup error, so the sensitive
+  // contexts are refused (fail closed) instead of letting every request pass unchecked.
+  if (!active) return { signals: EMPTY_SIGNALS, failed: getServerEnv().APP_ENV === 'production' };
   try {
     const signals = await active.lookup(ip);
     await getAdminSupabase().rpc('kd_reputation_put', {

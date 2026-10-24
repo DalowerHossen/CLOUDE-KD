@@ -425,6 +425,8 @@ export const strings = {
     saveNote: 'Save risk level and note',
     reasonForOwner: 'Reason shown to the owner',
     recommend: 'Recommend approval',
+    handChecked:
+      'The automatic screening did not clear the names. I checked every name against the sanctions lists by hand.',
     requestChanges: 'Ask for changes',
     reject: 'Reject',
     recommendHelp:

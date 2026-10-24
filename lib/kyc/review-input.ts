@@ -39,7 +39,13 @@ export const reviewActionSchema = z.discriminatedUnion('action', [
         .refine((v) => !/[<>]/.test(v), { message: 'Angle brackets are not allowed.' }),
     })
     .strict(),
-  z.object({ action: z.literal('recommend') }).strict(),
+  z
+    .object({
+      action: z.literal('recommend'),
+      /** Needed when the automatic screening did not run or failed: the reviewer checked the names by hand. */
+      screeningCheckedByHand: z.boolean().default(false),
+    })
+    .strict(),
   z.object({ action: z.literal('request_changes'), reason }).strict(),
   z.object({ action: z.literal('reject'), reason }).strict(),
 ]);
