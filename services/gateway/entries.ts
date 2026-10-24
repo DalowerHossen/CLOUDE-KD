@@ -19,12 +19,22 @@ export interface PostResult {
   failed: { externalRef: string; message: string }[];
 }
 
-export async function postEntries(actor: Actor, input: unknown): Promise<PostResult> {
-  const companyId = need(actor);
-  const parsed = entriesBatch.safeParse(input);
-  if (!parsed.success)
-    throw new ValidationError(parsed.error.issues[0]?.message ?? 'The entries are not valid.');
-  const { subMerchantId, entries } = parsed.data;
+/** Who posts: the owner (a person) or a key of the main merchant's app. */
+export interface PostContext {
+  companyId: string;
+  createdBy: string | null;
+  via: { kind: 'owner' } | { kind: 'ingest_key'; keyId: string };
+}
+
+type EntryInputs = ReturnType<typeof entriesBatch.parse>['entries'];
+
+/** Works out and stores a batch of entries of one sub-merchant. The same kind and reference twice is a duplicate, not an error. */
+export async function postBatch(
+  ctx: PostContext,
+  subMerchantId: string,
+  entries: EntryInputs,
+): Promise<PostResult> {
+  const { companyId } = ctx;
   const sub = await getSubMerchant(companyId, subMerchantId);
   if (sub.status === 'closed')
     throw new ValidationError('A closed sub-merchant takes no new entries.');
@@ -57,7 +67,7 @@ export async function postEntries(actor: Actor, input: unknown): Promise<PostRes
       available_at: worked.availableAt,
       terms_id: worked.termsId,
       note: e.note,
-      created_by: actor.userId,
+      created_by: ctx.createdBy,
     });
     if (error) {
       if (error.code === '23505') result.duplicates.push(e.externalRef);
@@ -71,8 +81,22 @@ export async function postEntries(actor: Actor, input: unknown): Promise<PostRes
     posted: result.posted,
     duplicates: result.duplicates.length,
     failed: result.failed.length,
+    via: ctx.via.kind,
+    ...(ctx.via.kind === 'ingest_key' ? { keyId: ctx.via.keyId } : {}),
   });
   return result;
+}
+
+export async function postEntries(actor: Actor, input: unknown): Promise<PostResult> {
+  const companyId = need(actor);
+  const parsed = entriesBatch.safeParse(input);
+  if (!parsed.success)
+    throw new ValidationError(parsed.error.issues[0]?.message ?? 'The entries are not valid.');
+  return postBatch(
+    { companyId, createdBy: actor.userId, via: { kind: 'owner' } },
+    parsed.data.subMerchantId,
+    parsed.data.entries,
+  );
 }
 
 export interface EntryView extends StatementRow {

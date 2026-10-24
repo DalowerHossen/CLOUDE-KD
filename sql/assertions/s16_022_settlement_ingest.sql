@@ -17,6 +17,8 @@ begin
   exception when check_violation then null; end;
   begin update public.settlement_ingest_keys set key_hash = repeat('c', 64) where id = k; assert false, 'hash fixed';
   exception when object_not_in_prerequisite_state then null; end;
+  assert public.kd_settlement_ingest_hit(k, c, date_trunc('minute', now())) = 1, 'first hit';
+  assert public.kd_settlement_ingest_hit(k, c, date_trunc('minute', now())) = 2, 'second hit';
   update public.settlement_ingest_keys set revoked_at = now() where id = k;
   begin update public.settlement_ingest_keys set revoked_at = null where id = k; assert false, 'revoked stays revoked';
   exception when object_not_in_prerequisite_state then null; end;
