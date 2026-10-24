@@ -117,3 +117,12 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 | Link, token (40 characters, one-way hash), business input, review actions, readiness, applicant modes, expired reading, verified test | passes | `scripts/verify/step16-gateway-kyc.ts` (7 checks) |
 | The gateway refuses a sub-merchant that is not verified, an expired approval, and lets a verified one through; with the gate off nothing changes | passes | `scripts/verify/step16-gateway.ts` (24 checks) |
 | The services (link, applicant, review), the routes, the applicant page and the review page against a running app, a database and the storage service | **not run** | needs a running app |
+
+## 16.14 Sub-merchant settlement ledger
+
+| Check | Result | Evidence |
+|---|---|---|
+| Tables: sign and net rules, one entry per kind and reference, append-only ledger, terms versioned not edited, company match, balance (pending, available, paid, negative), payout (minimum, available limit, idempotent key, one lock per sub-merchant, void only) | passes | `sql/assertions/s16_021_settlement.sql` |
+| Working out a sale, refund, chargeback, adjustment; rounding; hold; terms in force by time; the balance rule (same numbers as the database); inputs; the statement file | passes | `scripts/verify/step16-settlement.ts` (12 checks) |
+| Two payouts recorded at the same time for one sub-merchant (the lock) | **not run** | needs two database sessions at once |
+| The services, routes and page against a running app | **not run** | needs a running app |

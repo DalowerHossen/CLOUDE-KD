@@ -101,4 +101,13 @@ export const nav: NavItem[] = [
     roles: ['owner'],
     order: 92,
   },
+  {
+    id: 'settlement',
+    labelKey: 's16Settlement.nav.settlement',
+    href: '/integrations/settlement',
+    icon: 'receipt',
+    group: 'dashboard',
+    roles: ['owner'],
+    order: 93,
+  },
 ];
