@@ -1,0 +1,108 @@
+name: deploy-supabase
+
+# Manual database deployment: applies every migration of migrations/ to the Supabase project of the chosen
+# GitHub Environment, then checks the result. The workflow has no seeds and no edge functions: this project has none.
+#
+# One-time set-up (GitHub: Settings > Environments > New environment, name "staging" or "production"):
+#   - Environment secret SUPABASE_DB_URL = the Supabase "Session pooler" connection string, with the real
+#     database password in it (Supabase > Connect > Session pooler). Use the pooler, not the direct host: GitHub
+#     runners have no IPv6 and the direct host of a Supabase project is IPv6 only. A password that contains
+#     @ : / ? # % must be percent-encoded in the string (or use only letters and digits).
+#   - For "production" add "Required reviewers" to the environment so that a person approves each run.
+#
+# The migrations can be applied again and again without harm (every file is applied twice on purpose).
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'GitHub Environment (its secret SUPABASE_DB_URL names the database)'
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+      confirm:
+        description: 'Type APPLY to confirm that you want to change the database'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-supabase-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    if: inputs.confirm == 'APPLY'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the connection string and test the connection
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "The environment secret SUPABASE_DB_URL is not set." >&2
+            exit 1
+          fi
+          python3 - <<'PY' > "$RUNNER_TEMP/pg.env"
+          import os, sys
+          from urllib.parse import urlsplit, unquote
+          u = urlsplit(os.environ["SUPABASE_DB_URL"].strip())
+          if u.scheme not in ("postgres", "postgresql") or not u.hostname or not u.username or u.password is None:
+              sys.exit("SUPABASE_DB_URL must look like postgresql://user:password@host:5432/postgres")
+          password = unquote(u.password)
+          if "\n" in password or "\r" in password:
+              sys.exit("The password must not contain a line break.")
+          print("PGHOST=" + u.hostname)
+          print("PGPORT=" + str(u.port or 5432))
+          print("PGUSER=" + unquote(u.username))
+          print("PGPASSWORD=" + password)
+          print("PGDATABASE=" + (u.path.lstrip("/") or "postgres"))
+          print("PGSSLMODE=require")
+          PY
+          # Hide the password in every log line, then hand the settings to the next steps.
+          echo "::add-mask::$(grep '^PGPASSWORD=' "$RUNNER_TEMP/pg.env" | cut -d= -f2-)"
+          cat "$RUNNER_TEMP/pg.env" >> "$GITHUB_ENV"
+          rm -f "$RUNNER_TEMP/pg.env"
+      - name: Test the connection
+        run: |
+          psql --version
+          psql -v ON_ERROR_STOP=1 -At -c "select 'connected to ' || current_database() || ' as ' || current_user"
+      - name: Apply the migrations
+        run: bash scripts/db-apply.sh --target
+      - name: Check the result
+        run: |
+          psql -v ON_ERROR_STOP=1 -At <<'SQL'
+          do $$
+          declare
+            tables integer;
+            open_tables text;
+            hook integer;
+          begin
+            select count(*) into tables from information_schema.tables where table_schema = 'public';
+            select string_agg(tablename, ', ') into open_tables from pg_tables where schemaname = 'public' and not rowsecurity;
+            select count(*) into hook from pg_proc where proname = 'kd_auth_access_token_hook';
+            raise notice 'public tables: %', tables;
+            if tables < 100 then raise exception 'too few tables (%): the migrations did not finish', tables; end if;
+            if open_tables is not null then raise exception 'tables without row level security: %', open_tables; end if;
+            if hook = 0 then raise exception 'the sign-in hook function kd_auth_access_token_hook is missing'; end if;
+          end
+          $$;
+          SQL
+      - name: Reminder
+        run: |
+          {
+            echo "### Database is ready"
+            echo "Next, by hand in the Supabase dashboard (Authentication):"
+            echo "1. Hooks > Custom Access Token > Postgres function public.kd_auth_access_token_hook."
+            echo "2. URL Configuration: Site URL and Redirect URLs = the address of the site."
+            echo "3. Email provider: confirm e-mail on, public sign-ups off."
+            echo "Then create the first super admin with scripts/create-platform-user.mjs (docs/deploy/SETUP_GUIDE.md section 5)."
+          } >> "$GITHUB_STEP_SUMMARY"

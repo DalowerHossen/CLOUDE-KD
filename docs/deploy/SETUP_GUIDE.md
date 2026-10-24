@@ -17,6 +17,7 @@ Written from the code and configuration of this repository. The dashboards of Su
    bash scripts/db-apply.sh --target
    ```
    It applies every `migrations/S*.sql` (not the `_down` files) in order, twice. If the direct host does not resolve (some plans have IPv6 only), use the "session pooler" connection string of the same page. The migrations were tested on a plain PostgreSQL with a small stand-in for Supabase (`supabase/local-shim.sql`); this is their first run on a real Supabase project, so read any error and stop at the first one.
+   **Without psql on your computer:** run the GitHub workflow `deploy-supabase` (Actions > deploy-supabase > Run workflow). Before the first run create a GitHub Environment (`staging` or `production`; Settings > Environments) with the secret `SUPABASE_DB_URL`: the Supabase "Session pooler" connection string with the real database password (GitHub runners cannot reach the IPv6-only direct host). Type `APPLY` to confirm. The workflow applies every migration and fails if a table lacks row level security or the sign-in hook function is missing.
 4. **Authentication settings** (Authentication in the dashboard; these come from `docs/steps/STEP-03/HANDOFF.md`):
    - Email provider on, "Confirm email" on, e-mail OTP expiry 86400 seconds, public sign-ups off (the platform creates accounts through its own API).
    - Hooks: add the "Custom Access Token" hook of type Postgres function `public.kd_auth_access_token_hook`. On Teams or Enterprise plans also add `public.kd_auth_password_hook` and `public.kd_auth_mfa_hook`.
