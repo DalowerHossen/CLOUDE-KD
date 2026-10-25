@@ -6,6 +6,7 @@ import { getService } from '@/lib/container';
 import { ConflictError, ForbiddenError, InternalError } from '@/lib/errors';
 import type { FlagInput } from '@/lib/company/ops-input';
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { invalidatePlanCache } from '@/services/entitlement/cache';
 import type { Actor } from '@/types/contracts';
 
 export interface FlagView {
@@ -90,6 +91,7 @@ export async function saveFlag(actor: Actor, input: FlagInput): Promise<{ versio
     }
     version = Number(r.data.version);
   }
+  invalidatePlanCache();
   await getService('audit').record({
     action: 'flag.changed',
     resourceType: 'feature_flag',

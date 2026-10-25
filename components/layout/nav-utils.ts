@@ -18,16 +18,6 @@ export function visibleNavItems(
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
 
-/** Keeps the short menu: only the items whose id is listed. Roles of the platform team always see everything. */
-export function essentialNavItems(
-  items: readonly NavItem[],
-  ids: readonly string[],
-  role: Role | null,
-): NavItem[] {
-  if (role !== 'owner' && role !== 'staff') return [...items];
-  return items.filter((item) => ids.includes(item.id));
-}
-
 export function isActivePath(pathname: string, href: string): boolean {
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);

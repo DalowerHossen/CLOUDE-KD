@@ -1,12 +1,14 @@
 // path: app/(admin)/admin/feature-flags/page.tsx
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/shared/page-header';
+import { MODULES } from '@/config/features';
 import { ErrorState } from '@/components/shared/state-views';
 import { getService } from '@/lib/container';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { listFlags, type FlagView } from '@/services/company/flags';
 import { StepUpForm } from '../account-locks/_components/step-up-form';
+import { ModulesPanel } from '../_components/modules-panel';
 import { FlagManager } from './_components/flag-manager';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +35,10 @@ export default async function FlagsPage(): Promise<JSX.Element> {
       {flags === null ? (
         <ErrorState description={t('s07Company.adminOps.loadError')} />
       ) : (
-        <FlagManager flags={flags} canManage={canManage} />
+        <>
+          <ModulesPanel modules={MODULES} flags={flags} companyId={null} canManage={canManage} />
+          <FlagManager flags={flags} canManage={canManage} />
+        </>
       )}
     </div>
   );

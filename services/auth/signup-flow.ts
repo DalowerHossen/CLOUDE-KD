@@ -13,6 +13,7 @@ import { randomHex } from '@/lib/utils/hash';
 import { slugify } from '@/lib/utils/slug';
 import { shouldRefuseSignup } from '@/lib/security/signals';
 import { noteTrialAbuse, signupsFromThisAddress } from '@/services/fraud/signals';
+import { startSignupTrial } from '@/services/subscription/signup-trial';
 import { lookupUserByEmail } from './credentials';
 import { hashIdentifier } from './lock-service';
 import { recordLoginEvent } from './login-events';
@@ -137,6 +138,7 @@ export async function startSignup(input: z.infer<typeof signupSchema>, ip: strin
       companyId,
       metadata: { method: 'password' },
     });
+    await startSignupTrial(companyId, userId);
     await sendVerification(email, companyId);
   } catch (error) {
     log.error('sign-up failed; removing the half-created account', { error });

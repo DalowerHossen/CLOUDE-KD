@@ -164,6 +164,20 @@ export const strings = {
     resultDone: 'Saved.',
     error: 'The action failed. Check the step-up and try again.',
   },
+  adminModules: {
+    title: 'Modules',
+    descriptionGlobal:
+      'Optional features. Each one is off for every company until you turn it on here (all companies) or on the company page (one company). A feature that is off is not in the menu and does not work.',
+    descriptionCompany:
+      'Optional features of this company. Off by default. A setting here beats the setting for all companies.',
+    stateOnCompany: 'On for this company',
+    stateOffCompany: 'Off for this company',
+    stateOnAll: 'On for all companies',
+    stateOffDefault: 'Off (default)',
+    turnOn: 'Turn on',
+    turnOff: 'Turn off',
+    needStepUp: 'Confirm your identity with the step-up form above first.',
+  },
   adminOps: {
     staffTitle: 'Admin staff',
     staffDescription:

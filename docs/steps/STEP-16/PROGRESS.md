@@ -36,3 +36,8 @@
 
 - Done: sign-out CSRF fix; short owner menu with "Show all features"; personal profile page and API; plan feature "no limit" fix (S16_023) with a self-healing seed; verify script `step16-owner-menu`.
 - Not built (needs its own sub-steps): (a) payment link sent with the invoice only after verification (no verification check exists in the invoice or link services today); (b) a cancel option on the buyer's payment page; (c) a hosted checkout plug-in for Shopify and WooCommerce (today the platform only reads store orders through webhooks and REST); (d) page speed: not measured on the live site; the likely cause is the function region.
+
+## Optional modules, Developers off by default, sign-up trial (owner request)
+
+- Done: module catalogue (`config/features.ts`), flag reading with company override and rollout (`lib/features/rules.ts`, `services/company/module-access.ts`), menu, page and API gating, a Modules panel on Admin > Feature flags (all companies) and on the company page (one company), sign-up trial (`config/trial.ts`, `services/subscription/signup-trial.ts`), verify script `step16-modules`.
+- Open: the public gateway call path is not yet refused for a company whose gateway module is off; a trial-ending reminder mail is sent only by the existing job (needs the scheduler); the trial plan and length are fixed in `config/trial.ts` (no admin screen yet).
