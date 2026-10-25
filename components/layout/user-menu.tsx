@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,22 @@ export function UserMenu({
   user: ShellUser;
   accountItems: readonly NavItem[];
 }): JSX.Element {
+  const router = useRouter();
+
+  // A script call (not a plain form post) so the CSRF header is added by the page; the server answers 403 without it.
+  async function signOut(): Promise<void> {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+    } finally {
+      router.replace('/login');
+      router.refresh();
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -65,13 +82,13 @@ export function UserMenu({
             </Link>
           </DropdownMenuItem>
         ))}
-        <DropdownMenuItem asChild>
-          <form action="/api/auth/logout" method="post">
-            <button type="submit" className="flex w-full items-center gap-2 text-left">
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-              {t('s01Core.nav.signOut')}
-            </button>
-          </form>
+        <DropdownMenuItem
+          onSelect={() => {
+            void signOut();
+          }}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          {t('s01Core.nav.signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

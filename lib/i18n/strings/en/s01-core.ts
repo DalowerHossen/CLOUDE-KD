@@ -83,6 +83,8 @@ export const strings = {
     details: 'Details',
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
+    showAllFeatures: 'Show all features',
+    showEssentialMenu: 'Show the short menu',
     searchShortcut: 'Search',
     openSearch: 'Open search',
     switchTheme: 'Theme',

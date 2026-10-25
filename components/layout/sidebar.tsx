@@ -2,8 +2,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronsLeft, ChevronsRight, ListChecks, ListTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MENU_MODE_COOKIE } from '@/config/nav-essential';
 import type { NavItem } from '@/config/nav-types';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils/cn';
@@ -15,10 +17,12 @@ interface SidebarProps {
   items: readonly NavItem[];
   homeHref: string;
   badge?: string;
+  menuMode?: 'essential' | 'all';
 }
 
 /** Desktop sidebar (md and up). Phones use the drawer and the bottom navigation instead. */
-export function Sidebar({ items, homeHref, badge }: SidebarProps): JSX.Element {
+export function Sidebar({ items, homeHref, badge, menuMode }: SidebarProps): JSX.Element {
+  const router = useRouter();
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const setCollapsed = useUiStore((s) => s.setSidebarCollapsed);
   return (
@@ -48,7 +52,29 @@ export function Sidebar({ items, homeHref, badge }: SidebarProps): JSX.Element {
       <nav className="flex-1 overflow-y-auto p-3" aria-label={t('s01Core.nav.mainNavigation')}>
         <NavList items={items} collapsed={collapsed} />
       </nav>
-      <div className="border-t p-3">
+      <div className="space-y-1 border-t p-3">
+        {menuMode ? (
+          <Button
+            variant="ghost"
+            className={cn('w-full justify-start gap-3', collapsed && 'justify-center')}
+            onClick={() => {
+              const next = menuMode === 'all' ? 'essential' : 'all';
+              document.cookie = `${MENU_MODE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+              router.refresh();
+            }}
+          >
+            {menuMode === 'all' ? (
+              <ListChecks className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <ListTree className="h-5 w-5" aria-hidden="true" />
+            )}
+            <span className={cn(collapsed && 'sr-only')}>
+              {menuMode === 'all'
+                ? t('s01Core.nav.showEssentialMenu')
+                : t('s01Core.nav.showAllFeatures')}
+            </span>
+          </Button>
+        ) : null}
         <Button
           variant="ghost"
           className={cn('w-full justify-start gap-3', collapsed && 'justify-center')}
