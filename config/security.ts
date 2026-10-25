@@ -126,6 +126,7 @@ export const FINGERPRINT_EXCLUDED_PREFIXES: readonly string[] = [
   '/login',
   '/signup',
   '/forgot-password',
+  '/resend-verification',
   '/reset-password',
   '/account/security',
   '/checkout',

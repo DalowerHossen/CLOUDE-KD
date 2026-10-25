@@ -21,6 +21,7 @@ const outcome = z.discriminatedUnion('status', [
   z.object({ status: z.literal('ok'), redirectTo: z.enum(['/dashboard', '/admin']) }),
   z.object({ status: z.literal('two_factor_required') }),
   z.object({ status: z.literal('two_factor_setup_required') }),
+  z.object({ status: z.literal('email_unconfirmed') }),
 ]);
 
 export function LoginForm({
@@ -36,9 +37,11 @@ export function LoginForm({
   const [token, setToken] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const [remember, setRemember] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
   async function submit(data: FormData): Promise<void> {
     setMessage(null);
+    setUnconfirmed(false);
     const result = await postJson(
       '/api/auth/login',
       {
@@ -50,6 +53,12 @@ export function LoginForm({
       outcome,
     );
     if (result.ok) {
+      if (result.data.status === 'email_unconfirmed') {
+        setMessage(t('s03Auth.login.unconfirmed'));
+        setUnconfirmed(true);
+        setResetKey((k) => k + 1);
+        return;
+      }
       if (result.data.status === 'ok') router.replace(result.data.redirectTo);
       else if (result.data.status === 'two_factor_required') router.replace('/login/two-factor');
       else router.replace('/login/two-factor-setup');
@@ -101,6 +110,12 @@ export function LoginForm({
       <SubmitButton className="w-full">{t('s03Auth.login.submit')}</SubmitButton>
       <OAuthButtons providers={providers} />
       <div className="flex flex-col gap-1 text-sm">
+        <Link
+          href="/resend-verification"
+          className={`inline-flex min-h-[44px] items-center underline-offset-4 hover:underline ${unconfirmed ? 'font-semibold text-primary' : 'text-primary'}`}
+        >
+          {t('s03Auth.verify.noMail')} {t('s03Auth.verify.resendAgain')}
+        </Link>
         <Link
           href="/forgot-password"
           className="inline-flex min-h-[44px] items-center text-primary underline-offset-4 hover:underline"

@@ -14,6 +14,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { t } from '@/lib/i18n';
 import { postJson } from './auth-client';
 import { PasswordField } from './password-field';
+import { ResendForm } from './resend-form';
 import { Turnstile } from './turnstile';
 
 export interface PlanChoice {
@@ -74,7 +75,13 @@ export function SignupForm({
 
   if (done) {
     return (
-      <SuccessState title={t('s03Auth.signup.doneTitle')} description={t('s03Auth.signup.done')} />
+      <div className="space-y-sp-16">
+        <SuccessState
+          title={t('s03Auth.signup.doneTitle')}
+          description={t('s03Auth.signup.done')}
+        />
+        <ResendForm siteKey={siteKey} initialEmail={email} heading={false} />
+      </div>
     );
   }
 

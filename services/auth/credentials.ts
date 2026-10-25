@@ -71,7 +71,13 @@ export async function lookupUserByEmail(email: string): Promise<KnownUser | null
  * Checks e-mail and password with Supabase Auth. The session that Supabase creates for the check is closed at once;
  * the real session is created later by mintSession, after the second factor.
  */
-export async function verifyPassword(email: string, password: string): Promise<boolean> {
+export type PasswordCheck = 'ok' | 'wrong' | 'unconfirmed';
+
+/**
+ * Checks the password with Supabase Auth. "unconfirmed" means the password is right but the e-mail address was never
+ * confirmed (Supabase refuses to sign such an account in), so the caller can send a new confirmation link.
+ */
+export async function checkPassword(email: string, password: string): Promise<PasswordCheck> {
   const publicEnv = getPublicEnv();
   const client = createClient(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
@@ -84,9 +90,15 @@ export async function verifyPassword(email: string, password: string): Promise<b
     email: normalizeIdentifier(email),
     password,
   });
-  if (error || !data.session) return false;
+  if (error?.code === 'email_not_confirmed' || /email not confirmed/i.test(error?.message ?? ''))
+    return 'unconfirmed';
+  if (error || !data.session) return 'wrong';
   await getAdminSupabase().auth.admin.signOut(data.session.access_token, 'local');
-  return true;
+  return 'ok';
+}
+
+export async function verifyPassword(email: string, password: string): Promise<boolean> {
+  return (await checkPassword(email, password)) === 'ok';
 }
 
 export interface MintedSession {

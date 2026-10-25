@@ -36,6 +36,14 @@ export function VerifyEmailClient({ token }: { token: string }): JSX.Element {
       {state === 'failed' ? (
         <ErrorState title={t('s03Auth.verify.title')} description={t('s03Auth.verify.failed')} />
       ) : null}
+      {state === 'failed' ? (
+        <Link
+          href="/resend-verification"
+          className="inline-flex min-h-[44px] items-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {t('s03Auth.verify.resendTitle')}
+        </Link>
+      ) : null}
       <Link
         href="/login"
         className="inline-flex min-h-[44px] items-center text-sm text-primary underline-offset-4 hover:underline"

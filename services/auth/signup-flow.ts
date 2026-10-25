@@ -12,6 +12,7 @@ import { getAdminSupabase } from '@/lib/supabase/admin';
 import { randomHex } from '@/lib/utils/hash';
 import { slugify } from '@/lib/utils/slug';
 import { shouldRefuseSignup } from '@/lib/security/signals';
+import { processQueue } from '@/services/email/sender';
 import { noteTrialAbuse, signupsFromThisAddress } from '@/services/fraud/signals';
 import { startSignupTrial } from '@/services/subscription/signup-trial';
 import { lookupUserByEmail } from './credentials';
@@ -175,6 +176,35 @@ export async function confirmEmail(tokenHash: string): Promise<boolean> {
   return true;
 }
 
+/** Sends the queued messages that are due, so a confirmation mail that failed earlier is tried again without waiting for the job. */
+async function flushOutbox(): Promise<void> {
+  try {
+    await processQueue(20);
+  } catch (error) {
+    log.warn('the outbox could not be flushed', {
+      error: error instanceof Error ? error.name : 'unknown',
+    });
+  }
+}
+
+/**
+ * A new confirmation link for an account that exists and is not confirmed yet. Limited per account so the mailbox of the
+ * holder cannot be flooded. Returns true when a message was sent.
+ */
+export async function resendVerificationFor(
+  userId: string,
+  email: string,
+  companyId: string | null,
+): Promise<boolean> {
+  const { data } = await getAdminSupabase().auth.admin.getUserById(userId);
+  if (!data.user || data.user.email_confirmed_at) return false;
+  const rate = await getService('security').rateLimit(`resend-verification:${userId}`, 'strict');
+  if (!rate.allowed) return false;
+  await sendVerification(normalizeIdentifier(email), companyId);
+  await flushOutbox();
+  return true;
+}
+
 export async function resendVerification(
   input: z.infer<typeof resendSchema>,
   ip: string,
@@ -186,12 +216,5 @@ export async function resendVerification(
   }
   const user = await lookupUserByEmail(input.email);
   if (!user) return;
-  const { data } = await getAdminSupabase().auth.admin.getUserById(user.userId);
-  if (!data.user || data.user.email_confirmed_at) return;
-  const rate = await getService('security').rateLimit(
-    `resend-verification:${user.userId}`,
-    'api-default',
-  );
-  if (!rate.allowed) return;
-  await sendVerification(normalizeIdentifier(input.email), user.companyId);
+  await resendVerificationFor(user.userId, input.email, user.companyId);
 }
