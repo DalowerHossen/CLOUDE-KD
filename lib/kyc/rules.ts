@@ -1,6 +1,7 @@
 // path: lib/kyc/rules.ts
 // KYC rules shared by the owner screens, the reviewer screens and the services. Safe to import in the browser.
 import { z } from 'zod';
+import { KYC_DOC_CATALOG } from '@/lib/kyc/profile';
 import type { KycStatus } from '@/types/contracts';
 
 export const DOC_TYPES = ['id_front', 'id_back', 'business_registration', 'address_proof'] as const;
@@ -70,7 +71,7 @@ export type Owners = z.infer<typeof ownersSchema>;
 
 export const uploadSchema = z
   .object({
-    docType: z.enum(DOC_TYPES),
+    docType: z.enum(KYC_DOC_CATALOG),
     name: z.string().trim().min(1).max(150),
     mimeType: z.enum(DOC_MIME_TYPES),
     /** Base64 of the file, at most 5 MB of data. */

@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { countryName, sortedCountryCodes } from '@/lib/company/countries';
 import { MAX_PDF_BYTES, prepareImage } from '@/lib/kyc/image-prep';
-import { DOC_TYPES, MIN_IMAGE, type DocType } from '@/lib/kyc/rules';
+import { BUSINESS_FIELDS, DEFAULT_REQUIRED_DOCUMENTS, type KycDocType } from '@/lib/kyc/profile';
+import { MIN_IMAGE } from '@/lib/kyc/rules';
 import { t, type StringKey } from '@/lib/i18n';
 import type { KycView } from '@/services/kyc/owner';
 
@@ -46,8 +47,14 @@ export function KycPanel({
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, { ok: boolean; text: string }>>({});
-  const [previews, setPreviews] = useState<Partial<Record<DocType, string>>>({});
-  const [expiry, setExpiry] = useState<Partial<Record<DocType, string>>>({});
+  const [previews, setPreviews] = useState<Partial<Record<KycDocType, string>>>({});
+  const [expiry, setExpiry] = useState<Partial<Record<KycDocType, string>>>({});
+  const form = view.form;
+  const required: readonly KycDocType[] = form?.required ?? DEFAULT_REQUIRED_DOCUMENTS;
+  const optional: readonly KycDocType[] = form?.optional ?? [];
+  const shownDocs: readonly KycDocType[] = [...required, ...optional];
+  const questions = BUSINESS_FIELDS.filter((f) => form?.businessFields.includes(f.id));
+  const [answers, setAnswers] = useState<Record<string, string>>(form?.business ?? {});
   const [owners, setOwners] = useState<OwnerRow[]>(
     view.owners.length > 0 ? view.owners : [{ ...EMPTY_OWNER }],
   );
@@ -57,14 +64,20 @@ export function KycPanel({
   const note = (scope: string, ok: boolean, text: string): void =>
     setNotes((n) => ({ ...n, [scope]: { ok, text } }));
 
-  async function call(scope: string, method: string, body: unknown, ok: string): Promise<boolean> {
+  async function call(
+    scope: string,
+    method: string,
+    body: unknown,
+    ok: string,
+    url: string = endpoint,
+  ): Promise<boolean> {
     setBusy(scope);
     setNotes((n) => {
       const { [scope]: _gone, ...rest } = n;
       return rest;
     });
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(url, {
         method,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
@@ -95,7 +108,7 @@ export function KycPanel({
     return false;
   }
 
-  async function upload(type: DocType, file: File): Promise<void> {
+  async function upload(type: KycDocType, file: File): Promise<void> {
     const fail = (text: string): void => note(type, false, text);
     if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type))
       return fail(t('s07Company.kyc.wrongType'));
@@ -142,10 +155,11 @@ export function KycPanel({
     );
   }
 
-  const docsDone = DOC_TYPES.filter((d) =>
+  const docsDone = required.filter((d) =>
     view.documents.some((x) => x.docType === d && x.status !== 'rejected'),
   ).length;
   const ownersDone = view.owners.length > 0;
+  const businessDone = questions.every((q) => (form?.business[q.id] ?? '').length > 0);
   const rejectedDocs = view.documents.some((d) => d.status === 'rejected');
 
   const banner = t(`s07Company.kyc.banner.${view.status}` as StringKey);
@@ -185,14 +199,15 @@ export function KycPanel({
         </h2>
         <p className="text-sm text-muted-foreground">{t('s07Company.kyc.documentsHelp')}</p>
         <ul className="grid gap-sp-12 md:grid-cols-2">
-          {DOC_TYPES.map((type) => {
+          {shownDocs.map((type) => {
             const doc = view.documents.find((d) => d.docType === type);
-            const isId = type === 'id_front' || type === 'id_back';
+            const isId = type === 'id_front' || type === 'id_back' || type === 'selfie_with_id';
             return (
               <li key={type} className="space-y-2 rounded-lg border p-sp-12 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">
                     {t(`s07Company.kyc.docs.${type}` as StringKey)}
+                    {optional.includes(type) ? ` ${t('s07Company.kyc.optionalTag')}` : ''}
                   </span>
                   {doc ? (
                     <Badge variant={doc.status === 'rejected' ? 'destructive' : 'outline'}>
@@ -275,6 +290,103 @@ export function KycPanel({
           })}
         </ul>
       </section>
+
+      {questions.length > 0 ? (
+        <section className="space-y-sp-12" aria-labelledby="business">
+          <h2 id="business" className="text-h4 font-semibold">
+            {t('s07Company.kyc.businessTitle')}
+          </h2>
+          <p className="text-sm text-muted-foreground">{t('s07Company.kyc.businessHelp')}</p>
+          <form
+            className="space-y-sp-12"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void call(
+                'business',
+                'PUT',
+                answers,
+                t('s07Company.kyc.businessSaved'),
+                `${endpoint}/business`,
+              );
+            }}
+          >
+            <fieldset disabled={readOnly || busy !== null} className="grid gap-2 sm:grid-cols-2">
+              {questions.map((q) => {
+                const value = answers[q.id] ?? '';
+                const set = (v: string): void => setAnswers((a) => ({ ...a, [q.id]: v }));
+                const label = t(`s07Company.kyc.fields.${q.id}` as StringKey);
+                return (
+                  <label
+                    key={q.id}
+                    className={`space-y-1 text-sm ${q.kind === 'textarea' ? 'sm:col-span-2' : ''}`}
+                  >
+                    <span>{label}</span>
+                    {q.kind === 'select' ? (
+                      <NativeSelect required value={value} onChange={(e) => set(e.target.value)}>
+                        <option value="">{t('s07Company.kyc.chooseOne')}</option>
+                        {(q.options ?? []).map((o) => (
+                          <option key={o} value={o}>
+                            {t(`s07Company.kyc.options.${o}` as StringKey)}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    ) : q.kind === 'country' ? (
+                      <NativeSelect required value={value} onChange={(e) => set(e.target.value)}>
+                        <option value="">{t('s07Company.kyc.chooseOne')}</option>
+                        {sortedCountryCodes.map((c) => (
+                          <option key={c} value={c}>
+                            {countryName(c)}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    ) : q.kind === 'textarea' ? (
+                      <textarea
+                        required
+                        rows={3}
+                        maxLength={q.max}
+                        value={value}
+                        onChange={(e) => set(e.target.value)}
+                        className="w-full rounded-md border bg-background px-3 py-2"
+                      />
+                    ) : (
+                      <Input
+                        required
+                        maxLength={q.max}
+                        type={
+                          q.kind === 'date'
+                            ? 'date'
+                            : q.kind === 'tel'
+                              ? 'tel'
+                              : q.kind === 'url'
+                                ? 'url'
+                                : 'text'
+                        }
+                        value={value}
+                        onChange={(e) => set(e.target.value)}
+                      />
+                    )}
+                  </label>
+                );
+              })}
+              <div className="sm:col-span-2">
+                <Button type="submit" size="sm">
+                  {t('s07Company.kyc.saveBusiness')}
+                </Button>
+              </div>
+            </fieldset>
+            {notes.business ? (
+              <p
+                role={notes.business.ok ? 'status' : 'alert'}
+                className={
+                  notes.business.ok ? 'text-sm text-muted-foreground' : 'text-sm text-destructive'
+                }
+              >
+                {notes.business.text}
+              </p>
+            ) : null}
+          </form>
+        </section>
+      ) : null}
 
       <section className="space-y-sp-12" aria-labelledby="owners">
         <h2 id="owners" className="text-h4 font-semibold">
@@ -411,9 +523,17 @@ export function KycPanel({
           </h2>
           <ul className="space-y-1 text-sm">
             <li>
-              <span aria-hidden="true">{docsDone === DOC_TYPES.length ? '[x]' : '[ ]'} </span>
-              {t('s07Company.kyc.stepDocs', { done: docsDone, total: DOC_TYPES.length })}
+              <span aria-hidden="true">{docsDone === required.length ? '[x]' : '[ ]'} </span>
+              {t('s07Company.kyc.stepDocs', { done: docsDone, total: required.length })}
             </li>
+            {questions.length > 0 ? (
+              <li>
+                <span aria-hidden="true">{businessDone ? '[x]' : '[ ]'} </span>
+                {businessDone
+                  ? t('s07Company.kyc.stepBusinessDone')
+                  : t('s07Company.kyc.stepBusiness')}
+              </li>
+            ) : null}
             <li>
               <span aria-hidden="true">{ownersDone ? '[x]' : '[ ]'} </span>
               {ownersDone ? t('s07Company.kyc.stepOwnersDone') : t('s07Company.kyc.stepOwners')}

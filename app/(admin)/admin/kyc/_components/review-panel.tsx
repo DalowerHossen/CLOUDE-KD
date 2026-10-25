@@ -195,6 +195,24 @@ export function ReviewPanel({
         </ul>
       </section>
 
+      {Object.keys(detail.business).length > 0 ? (
+        <section className="space-y-sp-12" aria-labelledby="business">
+          <h2 id="business" className="text-h4 font-semibold">
+            {t('s07Company.kyc.businessTitle')}
+          </h2>
+          <dl className="grid gap-1 text-sm sm:grid-cols-2">
+            {Object.entries(detail.business).map(([key, value]) => (
+              <div key={key} className="rounded-md border p-sp-12">
+                <dt className="text-muted-foreground">
+                  {t(`s07Company.kyc.fields.${key}` as StringKey)}
+                </dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
       {canReview ? (
         <section className="space-y-sp-12" aria-labelledby="decide">
           <h2 id="decide" className="text-h4 font-semibold">

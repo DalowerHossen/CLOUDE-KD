@@ -15,4 +15,17 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['super_admin', 'ceo'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'kyc.settings.read',
+    description: 'See how businesses are verified and what the verification form asks',
+    defaultRoles: ['super_admin', 'ceo', 'admin_staff'],
+    approvalLevel: 'L0',
+  },
+  {
+    action: 'kyc.settings.manage',
+    description:
+      'Choose manual or automatic verification, the documents and the questions of the form (needs a fresh identity check)',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
 ];
