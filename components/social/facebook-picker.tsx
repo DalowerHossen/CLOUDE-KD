@@ -1,5 +1,6 @@
 // path: components/social/facebook-picker.tsx
 'use client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -83,9 +84,9 @@ export function FacebookPicker({
       {skipped.length > 0 ? (
         <Alert>
           {skipped.map((s) => `${s.name}: ${s.reason}`).join(' ')}{' '}
-          <a className="underline" href="/social">
+          <Link className="underline" href="/social" prefetch={false}>
             {t('s16Social.connect.continue')}
-          </a>
+          </Link>
         </Alert>
       ) : null}
       <fieldset className="space-y-sp-8">

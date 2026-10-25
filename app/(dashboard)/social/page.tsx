@@ -67,11 +67,9 @@ export default async function SocialAccountsPage({
             <p className="text-sm text-muted-foreground">{t('s16Social.accounts.facebookHint')}</p>
           </CardHeader>
           <CardContent>
-            <Button asChild>
-              <a href="/api/social/connect/facebook/start">
-                {t('s16Social.accounts.facebookButton')}
-              </a>
-            </Button>
+            <form action="/api/social/connect/facebook/start" method="get">
+              <Button type="submit">{t('s16Social.accounts.facebookButton')}</Button>
+            </form>
           </CardContent>
         </Card>
       ) : null}
