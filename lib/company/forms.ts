@@ -1,7 +1,7 @@
 // path: lib/company/forms.ts
 // Field lists of the settings screens. The generic section form (components/settings/section-form.tsx) renders them,
 // and the server checks every save against the strict section schema, so the list only decides what is shown.
-import { COUNTRY_CODES, countryName } from './countries';
+import { countryName, sortedCountryCodes } from './countries';
 import { DISPLAY_CURRENCIES, DUE_DAYS, FONT_KEYS, type SectionKey } from './sections';
 
 export type FieldKind =
@@ -37,7 +37,7 @@ export interface FieldSpec {
 
 const country = [
   { value: '', label: '-' },
-  ...COUNTRY_CODES.map((c) => ({ value: c, label: countryName(c) })),
+  ...sortedCountryCodes.map((c) => ({ value: c, label: countryName(c) })),
 ];
 const yesNo = (a: string, b: string): readonly { value: string; label: string }[] => [
   { value: a, label: a },

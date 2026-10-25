@@ -24,6 +24,8 @@ import {
 import type { ReviewAction } from '@/lib/kyc/review-input';
 import { runScreening, type ScreeningSubject } from '@/lib/kyc/screening';
 import { ensureSanctionsProvider } from '@/services/compliance/sanctions';
+import { missingDocuments } from '@/lib/kyc/profile';
+import { getKycProfile } from '@/services/kyc/settings';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 
@@ -80,6 +82,9 @@ export interface ReviewDetail extends QueueItem {
   screeningSummary: string;
   recommendedBy: string | null;
   owners: Owners['owners'];
+  business: Record<string, string>;
+  verificationMode: string;
+  providerStatus: string | null;
   documents: {
     id: string;
     docType: DocType;
@@ -130,6 +135,19 @@ export async function reviewDetail(id: string): Promise<ReviewDetail> {
     const parsed = ownersSchema.safeParse(JSON.parse(new TextDecoder().decode(bytes)));
     owners = parsed.success ? parsed.data.owners : [];
   }
+  let business: Record<string, string> = {};
+  if (row.business_encrypted) {
+    const bytes = await getService('encryption').decrypt(
+      'kyc',
+      row.business_encrypted as never,
+      companyId,
+    );
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (typeof parsed === 'object' && parsed !== null)
+      business = Object.fromEntries(
+        Object.entries(parsed).filter((e): e is [string, string] => typeof e[1] === 'string'),
+      );
+  }
   return {
     id,
     companyId,
@@ -146,6 +164,9 @@ export async function reviewDetail(id: string): Promise<ReviewDetail> {
     screeningSummary: String(row.screening_summary),
     recommendedBy: row.recommended_by ? String(row.recommended_by) : null,
     owners,
+    business,
+    verificationMode: String(row.verification_mode ?? 'manual'),
+    providerStatus: row.provider_status ? String(row.provider_status) : null,
     documents: (docs.data ?? []).map((d) => ({
       id: String(d.id),
       docType: String(d.doc_type) as DocType,
@@ -272,8 +293,17 @@ export async function runReviewAction(
       if (detail.status !== 'in_review') throw new ValidationError('Start the review first.');
       if (detail.awaitingApproval)
         throw new ValidationError('A recommendation is already waiting for the final approval.');
-      if (detail.documents.length < 4 || detail.documents.some((d) => d.status !== 'accepted'))
-        throw new ValidationError('Accept all four documents first.');
+      if (detail.providerStatus !== 'approved') {
+        const profile = await getKycProfile();
+        const accepted = new Set(
+          detail.documents.filter((d) => d.status === 'accepted').map((d) => d.docType),
+        );
+        if (
+          missingDocuments(profile, accepted).length > 0 ||
+          detail.documents.some((d) => d.status !== 'accepted')
+        )
+          throw new ValidationError('Accept all the required documents first.');
+      }
       if (detail.screeningStatus === 'hits')
         throw new ValidationError(
           'The screening found matches. Resolve them (reject or ask for changes) before you recommend approval.',

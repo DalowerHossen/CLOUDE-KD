@@ -132,25 +132,30 @@ Contracts consumed (present in `types/contracts/`): events, audit, permissions, 
 A main merchant (a company) lets its own sub-merchants call the main merchant's app through the platform. A sub-merchant holds a key made by the platform; the platform checks it, limits it, signs the request with the main merchant's signing secret and calls the main merchant's app at a fixed address. The sub-merchant never sees the address or the secret of the main merchant's app. Design decisions are D22 in `DECISIONS.md`.
 
 ### 16.12.a Tables
+
 - Goal: `gateway_upstreams` (one per company: base address, sealed signing secret and its rotation, state), `gateway_routes` (the allowed method and path templates), `sub_merchants`, `sub_merchant_keys` (hashed, with address allow list), `gateway_calls` (append-only log, no bodies), `gateway_key_windows` and `kd_gateway_hit` (per-key limit).
 - Files: `migrations/S16_019_gateway.sql` (+ `_down`), `sql/assertions/s16_019_gateway.sql`.
 - Done when: RLS is on, the company of every child row matches its parent, a key hash is unique, the call log cannot change, the hit counter counts.
 
 ### 16.12.b Rules (pure)
+
 - Goal: inputs, path templates and matching (no traversal, no encoded slashes), the request signature, header filters for both directions, the address allow list, the key format, the answer mapping.
 - Files: `config/s16-gateway.ts`, `lib/gateway/rules.ts`, `scripts/verify/step16-gateway.ts`.
 - Done when: the verify script checks every rule with a fake transport.
 
 ### 16.12.c Services
+
 - Goal: manage upstream, routes, sub-merchants and keys (audited, optimistic lock, step-up for secrets); the forwarding service.
 - Files: `services/gateway/{upstream,routes,sub-merchants,keys,forward,db}.ts`, `lib/security/ssrf.ts` (methods PUT, PATCH, DELETE added to the guarded request).
 - Done when: the forwarding service passes the verify script with fake storage and a fake transport.
 
 ### 16.12.d Routes and pages
+
 - Goal: the gateway entry `app/api/gateway/v1/[...path]/route.ts`, the management routes `app/api/integrations/gateway/**`, the page `(dashboard)/integrations/gateway`, strings, permissions `gateway.read` and `gateway.manage`, navigation.
 - Done when: lint, types and guards are clean.
 
 ### 16.12.e Closure
+
 - Goal: `docs/integrations/gateway.md` (how a sub-merchant calls, how the main merchant verifies the signature), VERIFY, HANDOFF, PROGRESS.
 
 ## 16.13 Sub-merchant KYC (owner request, 2026-10-24)
@@ -158,17 +163,21 @@ A main merchant (a company) lets its own sub-merchants call the main merchant's 
 A main merchant verifies its own sub-merchants before they may call the gateway. The sub-merchant has no login: it gets a secure link, fills the business details and the owners, uploads the four documents and submits. The main merchant reviews and decides. The platform screens the names against the sanctions lists and the restricted countries and does not let the main merchant approve a match. Design decisions are D23 in `DECISIONS.md`.
 
 ### 16.13.a Tables
+
 - Goal: `sub_merchant_kyc` (a submission per round), `sub_merchant_kyc_documents`, `sub_merchant_kyc_links` (hashed one-way links), `sub_merchants.kyc_approved_until`, `gateway_upstreams.kyc_required`.
 - Files: `migrations/S16_020_sub_merchant_kyc.sql` (+ `_down`), `sql/assertions/s16_020_sub_merchant_kyc.sql`.
 
 ### 16.13.b Rules and services
+
 - Goal: inputs, link tokens, readiness, review actions; services for the link, the applicant (view, business, owners, documents, submit) and the reviewer (queue, detail, document view logged, start with screening, documents, note and risk, approve, request changes, reject); the gateway refuses a sub-merchant that is not verified when the upstream asks for it.
 - Files: `lib/gateway/kyc-rules.ts`, `services/gateway/{kyc-links,kyc-applicant,kyc-review}.ts`, the gate in `services/gateway/{forward,keys,upstream}.ts`, `scripts/verify/step16-gateway-kyc.ts`.
 
 ### 16.13.c Routes and pages
+
 - Goal: public tokenised routes `app/api/gateway-kyc/[token]/**`, management routes `app/api/integrations/gateway/kyc/**`, the applicant page `(client-portal)/skyc/[token]`, the review area on the gateway page, strings, permission `gateway.kyc.review`.
 
 ### 16.13.d Closure
+
 - Goal: `docs/integrations/gateway-kyc.md`, VERIFY, HANDOFF, PROGRESS.
 
 ## 16.14 Sub-merchant settlement ledger (owner request, 2026-10-24)
@@ -176,17 +185,21 @@ A main merchant verifies its own sub-merchants before they may call the gateway.
 The records of what a main merchant owes each of its sub-merchants: terms (commission, fixed fee, hold days, minimum payout), the entries of sales, refunds, chargebacks and adjustments with the commission worked out and kept, the balance (available, pending, paid), payouts that the main merchant made and recorded, and statements. The platform keeps the books; it does not hold, receive or send money. Design decisions are D24 in `DECISIONS.md`.
 
 ### 16.14.a Tables and functions
+
 - Goal: `settlement_terms` (versions), `settlement_entries` (append-only), `settlement_payouts`, `kd_settlement_balance`, `kd_settlement_record_payout` (atomic, idempotent), `kd_settlement_entries_text` (amounts as text).
 - Files: `migrations/S16_021_settlement.sql` (+ `_down`), `sql/assertions/s16_021_settlement.sql`.
 
 ### 16.14.b Rules and services
+
 - Goal: inputs, the working out of one entry with `Money`, terms lookup, posting in batches with duplicate detection, balance, payouts (record, void), statement as CSV.
 - Files: `lib/gateway/split-rules.ts`, `services/gateway/{terms,entries,balances,transfers}.ts`, `scripts/verify/step16-settlement.ts`.
 
 ### 16.14.c Routes and page
+
 - Goal: `app/api/integrations/settlement/**`, `(dashboard)/integrations/settlement`, strings, permissions `settlement.read` and `settlement.manage`, navigation.
 
 ### 16.14.d Closure
+
 - Goal: `docs/integrations/settlement.md`, VERIFY, HANDOFF, PROGRESS.
 
 ## 16.15 Automatic settlement entries (owner request, 2026-10-24)
@@ -194,12 +207,15 @@ The records of what a main merchant owes each of its sub-merchants: terms (commi
 The main merchant's app posts sales, refunds and chargebacks of its sub-merchants to the platform by itself, with a key made for that purpose, instead of the owner typing them. Design decisions are D25 in `DECISIONS.md`.
 
 ### 16.15.a Table
+
 - Goal: `settlement_ingest_keys` (hashed, limit, optional address list, expiry, revoke).
 - Files: `migrations/S16_022_settlement_ingest.sql` (+ `_down`), `sql/assertions/s16_022_settlement_ingest.sql`.
 
 ### 16.15.b Rules and services
+
 - Goal: key format and header, the batch input by sub-merchant reference, key management (audited), authentication, the entry posting made reusable for the owner and for a key.
 - Files: `lib/gateway/ingest-rules.ts`, `services/gateway/ingest-keys.ts`, `services/gateway/entries.ts`, `scripts/verify/step16-settlement-ingest.ts`.
 
 ### 16.15.c Route, page and closure
+
 - Goal: `POST /api/gateway/settlement/v1/entries`, key management routes and the section on the settlement page, docs, VERIFY, HANDOFF, PROGRESS.

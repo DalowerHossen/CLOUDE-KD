@@ -60,6 +60,8 @@ export const strings = {
     subtitle: 'Start with a free company workspace.',
     fullName: 'Your name',
     companyName: 'Company name',
+    plan: 'Plan',
+    planNone: 'I will choose later (free trial)',
     terms: 'I accept the terms of service and the privacy policy',
     submit: 'Create account',
     haveAccount: 'Already have an account?',

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { isStrictObject } from '@/lib/security/zod-strict';
 import type { NextRequest } from 'next/server';
 import { getService } from '@/lib/container';
+import { assertApiModuleEnabled } from '@/services/company/module-access';
 import {
   type AppError,
   ForbiddenError,
@@ -187,6 +188,7 @@ export function withApi<
           if (options.scope === 'tenant') {
             tenant = await getService('tenant').getTenantContext();
             updateContext({ companyId: tenant.companyId });
+            await assertApiModuleEnabled(request.nextUrl.pathname, tenant.companyId);
           }
           if (options.permission) {
             const allowed = await getService('permissions').can(

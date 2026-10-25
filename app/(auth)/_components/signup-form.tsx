@@ -10,16 +10,33 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { t } from '@/lib/i18n';
 import { postJson } from './auth-client';
 import { PasswordField } from './password-field';
 import { Turnstile } from './turnstile';
 
-export function SignupForm({ siteKey }: { siteKey: string }): JSX.Element {
+export interface PlanChoice {
+  slug: string;
+  name: string;
+  priceMonthly: string;
+  trialDays: number;
+}
+
+export function SignupForm({
+  siteKey,
+  plans,
+  defaultPlan,
+}: {
+  siteKey: string;
+  plans: PlanChoice[];
+  defaultPlan: string;
+}): JSX.Element {
   const [done, setDone] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [terms, setTerms] = useState(false);
   const [email, setEmail] = useState('');
+  const [plan, setPlan] = useState(defaultPlan);
   const [errors, setErrors] = useState<string[]>([]);
   const [resetKey, setResetKey] = useState(0);
 
@@ -37,6 +54,7 @@ export function SignupForm({ siteKey }: { siteKey: string }): JSX.Element {
         fullName: String(data.get('fullName') ?? ''),
         companyName: String(data.get('companyName') ?? ''),
         acceptTerms: true,
+        ...(plan ? { plan } : {}),
         turnstileToken: token,
         website: '',
       },
@@ -91,6 +109,25 @@ export function SignupForm({ siteKey }: { siteKey: string }): JSX.Element {
           />
         )}
       </FormField>
+      {plans.length > 0 ? (
+        <FormField id="signup-plan" label={t('s03Auth.signup.plan')}>
+          {(props) => (
+            <NativeSelect
+              {...props}
+              name="plan"
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+            >
+              <option value="">{t('s03Auth.signup.planNone')}</option>
+              {plans.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+            </NativeSelect>
+          )}
+        </FormField>
+      ) : null}
       <FormField id="signup-email" label={t('s03Auth.common.email')} required>
         {(props) => (
           <Input

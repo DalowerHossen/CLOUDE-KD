@@ -86,7 +86,7 @@ export interface ReadinessInput {
   businessName: string | null;
   businessCountry: string | null;
   ownerCount: number;
-  documents: readonly { docType: DocType; status: 'pending' | 'accepted' | 'rejected' }[];
+  documents: readonly { docType: string; status: 'pending' | 'accepted' | 'rejected' }[];
 }
 
 /** The document types that are still missing (a rejected document counts as missing). */

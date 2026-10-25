@@ -211,6 +211,15 @@ export const nav: NavItem[] = [
     order: 70,
   },
   {
+    id: 'admin-kyc-settings',
+    labelKey: 's07Company.nav.adminKycSettings',
+    href: '/admin/kyc/settings',
+    icon: 'shield',
+    group: 'admin',
+    roles: ['super_admin', 'ceo', 'admin_staff'],
+    order: 71,
+  },
+  {
     id: 'settings-domains',
     labelKey: 's07Company.nav.domains',
     href: '/settings/domains',

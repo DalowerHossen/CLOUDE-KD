@@ -102,35 +102,45 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 
 ## 16.12 Sub-merchant gateway
 
-| Check | Result | Evidence |
-|---|---|---|
-| Tables, company match, unique hash, closed stays closed, append-only log, per-minute counter | passes | `sql/assertions/s16_019_gateway.sql` |
-| Path templates and matching (no dot segments, encoding, double slashes), route choice, query, app address, inputs, keys, address list, signature and its check, headers both ways, status mapping | passes | `scripts/verify/step16-gateway.ts` (14 checks) |
-| Whole forwarding pipeline with fake ports: signed request without the key, 401 for unknown/revoked/expired, address and state blocks, limit, route subset, bad query/body, missing or self-pointing upstream, 502/504 mapping, no app detail returned | passes | `scripts/verify/step16-gateway.ts` (9 checks) |
-| A real call through the guarded transport to a real app, the pages, step-up | **not run** | needs a running app, a database and a public https test app |
+| Check                                                                                                                                                                                                                                                 | Result      | Evidence                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| Tables, company match, unique hash, closed stays closed, append-only log, per-minute counter                                                                                                                                                          | passes      | `sql/assertions/s16_019_gateway.sql`                        |
+| Path templates and matching (no dot segments, encoding, double slashes), route choice, query, app address, inputs, keys, address list, signature and its check, headers both ways, status mapping                                                     | passes      | `scripts/verify/step16-gateway.ts` (14 checks)              |
+| Whole forwarding pipeline with fake ports: signed request without the key, 401 for unknown/revoked/expired, address and state blocks, limit, route subset, bad query/body, missing or self-pointing upstream, 502/504 mapping, no app detail returned | passes      | `scripts/verify/step16-gateway.ts` (9 checks)               |
+| A real call through the guarded transport to a real app, the pages, step-up                                                                                                                                                                           | **not run** | needs a running app, a database and a public https test app |
 
 ## 16.13 Sub-merchant KYC
 
-| Check | Result | Evidence |
-|---|---|---|
-| Tables: one open submission and one round per sub-merchant, company match of every child row, one document per type, unique link hash, decided states stay decided, gate on by default | passes | `sql/assertions/s16_020_sub_merchant_kyc.sql` |
-| Link, token (40 characters, one-way hash), business input, review actions, readiness, applicant modes, expired reading, verified test | passes | `scripts/verify/step16-gateway-kyc.ts` (7 checks) |
-| The gateway refuses a sub-merchant that is not verified, an expired approval, and lets a verified one through; with the gate off nothing changes | passes | `scripts/verify/step16-gateway.ts` (24 checks) |
-| The services (link, applicant, review), the routes, the applicant page and the review page against a running app, a database and the storage service | **not run** | needs a running app |
+| Check                                                                                                                                                                                  | Result      | Evidence                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------- |
+| Tables: one open submission and one round per sub-merchant, company match of every child row, one document per type, unique link hash, decided states stay decided, gate on by default | passes      | `sql/assertions/s16_020_sub_merchant_kyc.sql`     |
+| Link, token (40 characters, one-way hash), business input, review actions, readiness, applicant modes, expired reading, verified test                                                  | passes      | `scripts/verify/step16-gateway-kyc.ts` (7 checks) |
+| The gateway refuses a sub-merchant that is not verified, an expired approval, and lets a verified one through; with the gate off nothing changes                                       | passes      | `scripts/verify/step16-gateway.ts` (24 checks)    |
+| The services (link, applicant, review), the routes, the applicant page and the review page against a running app, a database and the storage service                                   | **not run** | needs a running app                               |
 
 ## 16.14 Sub-merchant settlement ledger
 
-| Check | Result | Evidence |
-|---|---|---|
-| Tables: sign and net rules, one entry per kind and reference, append-only ledger, terms versioned not edited, company match, balance (pending, available, paid, negative), payout (minimum, available limit, idempotent key, one lock per sub-merchant, void only) | passes | `sql/assertions/s16_021_settlement.sql` |
-| Working out a sale, refund, chargeback, adjustment; rounding; hold; terms in force by time; the balance rule (same numbers as the database); inputs; the statement file | passes | `scripts/verify/step16-settlement.ts` (12 checks) |
-| Two payouts recorded at the same time for one sub-merchant (the lock) | **not run** | needs two database sessions at once |
-| The services, routes and page against a running app | **not run** | needs a running app |
+| Check                                                                                                                                                                                                                                                              | Result      | Evidence                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ------------------------------------------------- |
+| Tables: sign and net rules, one entry per kind and reference, append-only ledger, terms versioned not edited, company match, balance (pending, available, paid, negative), payout (minimum, available limit, idempotent key, one lock per sub-merchant, void only) | passes      | `sql/assertions/s16_021_settlement.sql`           |
+| Working out a sale, refund, chargeback, adjustment; rounding; hold; terms in force by time; the balance rule (same numbers as the database); inputs; the statement file                                                                                            | passes      | `scripts/verify/step16-settlement.ts` (12 checks) |
+| Two payouts recorded at the same time for one sub-merchant (the lock)                                                                                                                                                                                              | **not run** | needs two database sessions at once               |
+| The services, routes and page against a running app                                                                                                                                                                                                                | **not run** | needs a running app                               |
 
 ## 16.15 Automatic settlement entries
 
-| Check | Result | Evidence |
-|---|---|---|
-| Key table: unique fixed hash, fixed company, a revoked key stays revoked, bounded limit, minute counter | passes | `sql/assertions/s16_022_settlement_ingest.sql` |
-| Key format and hash, header reading, inputs, and the pipeline with fake ports: 401 for wrong/revoked/expired, limited attempts, address list, limit of the key, bad JSON, bad batch, too large, unknown (404) and closed (409) sub-merchant, one good batch handed on once | passes | `scripts/verify/step16-settlement-ingest.ts` (7 checks) |
-| The same batch posted twice through the database | **not run** | needs a running app; the unique rule is tested in `s16_021_settlement.sql` and the duplicate answer in `postBatch` is not run against it |
+| Check                                                                                                                                                                                                                                                                      | Result      | Evidence                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Key table: unique fixed hash, fixed company, a revoked key stays revoked, bounded limit, minute counter                                                                                                                                                                    | passes      | `sql/assertions/s16_022_settlement_ingest.sql`                                                                                           |
+| Key format and hash, header reading, inputs, and the pipeline with fake ports: 401 for wrong/revoked/expired, limited attempts, address list, limit of the key, bad JSON, bad batch, too large, unknown (404) and closed (409) sub-merchant, one good batch handed on once | passes      | `scripts/verify/step16-settlement-ingest.ts` (7 checks)                                                                                  |
+| The same batch posted twice through the database                                                                                                                                                                                                                           | **not run** | needs a running app; the unique rule is tested in `s16_021_settlement.sql` and the duplicate answer in `postBatch` is not run against it |
+
+## KYC profile, Sumsub helpers, plan at sign-up
+
+| Check                                                                                                                                    | Result      | Evidence                                                                |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------- |
+| Settings table: one live row, RLS on, document type list, rollback                                                                       | passes      | `sql/assertions/s16_024_kyc_profile.sql`, `scripts/db-apply.sh --clean` |
+| Profile rules (automatic needs a service, manual needs a document, no duplicates, unknown items refused), business answers, upload types | passes      | `scripts/verify/step16-kyc-profile.ts` (10 checks)                      |
+| Request signature, link path, https-only link, webhook digest, result reading                                                            | passes      | `scripts/verify/step16-kyc-sumsub.ts` (6 checks)                        |
+| A real call to Sumsub and a real webhook                                                                                                 | **not run** | needs sandbox keys                                                      |
+| Sign-up with a chosen plan, trial of that plan, modules tied to the plan                                                                 | **not run** | needs a running app and database; type-checked only                     |

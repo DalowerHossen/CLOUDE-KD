@@ -3,11 +3,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/shared/page-header';
+import { MODULES } from '@/config/features';
 import { getService } from '@/lib/container';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { tenantDetail } from '@/services/company/admin';
+import { listFlags, type FlagView } from '@/services/company/flags';
 import { StepUpForm } from '../../account-locks/_components/step-up-form';
+import { ModulesPanel } from '../../_components/modules-panel';
 import { PeopleActions } from '../../_components/people-actions';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +32,15 @@ export default async function TenantPage({
   const perms = getService('permissions');
   const canManage = await perms.can(actor, 'people.manage', { type: 'tenant' });
   const canNote = await perms.can(actor, 'people.note', { type: 'tenant' });
+  const canFlags = await perms.can(actor, 'flags.manage', { type: 'feature_flag' });
+  let flags: FlagView[] = [];
+  try {
+    flags = (await listFlags()).filter(
+      (f) => f.key.startsWith('module.') && (f.companyId === null || f.companyId === c.id),
+    );
+  } catch {
+    flags = [];
+  }
   return (
     <div className="space-y-sp-16">
       <PageHeader
@@ -71,6 +83,7 @@ export default async function TenantPage({
           </p>
         ) : null}
       </section>
+      <ModulesPanel modules={MODULES} flags={flags} companyId={c.id} canManage={canFlags} />
       <PeopleActions
         subject="tenant"
         id={c.id}

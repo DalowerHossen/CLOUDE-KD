@@ -43,6 +43,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const forwarded = new Headers(request.headers);
   forwarded.set('x-nonce', security.nonce);
+  forwarded.set('x-pathname', pathname);
   forwarded.set('content-security-policy', security.csp);
   const response = NextResponse.next({ request: { headers: forwarded } });
   withHeaders(response, security.responseHeaders);

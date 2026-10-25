@@ -58,6 +58,7 @@ The rule of this STEP is to read each provider's latest official documentation i
 What unblocks it: allow `plaid.com`, `api.plaid.com`, `docs.saltedge.com` and `www.saltedge.com` in the environment's network settings and run 16.7 again. The plan for the sub-step stays as in SCOPE.md; the hand-over to STEP 15 goes through `services/bankfeed/ports.ts` (request R2).
 
 ## B9 Official readers for the OFAC and United Nations sanctions files
+
 The hosts of both publishers did not resolve from the build environment, so the official documentation and file formats could not be read. The import route takes normalized entries (`docs/compliance/sanctions.md`); the two readers and the scheduled refresh stay open until a session can reach the hosts.
 
 Update 2026-10-24: B9 and the sandbox runs of STEP 11 and 12 were tried again; the hosts of OFAC, the United Nations and BlueSnap still do not resolve from the session, so they stay open.

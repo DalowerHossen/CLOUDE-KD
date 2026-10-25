@@ -13,6 +13,7 @@ import { randomHex } from '@/lib/utils/hash';
 import { slugify } from '@/lib/utils/slug';
 import { shouldRefuseSignup } from '@/lib/security/signals';
 import { noteTrialAbuse, signupsFromThisAddress } from '@/services/fraud/signals';
+import { startSignupTrial } from '@/services/subscription/signup-trial';
 import { lookupUserByEmail } from './credentials';
 import { hashIdentifier } from './lock-service';
 import { recordLoginEvent } from './login-events';
@@ -30,6 +31,11 @@ export const signupSchema = z
     fullName: z.string().trim().min(1).max(200),
     companyName: z.string().trim().min(2).max(200),
     acceptTerms: z.literal(true),
+    /** The plan the person picked on the pricing page. Empty means no choice: the default trial applies. */
+    plan: z
+      .string()
+      .regex(/^[a-z0-9_-]{1,40}$/)
+      .optional(),
     turnstileToken: z.string().min(1).max(4096),
     /** Honeypot: real users never see or fill this field. */
     website: z.string().max(200).default(''),
@@ -137,6 +143,7 @@ export async function startSignup(input: z.infer<typeof signupSchema>, ip: strin
       companyId,
       metadata: { method: 'password' },
     });
+    await startSignupTrial(companyId, userId, input.plan);
     await sendVerification(email, companyId);
   } catch (error) {
     log.error('sign-up failed; removing the half-created account', { error });

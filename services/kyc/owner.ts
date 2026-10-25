@@ -8,29 +8,49 @@ import { type z } from 'zod';
 import { getService } from '@/lib/container';
 import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
 import {
-  DOC_TYPES,
   EXPIRY_WARNING_DAYS,
   MAX_DOC_BYTES,
   MIN_IMAGE,
   OPEN_STATUSES,
   ownersSchema,
   type uploadSchema,
-  type DocType,
   type Owners,
   type SubmissionStatus,
 } from '@/lib/kyc/rules';
+import {
+  businessAnswersSchema,
+  missingDocuments,
+  type KycDocType,
+  type KycMode,
+  type KycPresentation,
+  type KycProvider,
+} from '@/lib/kyc/profile';
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { getKycProfile } from '@/services/kyc/settings';
 import { sha256Hex } from '@/lib/utils/hash';
 import { recordMilestone } from '@/services/company/settings';
 import type { Actor } from '@/types/contracts';
 
 export interface DocumentView {
   id: string;
-  docType: DocType;
+  docType: KycDocType;
   name: string;
+  mimeType: string;
   status: 'pending' | 'accepted' | 'rejected';
   rejectReason: string;
   expiresOn: string | null;
+}
+
+/** What the platform asks of this owner: the way of verifying, the documents and the business questions. */
+export interface KycFormView {
+  mode: KycMode;
+  provider: KycProvider;
+  presentation: KycPresentation;
+  required: KycDocType[];
+  optional: KycDocType[];
+  businessFields: string[];
+  business: Record<string, string>;
+  providerStatus: string | null;
 }
 
 export interface KycView {
@@ -41,13 +61,14 @@ export interface KycView {
   expiresAt: string | null;
   documents: DocumentView[];
   owners: Owners['owners'];
-  missing: DocType[];
+  missing: KycDocType[];
   ready: boolean;
   version: number;
+  form?: KycFormView;
 }
 
 const SUBMISSION_COLUMNS =
-  'id, status, round, decision_reason, expires_at, owners_encrypted, version';
+  'id, status, round, decision_reason, expires_at, owners_encrypted, version, business_encrypted, provider_status, verification_mode';
 
 async function currentSubmission(companyId: string): Promise<Record<string, unknown> | null> {
   const admin = getAdminSupabase();
@@ -79,8 +100,29 @@ async function decryptOwners(companyId: string, stored: unknown): Promise<Owners
   return parsed.success ? parsed.data.owners : [];
 }
 
+async function decryptBusiness(
+  companyId: string,
+  stored: unknown,
+): Promise<Record<string, string>> {
+  if (!stored) return {};
+  const bytes = await getService('encryption').decrypt('kyc', stored as never, companyId);
+  const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
+  if (typeof parsed !== 'object' || parsed === null) return {};
+  return Object.fromEntries(
+    Object.entries(parsed).filter((e): e is [string, string] => typeof e[1] === 'string'),
+  );
+}
+
 export async function kycView(companyId: string): Promise<KycView> {
-  const row = await currentSubmission(companyId);
+  const [row, profile] = await Promise.all([currentSubmission(companyId), getKycProfile()]);
+  const baseForm = {
+    mode: profile.mode,
+    provider: profile.provider,
+    presentation: profile.presentation,
+    required: profile.requiredDocuments,
+    optional: profile.optionalDocuments,
+    businessFields: profile.businessFields,
+  };
   if (!row)
     return {
       submissionId: null,
@@ -90,27 +132,31 @@ export async function kycView(companyId: string): Promise<KycView> {
       expiresAt: null,
       documents: [],
       owners: [],
-      missing: [...DOC_TYPES],
+      missing: [...profile.requiredDocuments],
       ready: false,
       version: 0,
+      form: { ...baseForm, business: {}, providerStatus: null },
     };
   const docs = await getAdminSupabase()
     .from('kyc_documents')
-    .select('id, doc_type, file_name, status, reject_reason, document_expires_on')
+    .select('id, doc_type, file_name, mime_type, status, reject_reason, document_expires_on')
     .eq('submission_id', String(row.id))
     .is('deleted_at', null);
   if (docs.error) throw new InternalError(docs.error);
   const documents = (docs.data ?? []).map((d) => ({
     id: String(d.id),
-    docType: String(d.doc_type) as DocType,
+    docType: String(d.doc_type) as KycDocType,
     name: String(d.file_name),
+    mimeType: String(d.mime_type),
     status: String(d.status) as DocumentView['status'],
     rejectReason: String(d.reject_reason),
     expiresOn: d.document_expires_on ? String(d.document_expires_on) : null,
   }));
   const owners = await decryptOwners(companyId, row.owners_encrypted);
+  const business = await decryptBusiness(companyId, row.business_encrypted);
   const have = new Set(documents.filter((d) => d.status !== 'rejected').map((d) => d.docType));
-  const missing = DOC_TYPES.filter((t) => !have.has(t));
+  const missing = missingDocuments(profile, have);
+  const answered = profile.businessFields.every((f) => (business[f] ?? '').length > 0);
   return {
     submissionId: String(row.id),
     status: String(row.status) as SubmissionStatus,
@@ -120,13 +166,18 @@ export async function kycView(companyId: string): Promise<KycView> {
     documents,
     owners,
     missing,
-    ready: missing.length === 0 && owners.length > 0,
+    ready: missing.length === 0 && owners.length > 0 && answered,
     version: Number(row.version),
+    form: {
+      ...baseForm,
+      business,
+      providerStatus: row.provider_status ? String(row.provider_status) : null,
+    },
   };
 }
 
 /** The editable submission of the company, created on first use. A decided submission is never edited. */
-async function editableSubmission(
+export async function editableSubmission(
   companyId: string,
 ): Promise<{ id: string; status: SubmissionStatus; round: number }> {
   const row = await currentSubmission(companyId);
@@ -202,6 +253,12 @@ export async function uploadDocument(
   if (input.expiresOn && Date.parse(input.expiresOn) <= Date.now())
     throw new ValidationError('This document has expired. Use a valid one.');
   await checkImage(bytes, input.mimeType);
+  const profile = await getKycProfile();
+  if (
+    !profile.requiredDocuments.includes(input.docType) &&
+    !profile.optionalDocuments.includes(input.docType)
+  )
+    throw new ValidationError('This document is not asked for.');
   const submission = await editableSubmission(companyId);
   const storage = getService('storage');
   const record = await storage.put({
@@ -245,7 +302,7 @@ export async function uploadDocument(
       document_expires_on: input.expiresOn,
       duplicate_of_company: typeof dup.data === 'string' ? dup.data : null,
     })
-    .select('id, doc_type, file_name, status, reject_reason, document_expires_on')
+    .select('id, doc_type, file_name, mime_type, status, reject_reason, document_expires_on')
     .single();
   if (error) throw new InternalError(error);
   if (typeof dup.data === 'string')
@@ -265,6 +322,7 @@ export async function uploadDocument(
     id: String(data.id),
     docType: input.docType,
     name: String(data.file_name),
+    mimeType: String(data.mime_type),
     status: 'pending',
     rejectReason: '',
     expiresOn: data.document_expires_on ? String(data.document_expires_on) : null,
@@ -291,6 +349,36 @@ export async function saveOwners(actor: Actor, input: Owners): Promise<void> {
   });
 }
 
+export async function saveBusiness(actor: Actor, input: unknown): Promise<void> {
+  const companyId = actor.companyId;
+  if (!companyId) throw new ValidationError('A company is needed.');
+  const profile = await getKycProfile();
+  if (profile.businessFields.length === 0)
+    throw new ValidationError('No questions about the business are asked.');
+  const parsed = businessAnswersSchema(profile.businessFields).safeParse(input);
+  if (!parsed.success)
+    throw new ValidationError(parsed.error.issues[0]?.message ?? 'Check the answers.');
+  const submission = await editableSubmission(companyId);
+  const payload = await getService('encryption').encrypt(
+    'kyc',
+    JSON.stringify(parsed.data),
+    companyId,
+  );
+  const { error } = await getAdminSupabase()
+    .from('kyc_submissions')
+    .update({ business_encrypted: payload })
+    .eq('id', submission.id)
+    .eq('company_id', companyId);
+  if (error) throw new InternalError(error);
+  await getService('audit').record({
+    action: 'kyc.business_saved',
+    resourceType: 'kyc_submission',
+    resourceId: submission.id,
+    companyId,
+    metadata: { count: Object.keys(parsed.data).length, by: actor.userId },
+  });
+}
+
 export async function submitKyc(actor: Actor): Promise<void> {
   const companyId = actor.companyId;
   if (!companyId) throw new ValidationError('A company is needed.');
@@ -298,7 +386,9 @@ export async function submitKyc(actor: Actor): Promise<void> {
   if (!view.submissionId || (view.status !== 'draft' && view.status !== 'changes_requested'))
     throw new ValidationError('There is nothing to submit.');
   if (!view.ready)
-    throw new ValidationError('Upload all four documents and add at least one owner first.');
+    throw new ValidationError(
+      'Upload the required documents, save the owners and answer the questions first.',
+    );
   if (view.documents.some((d) => d.status === 'rejected'))
     throw new ValidationError('Replace the documents that were rejected first.');
   const { data, error } = await getAdminSupabase()
@@ -334,4 +424,34 @@ export async function assertOwnSubmission(companyId: string, submissionId: strin
     .maybeSingle();
   if (error) throw new InternalError(error);
   if (!data) throw new NotFoundError();
+}
+
+/**
+ * Opens one of the company's own KYC documents so the owner can see what was uploaded. Only a person of the same
+ * company gets it, every view is written to the audit log, and the answer is never cached.
+ */
+export async function openOwnDocument(
+  actor: Actor,
+  documentId: string,
+): Promise<{ bytes: Uint8Array; mimeType: string; name: string }> {
+  const companyId = actor.companyId;
+  if (!companyId) throw new NotFoundError();
+  const { data, error } = await getAdminSupabase()
+    .from('kyc_documents')
+    .select('id, file_id, file_name, mime_type')
+    .eq('id', documentId)
+    .eq('company_id', companyId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) throw new InternalError(error);
+  if (!data) throw new NotFoundError();
+  await getService('audit').record({
+    action: 'kyc.document_viewed_by_owner',
+    resourceType: 'kyc_document',
+    resourceId: String(data.id),
+    companyId,
+    metadata: { by: actor.userId },
+  });
+  const file = await getService('storage').get(String(data.file_id));
+  return { bytes: file.bytes, mimeType: String(data.mime_type), name: String(data.file_name) };
 }

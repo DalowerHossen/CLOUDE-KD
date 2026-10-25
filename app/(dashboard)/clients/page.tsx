@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import { COUNTRY_CODES, countryName } from '@/lib/company/countries';
+import { countryName, sortedCountryCodes } from '@/lib/company/countries';
 import { getService } from '@/lib/container';
 import { clientListQuery, type ClientListQuery } from '@/lib/crm/search';
 import { t } from '@/lib/i18n';
@@ -213,7 +213,7 @@ export default async function ClientsPage({
           aria-label={t('s08Crm.clients.country')}
         >
           <option value="">{t('s08Crm.search.allCountries')}</option>
-          {COUNTRY_CODES.map((c) => (
+          {sortedCountryCodes.map((c) => (
             <option key={c} value={c}>
               {countryName(c)}
             </option>

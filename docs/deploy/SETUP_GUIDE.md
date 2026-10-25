@@ -76,3 +76,9 @@ Use a personal address you control for the first super admin and keep a second s
 5. Set `NEXT_PUBLIC_APP_URL` and the Supabase URLs to the final address; redeploy.
 6. Create the first super admin (section 5) and sign in.
 7. Walk `docs/deploy/STAGING_CHECKLIST.md` section 5.
+
+## 7. Optional features (modules) and the sign-up trial
+
+- Every optional feature (Developers, online stores, sub-merchant gateway and settlement, accounting, payroll, inventory, projects, reports, WhatsApp, social and more; the list is `config/features.ts`) is **off for every company** until the super admin turns it on. A feature that is off is not in the menu and its pages and company API answer "not found".
+- Turn a feature on for all companies: sign in as super admin, Admin > Feature flags, Modules, "Turn on" (confirm identity with the step-up form first). For one company: Admin > Tenants > the company > Modules. A setting for one company beats the setting for all companies.
+- Every new company starts a free trial (plan and days in `config/trial.ts`: pro, 14 days, no payment details). When it ends without a paid first invoice the company moves to the free plan. The background job that ends trials must run (see section 4, item 5: scheduled jobs).

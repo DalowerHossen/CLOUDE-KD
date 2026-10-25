@@ -61,7 +61,7 @@ async function openOwners(companyId: string, stored: unknown): Promise<Owners['o
 async function documentsOf(link: ResolvedLink, submissionId: string): Promise<DocumentView[]> {
   const { data, error } = await getAdminSupabase()
     .from('sub_merchant_kyc_documents')
-    .select('id, doc_type, file_name, status, reject_reason, document_expires_on')
+    .select('id, doc_type, file_name, mime_type, status, reject_reason, document_expires_on')
     .eq('company_id', link.companyId)
     .eq('submission_id', submissionId)
     .is('deleted_at', null);
@@ -70,6 +70,7 @@ async function documentsOf(link: ResolvedLink, submissionId: string): Promise<Do
     id: String(d.id),
     docType: String(d.doc_type) as DocType,
     name: String(d.file_name),
+    mimeType: String(d.mime_type),
     status: String(d.status) as DocumentView['status'],
     rejectReason: String(d.reject_reason),
     expiresOn: d.document_expires_on ? String(d.document_expires_on) : null,
@@ -253,7 +254,7 @@ export async function uploadDocumentOfLink(
       content_hash: record.contentHash || (await sha256Hex(bytes)),
       document_expires_on: input.expiresOn,
     })
-    .select('id, doc_type, file_name, status, reject_reason, document_expires_on')
+    .select('id, doc_type, file_name, mime_type, status, reject_reason, document_expires_on')
     .single();
   if (error) throw new InternalError(error);
   await audit(link, 'gateway.kyc_document_uploaded', 'sub_merchant_kyc_document', String(data.id), {
@@ -263,6 +264,7 @@ export async function uploadDocumentOfLink(
     id: String(data.id),
     docType: input.docType,
     name: String(data.file_name),
+    mimeType: String(data.mime_type),
     status: 'pending',
     rejectReason: '',
     expiresOn: data.document_expires_on ? String(data.document_expires_on) : null,
