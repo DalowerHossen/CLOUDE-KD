@@ -24,6 +24,8 @@ import {
 import type { ReviewAction } from '@/lib/kyc/review-input';
 import { runScreening, type ScreeningSubject } from '@/lib/kyc/screening';
 import { ensureSanctionsProvider } from '@/services/compliance/sanctions';
+import { missingDocuments } from '@/lib/kyc/profile';
+import { getKycProfile } from '@/services/kyc/settings';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 
@@ -291,8 +293,17 @@ export async function runReviewAction(
       if (detail.status !== 'in_review') throw new ValidationError('Start the review first.');
       if (detail.awaitingApproval)
         throw new ValidationError('A recommendation is already waiting for the final approval.');
-      if (detail.documents.length < 4 || detail.documents.some((d) => d.status !== 'accepted'))
-        throw new ValidationError('Accept all four documents first.');
+      if (detail.providerStatus !== 'approved') {
+        const profile = await getKycProfile();
+        const accepted = new Set(
+          detail.documents.filter((d) => d.status === 'accepted').map((d) => d.docType),
+        );
+        if (
+          missingDocuments(profile, accepted).length > 0 ||
+          detail.documents.some((d) => d.status !== 'accepted')
+        )
+          throw new ValidationError('Accept all the required documents first.');
+      }
       if (detail.screeningStatus === 'hits')
         throw new ValidationError(
           'The screening found matches. Resolve them (reject or ask for changes) before you recommend approval.',

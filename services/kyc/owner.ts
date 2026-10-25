@@ -177,7 +177,7 @@ export async function kycView(companyId: string): Promise<KycView> {
 }
 
 /** The editable submission of the company, created on first use. A decided submission is never edited. */
-async function editableSubmission(
+export async function editableSubmission(
   companyId: string,
 ): Promise<{ id: string; status: SubmissionStatus; round: number }> {
   const row = await currentSubmission(companyId);

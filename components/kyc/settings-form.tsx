@@ -42,7 +42,7 @@ export function KycSettingsForm({
   const router = useRouter();
   const [mode, setMode] = useState<KycMode>(profile.mode);
   const [provider, setProvider] = useState<KycProvider>(profile.provider);
-  const [presentation, setPresentation] = useState<KycPresentation>(profile.presentation);
+  const presentation: KycPresentation = profile.presentation;
   const [docs, setDocs] = useState<Record<KycDocType, DocChoice>>(
     () =>
       Object.fromEntries(KYC_DOC_CATALOG.map((d) => [d, choiceOf(profile, d)])) as Record<
@@ -140,25 +140,6 @@ export function KycSettingsForm({
                 <option value="none">{t('s07Company.kycSettings.providers.none')}</option>
                 <option value="sumsub">{t('s07Company.kycSettings.providers.sumsub')}</option>
               </NativeSelect>
-            </div>
-            <div className="space-y-sp-4">
-              <Label htmlFor="ks-present">{t('s07Company.kycSettings.presentation')}</Label>
-              <NativeSelect
-                id="ks-present"
-                value={presentation}
-                disabled={!canManage}
-                onChange={(e) =>
-                  setPresentation(e.target.value === 'embedded' ? 'embedded' : 'hosted')
-                }
-              >
-                <option value="hosted">{t('s07Company.kycSettings.presentations.hosted')}</option>
-                <option value="embedded">
-                  {t('s07Company.kycSettings.presentations.embedded')}
-                </option>
-              </NativeSelect>
-              <p className="text-sm text-muted-foreground">
-                {t('s07Company.kycSettings.presentationHelp')}
-              </p>
             </div>
           </div>
         </CardContent>
