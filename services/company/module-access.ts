@@ -10,6 +10,7 @@ import { enabledKeys, type FlagRow } from '@/lib/features/rules';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { currentActor } from '@/services/auth/actor';
 import { cached } from '@/services/entitlement/cache';
+import { entitlementsOf } from '@/services/entitlement/entitlement';
 
 const KEYS = MODULES.map((m) => m.key);
 
@@ -28,7 +29,15 @@ async function load(companyId: string): Promise<ReadonlySet<string>> {
     enabled: r.enabled === true,
     rolloutPercent: Number(r.rollout_percent),
   }));
-  return enabledKeys(rows, companyId, KEYS);
+  const on = enabledKeys(rows, companyId, KEYS);
+  // A module tied to a plan switch needs the plan to carry it, unless it was turned on for this company by name.
+  const { values } = await entitlementsOf(companyId);
+  for (const mod of MODULES) {
+    if (!mod.entitlement || !on.has(mod.key)) continue;
+    const granted = rows.some((r) => r.key === mod.key && r.companyId === companyId && r.enabled);
+    if (!granted && values[mod.entitlement] !== true) on.delete(mod.key);
+  }
+  return on;
 }
 
 /** The module keys that are on for the company. Answers are kept for a few seconds. */

@@ -7,27 +7,52 @@ import { getService } from '@/lib/container';
 import { createLogger } from '@/lib/logger';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { changeCompanyPlan } from '@/services/plan/migrate';
-import { getPlanBySlug } from '@/services/plan/plans';
+import { getPlanBySlug, publicPlans } from '@/services/plan/plans';
 import { getSubRow, logEvent } from './platform';
 
 const log = createLogger({ component: 'signup-trial' });
 
-export async function startSignupTrial(companyId: string, userId: string): Promise<boolean> {
+/**
+ * The plan the trial runs on and for how long: the plan the person picked when it is a public, active plan; otherwise the
+ * default trial. Choosing the free plan means no trial.
+ */
+async function trialChoice(
+  picked: string | undefined,
+): Promise<{ plan: string; days: number } | null> {
+  if (picked) {
+    const chosen = (await publicPlans()).find((p) => p.slug === picked);
+    if (chosen) {
+      if (chosen.slug === 'free') return null;
+      return {
+        plan: chosen.slug,
+        days: chosen.trialDays > 0 ? chosen.trialDays : SIGNUP_TRIAL_DAYS,
+      };
+    }
+  }
+  return (await getPlanBySlug(SIGNUP_TRIAL_PLAN))
+    ? { plan: SIGNUP_TRIAL_PLAN, days: SIGNUP_TRIAL_DAYS }
+    : null;
+}
+
+export async function startSignupTrial(
+  companyId: string,
+  userId: string,
+  pickedPlan?: string,
+): Promise<boolean> {
   try {
     if (await getSubRow(companyId)) return false;
-    if (!(await getPlanBySlug(SIGNUP_TRIAL_PLAN))) {
-      log.warn('the trial plan does not exist; the company stays on the free plan', {
-        plan: SIGNUP_TRIAL_PLAN,
-      });
+    const choice = await trialChoice(pickedPlan);
+    if (!choice) {
+      log.warn('no trial plan applies; the company stays on the free plan', { picked: pickedPlan });
       return false;
     }
     const start = new Date();
-    const end = new Date(start.getTime() + SIGNUP_TRIAL_DAYS * 86_400_000);
+    const end = new Date(start.getTime() + choice.days * 86_400_000);
     const made = await getAdminSupabase()
       .from('platform_subscriptions')
       .insert({
         company_id: companyId,
-        plan_slug: SIGNUP_TRIAL_PLAN,
+        plan_slug: choice.plan,
         interval: 'month',
         status: 'trialing',
         seats: 1,
@@ -42,14 +67,15 @@ export async function startSignupTrial(companyId: string, userId: string): Promi
       log.warn('the trial could not be recorded', { code: made.error.code });
       return false;
     }
-    await changeCompanyPlan(companyId, SIGNUP_TRIAL_PLAN, userId, 'Free trial at sign-up');
+    await changeCompanyPlan(companyId, choice.plan, userId, 'Free trial at sign-up');
     await logEvent(
       { id: String(made.data.id), company_id: companyId },
       'trial_started',
       {
-        days: SIGNUP_TRIAL_DAYS,
-        plan: SIGNUP_TRIAL_PLAN,
+        days: choice.days,
+        plan: choice.plan,
         source: 'signup',
+        picked: pickedPlan ?? null,
       },
       userId,
     );
@@ -58,7 +84,7 @@ export async function startSignupTrial(companyId: string, userId: string): Promi
       resourceType: 'company',
       resourceId: companyId,
       companyId,
-      metadata: { plan: SIGNUP_TRIAL_PLAN, days: SIGNUP_TRIAL_DAYS },
+      metadata: { plan: choice.plan, days: choice.days, picked: pickedPlan ?? null },
     });
     return true;
   } catch (error) {

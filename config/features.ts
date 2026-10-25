@@ -2,7 +2,11 @@
 // The optional modules of a company dashboard. Every module is OFF for every company until the super admin turns it on
 // (for all companies or for one company) in Admin > Feature flags. A module that is off is not in the menu, its pages
 // answer "not found" and its company API answers "not found". The core screens (listed at the end) are always on.
-// The flag key of a module is its `key`; a company flag beats the global flag; no flag means off.
+// The flag key of a module is its `key`; a company flag beats the global flag; no flag means off. A module that names a
+// plan `entitlement` is also tied to the company's plan: the plan must carry it, unless the super admin turned the module
+// on for that one company (a grant for one company beats the plan).
+
+import type { EntitlementKey } from '@/config/plans';
 
 export interface ModuleDef {
   /** Flag key, for example "module.developers". */
@@ -15,6 +19,8 @@ export interface ModuleDef {
   pagePrefixes: readonly string[];
   /** Company API paths that only this module uses (a path and everything below it). */
   apiPrefixes: readonly string[];
+  /** The plan switch the company's plan must carry for this module (not needed when granted to the company itself). */
+  entitlement?: EntitlementKey;
 }
 
 export const MODULES: readonly ModuleDef[] = [
@@ -89,6 +95,7 @@ export const MODULES: readonly ModuleDef[] = [
     navIds: ['whatsapp'],
     pagePrefixes: ['/whatsapp'],
     apiPrefixes: ['/api/whatsapp'],
+    entitlement: 'whatsapp.automation',
   },
   {
     key: 'module.social',
@@ -97,6 +104,7 @@ export const MODULES: readonly ModuleDef[] = [
     navIds: ['social'],
     pagePrefixes: ['/social'],
     apiPrefixes: ['/api/social'],
+    entitlement: 'social.automation',
   },
   {
     key: 'module.migration',
@@ -135,6 +143,7 @@ export const MODULES: readonly ModuleDef[] = [
     ],
     pagePrefixes: ['/accounting', '/expenses', '/bills'],
     apiPrefixes: ['/api/accounting', '/api/expenses', '/api/bills'],
+    entitlement: 'accounting.enabled',
   },
   {
     key: 'module.payroll_hr',
@@ -155,6 +164,7 @@ export const MODULES: readonly ModuleDef[] = [
     ],
     pagePrefixes: ['/payroll', '/hr'],
     apiPrefixes: ['/api/payroll', '/api/hr'],
+    entitlement: 'payroll.enabled',
   },
   {
     key: 'module.inventory',
@@ -163,6 +173,7 @@ export const MODULES: readonly ModuleDef[] = [
     navIds: ['inventory', 'suppliers', 'purchase-orders'],
     pagePrefixes: ['/inventory', '/suppliers', '/purchase-orders'],
     apiPrefixes: ['/api/inventory', '/api/suppliers', '/api/purchase-orders'],
+    entitlement: 'inventory.enabled',
   },
   {
     key: 'module.projects',
@@ -171,6 +182,7 @@ export const MODULES: readonly ModuleDef[] = [
     navIds: ['projects', 'timesheets'],
     pagePrefixes: ['/projects', '/timesheets'],
     apiPrefixes: ['/api/projects', '/api/time'],
+    entitlement: 'projects.enabled',
   },
   {
     key: 'module.reports',
@@ -179,6 +191,7 @@ export const MODULES: readonly ModuleDef[] = [
     navIds: ['reports'],
     pagePrefixes: ['/reports'],
     apiPrefixes: [],
+    entitlement: 'reports.advanced',
   },
   {
     key: 'module.invoicing_extras',
@@ -209,6 +222,7 @@ export const MODULES: readonly ModuleDef[] = [
     navIds: ['client-subscriptions'],
     pagePrefixes: ['/subscriptions'],
     apiPrefixes: [],
+    entitlement: 'recurring.enabled',
   },
   {
     key: 'module.bnpl',

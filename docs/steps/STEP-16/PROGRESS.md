@@ -41,3 +41,8 @@
 
 - Done: module catalogue (`config/features.ts`), flag reading with company override and rollout (`lib/features/rules.ts`, `services/company/module-access.ts`), menu, page and API gating, a Modules panel on Admin > Feature flags (all companies) and on the company page (one company), sign-up trial (`config/trial.ts`, `services/subscription/signup-trial.ts`), verify script `step16-modules`.
 - Open: the public gateway call path is not yet refused for a company whose gateway module is off; a trial-ending reminder mail is sent only by the existing job (needs the scheduler); the trial plan and length are fixed in `config/trial.ts` (no admin screen yet).
+
+## Verification (KYC) and plan at sign-up (owner request)
+
+- Done: owner screen (previews, smaller photos, checklist, all countries), super admin verification settings (mode, service, documents, business questions), business answers (encrypted) and reviewer view, Sumsub hosted check with signed webhook, plan choice at sign-up, plan-tied modules. Verify scripts: `step16-kyc-owner`, `step16-kyc-profile`, `step16-kyc-sumsub`, `step16-modules`; database rules: `sql/assertions/s16_024_kyc_profile.sql`.
+- Open: migrations S16_023 and S16_024 must be applied to the live database; the Sumsub calls were not run against a sandbox (D29 item 4); the pricing page links to the sign-up plan by hand; the first real upload failure on the live site was never seen (client-side shrinking and visible errors were added instead).
