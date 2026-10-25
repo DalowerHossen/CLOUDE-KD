@@ -71,6 +71,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci --ignore-scripts
+      - name: More connections for the concurrency checks
+        # The invoice numbering check opens 100 sessions at once; the default limit of the server is 100 in total.
+        run: |
+          psql -v ON_ERROR_STOP=1 -c "alter system set max_connections = 400"
+          docker restart "$(docker ps -q --filter ancestor=postgres:15)"
+          for i in $(seq 1 30); do pg_isready -h localhost -U postgres && break; sleep 2; done
       - name: Concurrency and export checks (need the database)
         run: bash scripts/verify-all.sh db
 
