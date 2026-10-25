@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getService } from '@/lib/container';
 import { t, type StringKey } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
+import { getSection } from '@/services/company/settings';
 import { listMethods, type MethodView } from '@/services/payout/methods';
 import { ActionButton } from '../_components/action-button';
-import { JsonForm } from '../_components/json-form';
+import { PayoutMethodForm } from '../_components/payout-method-form';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Payout methods' };
@@ -21,6 +22,7 @@ export default async function MethodsPage(): Promise<JSX.Element> {
   const canManage = await getService('permissions').can(actor, 'payout.method.manage', {
     type: 'payout_method',
   });
+  const country = (await getSection(companyId, 'profile')).value.country.trim().toUpperCase();
   let rows: MethodView[] | null;
   try {
     rows = await listMethods(companyId);
@@ -103,36 +105,7 @@ export default async function MethodsPage(): Promise<JSX.Element> {
             <p className="text-sm text-muted-foreground">{t('s14Wallet.methods.stepUp')}</p>
           </CardHeader>
           <CardContent>
-            <JsonForm
-              endpoint="/api/payouts/methods"
-              submitLabel={t('s14Wallet.methods.add')}
-              doneText={t('s14Wallet.methods.added')}
-              resetAfter
-              fields={[
-                { name: 'label', label: t('s14Wallet.methods.label'), required: true },
-                {
-                  name: 'kind',
-                  label: t('s14Wallet.methods.kind'),
-                  kind: 'select',
-                  initial: 'bank_transfer',
-                  options: (['bank_transfer', 'wire', 'partner_payout'] as const).map((k) => ({
-                    value: k,
-                    label: t(`s14Wallet.methods.kinds.${k}` as StringKey),
-                  })),
-                },
-                { name: 'country', label: t('s14Wallet.methods.country') },
-                { name: 'currency', label: t('s14Wallet.methods.currency'), initial: 'USD' },
-                { name: 'holderName', label: t('s14Wallet.methods.holderName'), required: true },
-                {
-                  name: 'accountNumber',
-                  label: t('s14Wallet.methods.accountNumber'),
-                  required: true,
-                },
-                { name: 'bankName', label: t('s14Wallet.methods.bankName'), required: true },
-                { name: 'routingCode', label: t('s14Wallet.methods.routingCode') },
-                { name: 'swiftCode', label: t('s14Wallet.methods.swiftCode') },
-              ]}
-            />
+            <PayoutMethodForm defaultCountry={country} />
           </CardContent>
         </Card>
       ) : null}
