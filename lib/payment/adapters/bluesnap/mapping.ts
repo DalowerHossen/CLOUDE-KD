@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/bluesnap/mapping.ts
 // Pure mapping of BlueSnap transactions and errors to the platform's transaction shape
 // (docs/processors/bluesnap.md sections 6 to 8). Everything read from BlueSnap is untrusted text.
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction, fromMinorUnits, NO_THREE_DS } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type {
@@ -75,7 +76,11 @@ export function cardIdentity(card: Json | null): CardIdentity | null {
       ? ''
       : String(card.cardLastFourDigits);
   if (!/^\d{4,6}$/.test(bin) || !/^\d{4}$/.test(last4)) return null;
-  return { type: 'fingerprint', value: `${bin}|${last4}|${str(card.cardType) ?? ''}` };
+  return {
+    type: 'fingerprint',
+    value: `${bin}|${last4}|${str(card.cardType) ?? ''}`,
+    ...cardFacts(last4, str(card.cardType)),
+  };
 }
 
 /** 3D Secure result from the transaction's `threeDSecure.authenticationResult` (docs section 6). */

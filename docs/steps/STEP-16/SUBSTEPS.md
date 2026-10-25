@@ -242,3 +242,17 @@ A merchant's store (WooCommerce, Shopify or its own code) gets a key after its b
 ### 16.16.d Owner page and closure
 
 - Goal: `(dashboard)/developers/checkout` (KYC state, key, steps), `docs/integrations/checkout-api.md`, VERIFY, PROGRESS.
+
+## 16.17 Find a payment by the last four digits of the card (owner request, 2026-10-25)
+
+Support staff find a payment across all companies by the last four digits of the card, and an owner finds payments of the own company; the result shows the merchant, the payer, the amount and the time. Design decisions are D38 in `DECISIONS.md`.
+
+### 16.17.a Storage and adapters
+
+- Goal: `payments.card_last4` and `card_brand`, the digits and the brand on `CardIdentity`, the adapters that already read them pass them on, the payment core keeps them.
+- Files: `migrations/S16_029_payment_card_last4.sql` (+ `_down`), `sql/assertions/s16_029_payment_card_last4.sql`, `lib/payment/card-facts.ts`, `types/contracts/payment-adapter.ts`, `lib/payment/adapters/*/mapping.ts`, `services/payment/{payments,payment-store}.ts`.
+
+### 16.17.b Search, routes and pages
+
+- Goal: input rules, the search service with the platform guards and the audit entry, `POST /api/admin/payments/card-search`, `POST /api/payments/card-search`, the two pages, permission `payment.card.search`, navigation, strings.
+- Files: `lib/payment/card-search-rules.ts`, `services/payment/card-search.ts`, `app/api/**/card-search/route.ts`, `app/(admin)/admin/payments/card-search`, `app/(dashboard)/payments/card-search`, `components/payment/card-search.tsx`, `scripts/verify/step16-card-search.ts`.

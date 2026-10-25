@@ -195,7 +195,12 @@ async function main(): Promise<void> {
     assert.equal(result.processorTransactionId, TX);
     assert.ok(result.amount.eq('120.50'));
     assert.equal(result.avsPostalCodeMatch, true);
-    assert.deepEqual(result.cardIdentity, { type: 'fingerprint', value: '411111|9299|VISA' });
+    assert.deepEqual(result.cardIdentity, {
+      type: 'fingerprint',
+      value: '411111|9299|VISA',
+      last4: '9299',
+      brand: 'visa',
+    });
     assert.deepEqual(result.threeDS, {
       requested: true,
       completed: true,
@@ -350,7 +355,7 @@ async function main(): Promise<void> {
     assert.equal(cardIdentity({ cardLastFourDigits: '1234', cardType: 'VISA' }), null);
     assert.deepEqual(
       cardIdentity({ binNumber: '411111', cardLastFourDigits: '0002', cardType: 'VISA' }),
-      { type: 'fingerprint', value: '411111|0002|VISA' },
+      { type: 'fingerprint', value: '411111|0002|VISA', last4: '0002', brand: 'visa' },
     );
   });
 

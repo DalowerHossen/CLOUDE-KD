@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/braintree/mapping.ts
 // Pure mapping of Braintree GraphQL transactions to the platform's transaction shape (docs/processors/braintree.md
 // sections 6 to 8). Everything read from Braintree is untrusted text (the API returns data unencoded).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction, NO_THREE_DS } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type {
@@ -136,13 +137,19 @@ function cardOf(tx: Json): Json | null {
 export function cardIdentity(card: Json | null): CardIdentity | null {
   if (!card) return null;
   const unique = str(card.uniqueNumberIdentifier);
-  if (unique) return { type: 'fingerprint', value: `uid:${unique}` };
   const last4 = str(card.last4);
+  if (unique)
+    return {
+      type: 'fingerprint',
+      value: `uid:${unique}`,
+      ...cardFacts(last4, str(card.brandCode)),
+    };
   if (!last4) return null;
   const expiry = `${str(card.expirationMonth) ?? ''}/${str(card.expirationYear) ?? ''}`;
   return {
     type: 'fingerprint',
     value: `${str(card.bin) ?? ''}|${last4}|${expiry}|${str(card.brandCode) ?? ''}`,
+    ...cardFacts(last4, str(card.brandCode)),
   };
 }
 

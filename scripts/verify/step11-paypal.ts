@@ -218,7 +218,12 @@ async function main(): Promise<void> {
     assert.equal(tx.status, 'authorized');
     assert.equal(tx.processorTransactionId, '5O190127TN364715T');
     assert.equal(tx.amount.toDbString(), '120.5000');
-    assert.deepEqual(tx.cardIdentity, { type: 'fingerprint', value: '40128888|1881|2030-12|VISA' });
+    assert.deepEqual(tx.cardIdentity, {
+      type: 'fingerprint',
+      value: '40128888|1881|2030-12|VISA',
+      last4: '1881',
+      brand: 'visa',
+    });
     assert.equal(tx.avsPostalCodeMatch, true);
     assert.deepEqual(
       [
@@ -287,7 +292,12 @@ async function main(): Promise<void> {
     const tx = await adapter.authorize(ctx, input);
     assert.equal(tx.status, 'declined');
     assert.equal(tx.declineCategory, 'three_ds_failed');
-    assert.deepEqual(tx.cardIdentity, { type: 'fingerprint', value: '40128888|1881|2030-12|VISA' });
+    assert.deepEqual(tx.cardIdentity, {
+      type: 'fingerprint',
+      value: '40128888|1881|2030-12|VISA',
+      last4: '1881',
+      brand: 'visa',
+    });
     assert.ok(!calls().includes('/authorize'));
     const noAuth = order({ payment_source: { card: card() } });
     route('GET /v2/checkout/orders/5O190127TN364715T', { status: 200, body: noAuth });

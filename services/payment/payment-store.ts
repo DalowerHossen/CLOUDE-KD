@@ -7,7 +7,7 @@ import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { PaymentStatus, PaymentSummary, ProcessorId } from '@/types/contracts';
 
 export const PAYMENT_COLUMNS =
-  'id, company_id, invoice_id, client_id, processor_id, mode_id, environment, status, amount, captured_amount, refunded_amount, surcharge_amount, idempotency_key, processor_transaction_id, payment_method, card_identity_id, payer_ip, payer_country, billing_postal_code, three_ds, failure_reason, decline_category, link_id, created_by, authorized_at, captured_at, voided_at, created_at, version';
+  'id, company_id, invoice_id, client_id, processor_id, mode_id, environment, status, amount, captured_amount, refunded_amount, surcharge_amount, idempotency_key, processor_transaction_id, payment_method, card_identity_id, card_last4, card_brand, payer_ip, payer_country, billing_postal_code, three_ds, failure_reason, decline_category, link_id, created_by, authorized_at, captured_at, voided_at, created_at, version';
 
 export interface PaymentRow {
   id: string;
@@ -26,6 +26,8 @@ export interface PaymentRow {
   processor_transaction_id: string | null;
   payment_method: string;
   card_identity_id: string | null;
+  card_last4: string | null;
+  card_brand: string | null;
   payer_ip: string | null;
   payer_country: string | null;
   billing_postal_code: string | null;

@@ -73,6 +73,10 @@ export interface CardIdentity {
   /** `fingerprint` is the processor's card fingerprint; `token` is a stable vault token. */
   type: 'fingerprint' | 'token';
   value: string;
+  /** The last four digits of the card, when the processor returned them. Never more of the number. */
+  last4?: string;
+  /** The card brand in lower case (for example `visa`), when the processor returned it. */
+  brand?: string;
 }
 
 export type ThreeDSPolicy = 'required' | 'preferred' | 'disabled';

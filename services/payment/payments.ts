@@ -364,8 +364,14 @@ async function handleTransaction(
     const resolved = await resolveIdentity(row.processor_id, tx.cardIdentity);
     identityId = resolved.id;
     identityHmacValue = resolved.hmac;
-    if (row.card_identity_id !== identityId)
-      row = await patchPayment(row, { card_identity_id: identityId });
+    const facts: Record<string, unknown> = {};
+    if (row.card_identity_id !== identityId) facts.card_identity_id = identityId;
+    // The last four digits and the brand let support find the payment later; they are kept as the processor returned them.
+    const cardLast4 = tx.cardIdentity.last4 ?? null;
+    const cardBrand = tx.cardIdentity.brand ?? null;
+    if (cardLast4 !== null && row.card_last4 !== cardLast4) facts.card_last4 = cardLast4;
+    if (cardBrand !== null && row.card_brand !== cardBrand) facts.card_brand = cardBrand;
+    if (Object.keys(facts).length > 0) row = await patchPayment(row, facts);
   }
   const category = tx.declineCategory ? normalizeCategory(tx.declineCategory) : null;
   // The card rules run before this attempt is written, so the attempt itself is not counted against the card.

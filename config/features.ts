@@ -280,6 +280,7 @@ export const CORE_NAV_IDS: readonly string[] = [
   'invoices',
   'estimates',
   'payments',
+  'payment-card-search',
   'wallet',
   'payment-settings',
   'billing',

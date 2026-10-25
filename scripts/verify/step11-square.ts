@@ -192,6 +192,8 @@ async function main(): Promise<void> {
     assert.deepEqual(result.cardIdentity, {
       type: 'fingerprint',
       value: 'sq-1-INCyQnSb8QOHkoFASh566s5S',
+      last4: '5858',
+      brand: 'visa',
     });
     assert.deepEqual(result.threeDS, {
       requested: false,
@@ -216,6 +218,8 @@ async function main(): Promise<void> {
     assert.deepEqual(result.cardIdentity, {
       type: 'fingerprint',
       value: '453275|5858|12/2030|VISA',
+      last4: '5858',
+      brand: 'visa',
     });
     assert.equal(avsPostal('AVS_NOT_CHECKED'), null);
     assert.equal(cardIdentity(null), null);

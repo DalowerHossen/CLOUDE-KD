@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/square/mapping.ts
 // Pure mapping of Square payments, refunds and errors to the platform's transaction shape
 // (docs/processors/square.md sections 6 to 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction, fromMinorUnits } from '@/lib/payment/adapters/base';
 import type { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -52,12 +53,14 @@ export function avsPostal(status: string | null): boolean | null {
 export function cardIdentity(card: Json | null): CardIdentity | null {
   if (!card) return null;
   const fingerprint = str(card.fingerprint);
-  if (fingerprint) return { type: 'fingerprint', value: fingerprint };
   const last4 = str(card.last_4);
+  if (fingerprint)
+    return { type: 'fingerprint', value: fingerprint, ...cardFacts(last4, str(card.card_brand)) };
   if (!last4) return null;
   return {
     type: 'fingerprint',
     value: `${str(card.bin) ?? ''}|${last4}|${String(card.exp_month ?? '')}/${String(card.exp_year ?? '')}|${str(card.card_brand) ?? ''}`,
+    ...cardFacts(last4, str(card.card_brand)),
   };
 }
 

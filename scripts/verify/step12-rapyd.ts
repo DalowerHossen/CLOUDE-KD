@@ -250,6 +250,8 @@ async function main(): Promise<void> {
       assert.deepEqual(result?.cardIdentity, {
         type: 'fingerprint',
         value: 'ocfp_11ECFC396977BB4E81220EC01B2F2B1B',
+        last4: '1111',
+        brand: 'visa',
       });
     }
     const h = seen[0]?.headers ?? {};
@@ -403,6 +405,8 @@ async function main(): Promise<void> {
     assert.deepEqual(cardIdentity(noFingerprint), {
       type: 'fingerprint',
       value: '411111|1111|12/29|VISA',
+      last4: '1111',
+      brand: 'visa',
     });
     assert.equal(
       cardIdentity(payment({ payment_method_data: { category: 'bank_redirect' } })),

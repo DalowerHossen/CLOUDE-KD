@@ -172,3 +172,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `step16-public-api.ts` (15 checks) still passes with the three checkout endpoints in the OpenAPI document.
 - `sql/assertions/s16_028_checkout_sessions.sql`: RLS, one session per order, https only, positive amount, open sessions complete. Runs in the CI `database` job.
 - Not verified: a real purchase through a real processor, a real WooCommerce or Shopify store, real webhook delivery to a store.
+
+## 16.17 Find a payment by card
+
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-card-search.ts` (7 checks): card facts keep four digits and a clean brand; the adapters (Adyen, BlueSnap, Braintree with and without the unique id, Square, Paddle, PayPal, Verifone with and without a token) give the digits and the brand and the identity HMAC is the same with and without them; the input rules (four digits, window, amounts, reason, strict keys); an owner sees only the own company, in the window, with the payer facts; platform staff see all companies with the merchant and site and the audit entry holds the reason and the count but no person; the platform search is refused without a platform role, the permission, a fresh sign-in check or room in the rate limit.
+- `sql/assertions/s16_029_payment_card_last4.sql`: the columns, their checks and the two indexes.
+- Not verified: a real payment through a processor returning the digits (sandbox), the pages in a browser. Stripe and Authorize.Net payments carry no digits yet.

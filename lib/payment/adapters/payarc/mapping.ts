@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/payarc/mapping.ts
 // Pure mapping of PayArc charges, refunds and response codes to the platform's transaction shape
 // (docs/processors/payarc.md sections 5, 7 and 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction, fromMinorUnits } from '@/lib/payment/adapters/base';
 import type { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -67,13 +68,15 @@ export function centsOf(value: unknown): Money | null {
 export function cardIdentity(card: Json | null): CardIdentity | null {
   if (!card) return null;
   const fingerprint = str(card.fingerprint);
-  if (fingerprint) return { type: 'fingerprint', value: fingerprint };
   const last4 = str(card.last4digit);
+  if (fingerprint)
+    return { type: 'fingerprint', value: fingerprint, ...cardFacts(last4, str(card.brand)) };
   if (!last4) return null;
   const first6 = card.first6digit === undefined ? '' : String(card.first6digit);
   return {
     type: 'fingerprint',
     value: `${first6}|${last4}|${str(card.brand) ?? ''}|${str(card.exp_month) ?? ''}/${str(card.exp_year) ?? ''}`,
+    ...cardFacts(last4, str(card.brand)),
   };
 }
 
