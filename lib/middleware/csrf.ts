@@ -23,6 +23,14 @@ const EXEMPT_PREFIXES: readonly string[] = [
   '/api/email/track/',
 ];
 
+/**
+ * Payer routes that are called from the checkout page, including when it is shown in a frame on a merchant's web site. A
+ * browser does not keep a SameSite cookie in a frame of another site, so the cookie check cannot work there. The secret in
+ * the address (the payment link token) is the credential and no cookie is used; the request must still come from this
+ * application's own pages (Origin check).
+ */
+const ORIGIN_ONLY_PREFIXES: readonly string[] = ['/api/payment-links/checkout/'];
+
 export async function createCsrfToken(secret: string): Promise<string> {
   const random = randomHex(24);
   return `${random}.${await hmacSha256Hex(secret, `csrf:${random}`)}`;
@@ -85,6 +93,7 @@ export async function checkCsrf(input: {
 }): Promise<CsrfVerdict> {
   if (!requiresCsrfCheck(input.method, input.pathname)) return 'ok';
   if (!isSameOrigin(input.origin, input.referer, input.appOrigin)) return 'bad_origin';
+  if (ORIGIN_ONLY_PREFIXES.some((p) => input.pathname.startsWith(p))) return 'ok';
   if (!input.cookieToken || !input.headerToken) return 'missing_token';
   if (!timingSafeEqualStrings(input.cookieToken, input.headerToken)) return 'mismatch';
   if (!(await isValidCsrfToken(input.cookieToken, input.secret))) return 'invalid_signature';

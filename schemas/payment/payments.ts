@@ -94,6 +94,8 @@ export const linkPayBodySchema = z
     paymentToken: z.string().min(4).max(4000),
     billingPostalCode: z.string().trim().max(20).nullable().default(null),
     returnUrl,
+    /** The web site that shows the embedded checkout; the server checks it against the merchant's list. */
+    embedOrigin: z.string().max(200).nullable().default(null),
   })
   .strict();
 

@@ -1,6 +1,7 @@
 // path: app/(dashboard)/payments/links/page.tsx
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { EmbedOriginsManager } from '@/components/payment/embed-origins-manager';
 import { LinksManager } from '@/components/payment/links-manager';
 import { PageHeader } from '@/components/shared/page-header';
 import { ErrorState } from '@/components/shared/state-views';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { getService } from '@/lib/container';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
+import { listEmbedOrigins, type EmbedOriginView } from '@/services/payment/embed-origins';
 import { listPaymentLinks, type LinkView } from '@/services/payment/links';
 import { payableInvoices } from '@/services/payment/payment-detail';
 
@@ -22,8 +24,10 @@ export default async function PaymentLinksPage(): Promise<JSX.Element> {
   });
   let links: LinkView[] | null;
   let invoices: { id: string; number: string; due: string }[] = [];
+  let origins: EmbedOriginView[] = [];
   try {
     links = await listPaymentLinks(companyId, null);
+    origins = await listEmbedOrigins(companyId);
     if (canManage) invoices = await payableInvoices(companyId);
   } catch {
     links = null;
@@ -42,7 +46,10 @@ export default async function PaymentLinksPage(): Promise<JSX.Element> {
       {links === null ? (
         <ErrorState description={t('s10Payments.links.loadError')} />
       ) : (
-        <LinksManager links={links} invoices={invoices} canManage={canManage} />
+        <>
+          <LinksManager links={links} invoices={invoices} canManage={canManage} />
+          <EmbedOriginsManager origins={origins} canManage={canManage} />
+        </>
       )}
     </div>
   );

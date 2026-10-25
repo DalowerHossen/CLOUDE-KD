@@ -21,10 +21,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const production = env.APP_ENV === 'production';
   const appOrigin = new URL(publicEnv.NEXT_PUBLIC_APP_URL).origin;
   const { pathname } = request.nextUrl;
+  // The embed page may be framed, but only by the web sites the merchant listed for that payment link.
+  const embedToken = /^\/embed\/([A-Za-z0-9_-]{16,200})$/.exec(pathname)?.[1];
+  const frameAncestors = embedToken
+    ? await import('@/services/payment/embed').then((m) => m.ancestorsFor(embedToken))
+    : undefined;
   const security = buildRequestSecurity({
     pathname,
     production,
     supabaseOrigin: publicEnv.NEXT_PUBLIC_SUPABASE_URL,
+    ...(frameAncestors ? { frameAncestors } : {}),
   });
 
   // Cross-origin preflight for the API: answered here, only for allowed origins.
@@ -47,6 +53,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   forwarded.set('content-security-policy', security.csp);
   const response = NextResponse.next({ request: { headers: forwarded } });
   withHeaders(response, security.responseHeaders);
+  // The merchant SDK script is loaded by other web sites with a script tag.
+  if (pathname.startsWith('/embed/v1/'))
+    response.headers.set('cross-origin-resource-policy', 'cross-origin');
 
   const cors = pathname.startsWith('/api/')
     ? corsHeaders(request.headers.get('origin'), appOrigin)

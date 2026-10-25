@@ -1,10 +1,49 @@
 // path: lib/i18n/strings/en/s10-processors.ts
 // Strings of the super admin processor screens (STEP 10). English only.
 export const strings = {
-  nav: { processors: 'Payment processors' },
+  nav: { processors: 'Payment processors', health: 'Processor health' },
   title: 'Payment processors',
   description:
     'Connect a processor by entering its keys, test the connection, then enable it. Keys are encrypted and are never shown again.',
+  health: {
+    title: 'Processor health',
+    description:
+      'A job checks every enabled processor every 10 minutes. A processor that fails {count} checks in a row is switched off and the super admins are told. Check that it is back online, then test it and enable it again.',
+    back: 'Back to processors',
+    loadError: 'The health could not be loaded.',
+    refreshed: 'Updated automatically every 15 seconds. Last refresh: {time}',
+    columns: {
+      processor: 'Processor',
+      status: 'Health',
+      response: 'Response',
+      checked: 'Last check',
+      failures: 'Failures in a row',
+      state: 'State',
+      actions: 'Actions',
+    },
+    status: { healthy: 'Healthy', degraded: 'Degraded', down: 'Down', unknown: 'No data' },
+    state: {
+      enabled: 'Enabled',
+      disabled: 'Disabled',
+      autoDisabled: 'Switched off automatically',
+      notAvailable: 'No adapter yet',
+    },
+    probe: { url: 'Ping address', adapter: 'Credential test' },
+    interval: 'Every {minutes} minutes',
+    lastOk: 'Last healthy: {time}',
+    never: 'never',
+    checkNow: 'Check now',
+    checking: 'Checking...',
+    reenable: 'Test and enable again',
+    reenabling: 'Testing...',
+    checkResult: '{name}: {status}{detail}',
+    reenabled: '{name} is enabled again.',
+    testFailed: '{name} did not pass the test, so it stays off: {message}',
+    needStepUp: 'Confirm your identity above first (password and code), then try again.',
+    failed: 'The action could not be completed.',
+    notice:
+      'A check you start here is recorded but never switches a processor off. Only the 10-minute job does, and never when the platform itself cannot reach the internet or every processor fails at once.',
+  },
   loadError: 'The processors could not be loaded.',
   empty: 'No processors are listed.',
   notAvailable: 'No adapter in this build yet',

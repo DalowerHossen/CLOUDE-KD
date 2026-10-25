@@ -71,6 +71,19 @@ export const strings = {
     failed: 'The action could not be completed.',
     needStepUp: 'Confirm your identity above first (password and code), then try again.',
   },
+  embed: {
+    title: 'Embedded checkout',
+    help: 'List the web sites that may show your payment links inside their own pages. A link shown on any other site is refused. Add the address only, for example https://shop.example.com (no path, no wildcard).',
+    label: 'Web site address',
+    add: 'Add web site',
+    remove: 'Remove',
+    none: 'No web sites are listed yet. The embedded checkout is off until you add one.',
+    added: 'Web site added.',
+    removed: 'Web site removed.',
+    failed: 'The change could not be saved. Try again.',
+    guide:
+      'How to add the checkout to your site: see the merchant guide (docs/embed/CHECKOUT_SDK.md).',
+  },
   checkout: {
     title: 'Pay invoice {invoice}',
     amount: 'Invoice amount',

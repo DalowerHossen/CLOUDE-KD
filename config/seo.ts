@@ -17,6 +17,7 @@ export const PRIVATE_PREFIXES: readonly string[] = [
   '/forgot-password',
   '/reset-password',
   '/verify-email',
+  '/resend-verification',
   '/unlock',
   '/join',
   // Tokenised client links: one-letter folders end with a slash so that public pages such as /contact stay open.

@@ -23,6 +23,7 @@ export const POST = withApi(
       returnUrl: body.returnUrl,
       idempotencyKey,
       payerIp: ip,
+      embedOrigin: body.embedOrigin,
     });
     return { status: 201, data: result };
   },

@@ -1,6 +1,7 @@
 // path: lib/middleware/headers.ts
 // Builds the per-request security headers (nonce, CSP, fixed headers) and the CORS answer.
 import { CORS_ALLOWED_HEADERS, CORS_ALLOWED_METHODS, CORS_EXTRA_ORIGINS } from '@/config/security';
+import { paymentPageOrigins } from '@/lib/payment/csp';
 import { buildCsp, buildTrustedTypesPolicy, profileForPath } from '@/lib/security/csp';
 import { securityHeaders } from '@/lib/security/headers';
 import { randomBase64Url } from '@/lib/utils/hash';
@@ -16,14 +17,20 @@ export function buildRequestSecurity(input: {
   production: boolean;
   supabaseOrigin?: string;
   processorOrigins?: readonly string[];
+  /** The embed page: who may frame it. */
+  frameAncestors?: readonly string[];
 }): RequestSecurity {
   const nonce = randomBase64Url(16);
+  const profile = profileForPath(input.pathname);
+  const processorOrigins =
+    input.processorOrigins ?? (profile === 'payment' ? paymentPageOrigins() : undefined);
   const csp = buildCsp({
     nonce,
     production: input.production,
-    profile: profileForPath(input.pathname),
+    profile,
     ...(input.supabaseOrigin ? { supabaseOrigin: input.supabaseOrigin } : {}),
-    ...(input.processorOrigins ? { processorOrigins: input.processorOrigins } : {}),
+    ...(processorOrigins ? { processorOrigins } : {}),
+    ...(input.frameAncestors ? { frameAncestors: input.frameAncestors } : {}),
   });
   return {
     nonce,
@@ -32,6 +39,7 @@ export function buildRequestSecurity(input: {
       csp,
       trustedTypesReportOnly: buildTrustedTypesPolicy(),
       production: input.production,
+      allowFraming: input.pathname.startsWith('/embed/') && (input.frameAncestors?.length ?? 0) > 0,
     }),
   };
 }

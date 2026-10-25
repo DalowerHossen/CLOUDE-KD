@@ -4,6 +4,8 @@ export interface HeaderInput {
   csp: string;
   trustedTypesReportOnly: string;
   production: boolean;
+  /** True for the embed page: it may be framed, and the CSP frame-ancestors list says by whom. */
+  allowFraming?: boolean;
 }
 
 export function securityHeaders(input: HeaderInput): Record<string, string> {
@@ -21,6 +23,7 @@ export function securityHeaders(input: HeaderInput): Record<string, string> {
     'x-dns-prefetch-control': 'off',
     'x-permitted-cross-domain-policies': 'none',
   };
+  if (input.allowFraming) delete headers['x-frame-options'];
   if (input.production)
     headers['strict-transport-security'] = 'max-age=31536000; includeSubDomains; preload';
   return headers;

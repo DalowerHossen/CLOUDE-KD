@@ -43,7 +43,7 @@ export default function CustomSecureForm(props: SecureFormProps): JSX.Element {
         <div className="space-y-sp-12">
           <p className="text-sm text-muted-foreground">{t('s10Payments.checkout.hostedStep')}</p>
           <Input
-                        autoComplete="off"
+            autoComplete="off"
             aria-label={t('s10Payments.checkout.orderNumber')}
             placeholder={t('s10Payments.checkout.orderNumber')}
             value={order}

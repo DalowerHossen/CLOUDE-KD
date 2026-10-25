@@ -78,6 +78,12 @@ export async function receiveWebhook(
 ): Promise<WebhookOutcome> {
   if (!isKnownProcessor(processorId) || !hasAdapter(processorId))
     return { kind: 'unknown_processor' };
+  // A processor that is switched off (by a person or by the health check) takes no webhooks: 404, nothing is read or stored.
+  const processorRow = await getProcessorRow(processorId).catch((error: unknown) => {
+    if (error instanceof NotFoundError) return null;
+    throw error;
+  });
+  if (!processorRow || !processorRow.enabled) return { kind: 'unknown_processor' };
   let context: AdapterContext;
   try {
     context = await contextFor(processorId);

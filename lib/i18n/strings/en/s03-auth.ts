@@ -54,6 +54,8 @@ export const strings = {
     createAccount: 'Create an account',
     failed: 'E-mail or password is incorrect, or sign-in is not available right now.',
     rateLimited: 'Too many attempts. Wait a few minutes and try again.',
+    unconfirmed:
+      'Your e-mail address is not confirmed yet. We sent you a new confirmation link. Open it, then sign in.',
   },
   signup: {
     title: 'Create your account',
@@ -76,6 +78,12 @@ export const strings = {
     resendTitle: 'Send a new link',
     resend: 'Send link',
     resent: 'If the address needs confirmation, we sent a new link.',
+    resendHelp:
+      'Enter the e-mail address you signed up with. We send a new confirmation link if it is not confirmed yet.',
+    noMail: 'Did not get the confirmation e-mail?',
+    resendAgain: 'Send a new link',
+    waitSeconds: 'You can ask again in {seconds} seconds.',
+    checkSpam: 'Look in the spam folder too. The link works for a limited time.',
   },
   forgot: {
     title: 'Reset your password',

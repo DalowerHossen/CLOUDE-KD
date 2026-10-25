@@ -17,9 +17,10 @@ import {
   hasActiveFactor,
   lookupUserByEmail,
   mintSession,
-  verifyPassword,
+  checkPassword,
   type KnownUser,
 } from './credentials';
+import { resendVerificationFor } from './signup-flow';
 import { currentIpFailures, recordLoginEvent } from './login-events';
 import { checkLock, hashIdentifier, recordFailure, recordSuccess } from './lock-service';
 import { openSessionRecord } from './session-service';
@@ -32,7 +33,9 @@ export const GENERIC_LOGIN_MESSAGE =
 export type LoginOutcome =
   | { status: 'ok'; redirectTo: string }
   | { status: 'two_factor_required' }
-  | { status: 'two_factor_setup_required' };
+  | { status: 'two_factor_setup_required' }
+  /** The password is right but the e-mail address is not confirmed; a new confirmation link was sent. */
+  | { status: 'email_unconfirmed' };
 
 /** Fixed targets only, so the response can never become an open redirect. */
 export function redirectFor(user: KnownUser): string {
@@ -84,8 +87,13 @@ export async function startLogin(input: {
   }
 
   const user = await lookupUserByEmail(input.email);
-  const passwordOk = await verifyPassword(input.email, input.password);
-  if (!passwordOk || !user || !user.active) {
+  const passwordCheck = await checkPassword(input.email, input.password);
+  if (passwordCheck === 'unconfirmed' && user) {
+    // The person proved the password, so telling them what is missing reveals nothing new. A new link is sent at once.
+    await resendVerificationFor(user.userId, input.email, user.companyId).catch(() => false);
+    return { status: 'email_unconfirmed' };
+  }
+  if (passwordCheck !== 'ok' || !user || !user.active) {
     await recordFailure(identifier, 'password', {
       userId: user?.userId ?? null,
       companyId: user?.companyId ?? null,

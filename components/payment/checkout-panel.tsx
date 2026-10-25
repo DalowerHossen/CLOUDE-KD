@@ -50,8 +50,24 @@ type Phase =
   | { kind: 'challenge'; checkout: Checkout; paymentId: string; clientSecret: string | null }
   | { kind: 'done'; message: string; ok: boolean };
 
-/** Hosted checkout shell. The portal page (STEP 13) renders it at /pay/<token>. */
-export function CheckoutPanel({ token }: { token: string }): JSX.Element {
+/** Set when the checkout is shown in a frame on a merchant's web site (the embedded checkout, app/embed/<token>). */
+export interface EmbedHooks {
+  /** The merchant web site that shows the frame; the server checks it against the merchant's list. */
+  parentOrigin: string;
+  /** Called when the payment reached a final state. */
+  onComplete: (result: { paymentId: string; status: string }) => void;
+  /** Called instead of leaving the page when the processor needs a full-page redirect (3D Secure); the merchant page does it. */
+  onRedirect: (url: string) => void;
+}
+
+/** Hosted checkout shell. The portal page (STEP 13) renders it at /pay/<token>; the embed page renders it in a frame. */
+export function CheckoutPanel({
+  token,
+  embed,
+}: {
+  token: string;
+  embed?: EmbedHooks;
+}): JSX.Element {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [error, setError] = useState<string | null>(null);
   const [postal, setPostal] = useState('');
@@ -78,20 +94,25 @@ export function CheckoutPanel({ token }: { token: string }): JSX.Element {
     };
   }, [token]);
 
-  const finish = useCallback((status: string, message: string | null | undefined): void => {
-    const ok = status === 'captured';
-    setPhase({
-      kind: 'done',
-      ok,
-      message:
-        message ??
-        (ok
-          ? t('s10Payments.checkout.paid')
-          : status === 'pending_review'
-            ? t('s10Payments.checkout.review')
-            : t('s10Payments.checkout.failed')),
-    });
-  }, []);
+  const onEmbedComplete = embed?.onComplete;
+  const finish = useCallback(
+    (paymentId: string, status: string, message: string | null | undefined): void => {
+      onEmbedComplete?.({ paymentId, status });
+      const ok = status === 'captured';
+      setPhase({
+        kind: 'done',
+        ok,
+        message:
+          message ??
+          (ok
+            ? t('s10Payments.checkout.paid')
+            : status === 'pending_review'
+              ? t('s10Payments.checkout.review')
+              : t('s10Payments.checkout.failed')),
+      });
+    },
+    [onEmbedComplete],
+  );
 
   const handleResult = useCallback(
     (checkout: Checkout, json: unknown): void => {
@@ -105,7 +126,8 @@ export function CheckoutPanel({ token }: { token: string }): JSX.Element {
       if (result.status === 'requires_action' && result.requiredAction) {
         const action = result.requiredAction;
         if (action.kind === 'redirect' && action.url && action.url.startsWith('https://')) {
-          window.location.assign(action.url);
+          if (embed) embed.onRedirect(action.url);
+          else window.location.assign(action.url);
           return;
         }
         setPhase({
@@ -116,9 +138,9 @@ export function CheckoutPanel({ token }: { token: string }): JSX.Element {
         });
         return;
       }
-      finish(result.status, result.message);
+      finish(result.id, result.status, result.message);
     },
-    [finish],
+    [finish, embed],
   );
 
   async function onToken(checkout: Checkout, paymentToken: string): Promise<void> {
@@ -132,7 +154,8 @@ export function CheckoutPanel({ token }: { token: string }): JSX.Element {
         body: JSON.stringify({
           paymentToken,
           billingPostalCode: postal.trim() === '' ? null : postal.trim(),
-          returnUrl: window.location.href,
+          returnUrl: embed ? `${window.location.origin}/pay/${token}` : window.location.href,
+          embedOrigin: embed ? embed.parentOrigin : null,
         }),
       });
       const json: unknown = await response.json().catch(() => null);
