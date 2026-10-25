@@ -2,7 +2,7 @@
 // Checks of the Netlify scheduler: the cron line matcher and the job list copied from cron/jobs.
 // Run: SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-cron-tick.ts
 import assert from 'node:assert/strict';
-import { CRON_JOBS } from '../../netlify/functions/cron-jobs.generated.mjs';
+import { CRON_JOBS } from '../../netlify/cron-jobs.generated.mjs';
 import { dueJobs, fieldMatches, scheduleMatches } from '../../netlify/functions/cron-tick.mjs';
 import { readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
