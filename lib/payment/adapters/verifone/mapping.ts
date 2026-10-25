@@ -3,6 +3,7 @@
 // (docs/processors/verifone.md sections 6 to 8). Two vocabularies exist: the payment result of the Checkout events and
 // of the payment actions (`status` AUTHORIZED, SETTLEMENT_REQUESTED, ...) and the stored transaction read back with
 // `GET /api/v2/transaction/{id}` (`transaction_type` and `transaction_status`, AUTHORISED, SETTLED, ...).
+import { cardFacts, lastFourOf } from '@/lib/payment/card-facts';
 import { buildTransaction, fromMinorUnits } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -112,10 +113,11 @@ export function cardIdentity(
   masked: string | null,
   brand: string | null,
 ): CardIdentity | null {
-  if (token) return { type: 'token', value: token };
+  const facts = cardFacts(lastFourOf(masked), brand);
+  if (token) return { type: 'token', value: token, ...facts };
   if (!masked) return null;
   const m = /^(\d{6})\D*(\d{4})$/.exec(masked.replace(/\s+/g, ''));
-  return m ? { type: 'fingerprint', value: `${m[1]}|${m[2]}|${brand ?? ''}` } : null;
+  return m ? { type: 'fingerprint', value: `${m[1]}|${m[2]}|${brand ?? ''}`, ...facts } : null;
 }
 
 function declined(

@@ -4,12 +4,15 @@ import { getService, registerService } from '@/lib/container';
 import { ForbiddenError } from '@/lib/errors';
 import { type Money } from '@/lib/utils/currency';
 import type { PaymentService } from '@/types/contracts';
+import { createLinkForOrder, revokeLinkForOrder } from './order-links';
 import { getPayment, startPayment } from './payments';
 import { refundPayment } from './refunds';
 import { listReviewPayments } from './reviews';
 import { toSummary, getRow } from './payment-store';
 
 const payments: PaymentService = {
+  createLink: createLinkForOrder,
+  revokeLink: revokeLinkForOrder,
   createPayment: (input) => startPayment(input),
   refund: (paymentId, amount: Money, reason, idempotencyKey) =>
     refundPayment(paymentId, amount, reason, idempotencyKey),

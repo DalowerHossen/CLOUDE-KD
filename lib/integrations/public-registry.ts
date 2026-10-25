@@ -32,6 +32,7 @@ import {
   TRIGGERS,
   triggerItemOut,
 } from './automation-rules';
+import { sessionInput, sessionOut, sessionParams } from '@/lib/checkout/session-rules';
 import { z } from 'zod';
 
 export interface EndpointSpec {
@@ -169,6 +170,42 @@ export const ENDPOINTS: readonly EndpointSpec[] = [
     sandboxOnly: true,
   },
   ...read('Payments', '/payments', 'payments', paymentOut, 'Payment', paymentsQuery),
+  {
+    method: 'post',
+    path: '/checkout/sessions',
+    operationId: 'create_checkout_session',
+    summary: 'Make a hosted checkout session for one order (live keys, after KYC approval)',
+    tag: 'Checkout',
+    scope: 'write:checkout',
+    body: sessionInput,
+    bodyName: 'CheckoutSessionCreate',
+    response: sessionOut,
+    responseName: 'CheckoutSession',
+    idempotent: true,
+    createsRecord: true,
+  },
+  {
+    method: 'get',
+    path: '/checkout/sessions/{id}',
+    operationId: 'get_checkout_session',
+    summary: 'Get the state of a checkout session',
+    tag: 'Checkout',
+    scope: 'read:checkout',
+    params: sessionParams,
+    response: sessionOut,
+    responseName: 'CheckoutSession',
+  },
+  {
+    method: 'delete',
+    path: '/checkout/sessions/{id}',
+    operationId: 'cancel_checkout_session',
+    summary: 'Cancel an unpaid checkout session (the order was cancelled in the store)',
+    tag: 'Checkout',
+    scope: 'write:checkout',
+    params: sessionParams,
+    response: sessionOut,
+    responseName: 'CheckoutSession',
+  },
   ...read('Estimates', '/estimates', 'estimates', estimateOut, 'Estimate', estimatesQuery),
   {
     method: 'post',

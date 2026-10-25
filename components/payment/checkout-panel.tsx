@@ -23,6 +23,13 @@ const checkoutBody = z.object({
     environment: z.enum(['sandbox', 'live']),
     clientConfig: z.record(z.string(), z.string()),
     refundWindowDays: z.number(),
+    storeReturn: z
+      .object({
+        successUrl: z.string().startsWith('https://'),
+        cancelUrl: z.string().startsWith('https://'),
+      })
+      .nullable()
+      .optional(),
   }),
 });
 const resultBody = z.object({
@@ -48,7 +55,7 @@ type Phase =
   | { kind: 'ready'; checkout: Checkout }
   | { kind: 'paying'; checkout: Checkout }
   | { kind: 'challenge'; checkout: Checkout; paymentId: string; clientSecret: string | null }
-  | { kind: 'done'; message: string; ok: boolean };
+  | { kind: 'done'; message: string; ok: boolean; returnTo: string | null };
 
 /** Set when the checkout is shown in a frame on a merchant's web site (the embedded checkout, app/embed/<token>). */
 export interface EmbedHooks {
@@ -58,6 +65,34 @@ export interface EmbedHooks {
   onComplete: (result: { paymentId: string; status: string }) => void;
   /** Called instead of leaving the page when the processor needs a full-page redirect (3D Secure); the merchant page does it. */
   onRedirect: (url: string) => void;
+}
+
+/** A link back to the store that sent the buyer. After a payment it also takes the buyer there by itself after a few seconds. */
+function ReturnToStore({
+  href,
+  label,
+  auto = false,
+}: {
+  href: string;
+  label?: string;
+  auto?: boolean;
+}): JSX.Element {
+  useEffect(() => {
+    if (!auto || embedded()) return undefined;
+    const timer = window.setTimeout(() => window.location.assign(href), 5000);
+    return () => window.clearTimeout(timer);
+  }, [auto, href]);
+  return (
+    <p className="text-sm">
+      <a className="underline" href={href} rel="noopener noreferrer">
+        {label ?? t('s10Payments.checkout.backToStore')}
+      </a>
+    </p>
+  );
+}
+
+function embedded(): boolean {
+  return window.self !== window.top;
 }
 
 /** Hosted checkout shell. The portal page (STEP 13) renders it at /pay/<token>; the embed page renders it in a frame. */
@@ -96,12 +131,18 @@ export function CheckoutPanel({
 
   const onEmbedComplete = embed?.onComplete;
   const finish = useCallback(
-    (paymentId: string, status: string, message: string | null | undefined): void => {
+    (
+      paymentId: string,
+      status: string,
+      message: string | null | undefined,
+      returnTo: string | null,
+    ): void => {
       onEmbedComplete?.({ paymentId, status });
       const ok = status === 'captured';
       setPhase({
         kind: 'done',
         ok,
+        returnTo: ok ? returnTo : null,
         message:
           message ??
           (ok
@@ -138,7 +179,7 @@ export function CheckoutPanel({
         });
         return;
       }
-      finish(result.id, result.status, result.message);
+      finish(result.id, result.status, result.message, checkout.storeReturn?.successUrl ?? null);
     },
     [finish, embed],
   );
@@ -193,7 +234,12 @@ export function CheckoutPanel({
   if (phase.kind === 'unavailable')
     return <Alert variant="destructive">{t('s10Payments.checkout.unavailable')}</Alert>;
   if (phase.kind === 'done')
-    return <Alert variant={phase.ok ? 'success' : 'destructive'}>{phase.message}</Alert>;
+    return (
+      <div className="space-y-sp-12">
+        <Alert variant={phase.ok ? 'success' : 'destructive'}>{phase.message}</Alert>
+        {phase.returnTo ? <ReturnToStore href={phase.returnTo} auto /> : null}
+      </div>
+    );
 
   const checkout = phase.checkout;
   const busy = phase.kind === 'paying';
@@ -254,6 +300,12 @@ export function CheckoutPanel({
       <p className="text-xs text-muted-foreground">
         {t('s10Payments.checkout.refundPolicy', { days: checkout.refundWindowDays })}
       </p>
+      {checkout.storeReturn ? (
+        <ReturnToStore
+          href={checkout.storeReturn.cancelUrl}
+          label={t('s10Payments.checkout.cancelToStore')}
+        />
+      ) : null}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/payproglobal/mapping.ts
 // Pure mapping of PayPro Global order details and refund answers to the platform's transaction shape
 // (docs/processors/payproglobal.md sections 5, 7 and 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -45,6 +46,7 @@ export function cardIdentity(order: Json): CardIdentity | null {
   return {
     type: 'fingerprint',
     value: `${str(order.paymentMethodName) ?? ''}|${last4}|${str(order.creditCardExpirationDate) ?? ''}`,
+    ...cardFacts(last4, str(order.paymentMethodName)),
   };
 }
 

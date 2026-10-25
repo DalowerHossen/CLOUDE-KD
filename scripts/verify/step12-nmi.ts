@@ -231,7 +231,12 @@ async function main(): Promise<void> {
     assert.equal(result.status, 'authorized');
     assert.equal(result.processorTransactionId, PAY);
     assert.ok(result.amount.eq('120.50'));
-    assert.deepEqual(result.cardIdentity, { type: 'fingerprint', value: 'hash-abc-123' });
+    assert.deepEqual(result.cardIdentity, {
+      type: 'fingerprint',
+      value: 'hash-abc-123',
+      last4: '1111',
+      brand: 'visa',
+    });
     assert.equal(result.avsPostalCodeMatch, true);
     assert.equal(result.rawCode, '100');
     assert.deepEqual(result.threeDS, {
@@ -483,7 +488,7 @@ async function main(): Promise<void> {
         card_type: 'Visa',
         card_bin: '411111',
       }),
-      { type: 'fingerprint', value: '411111|1111|1029|Visa' },
+      { type: 'fingerprint', value: '411111|1111|1029|Visa', last4: '1111', brand: 'visa' },
     );
     assert.equal(cardIdentity({ [MASKED]: 'xx' }), null);
     for (const code of ['Y', 'X', 'Z', '2']) assert.equal(avsPostal(code), true, code);

@@ -1,5 +1,6 @@
 // path: lib/payment/adapters/paypal/mapping.ts
 // Pure mapping of PayPal order objects to the platform's transaction shape (docs/processors/paypal.md sections 6 to 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction, fromMinorUnits, NO_THREE_DS } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type {
@@ -118,7 +119,11 @@ export function cardIdentity(card: Json | null): CardIdentity | null {
   const bin = str(obj(card?.bin_details)?.bin) ?? '';
   const expiry = str(card?.expiry) ?? str(obj(card?.from_request)?.expiry) ?? '';
   const brand = str(card?.brand) ?? '';
-  return { type: 'fingerprint', value: `${bin}|${last}|${expiry}|${brand}` };
+  return {
+    type: 'fingerprint',
+    value: `${bin}|${last}|${expiry}|${brand}`,
+    ...cardFacts(last, brand),
+  };
 }
 
 export interface OrderView {

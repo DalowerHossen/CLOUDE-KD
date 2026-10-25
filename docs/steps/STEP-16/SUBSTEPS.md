@@ -219,3 +219,40 @@ The main merchant's app posts sales, refunds and chargebacks of its sub-merchant
 ### 16.15.c Route, page and closure
 
 - Goal: `POST /api/gateway/settlement/v1/entries`, key management routes and the section on the settlement page, docs, VERIFY, HANDOFF, PROGRESS.
+
+## 16.16 White-label hosted checkout API (owner request, 2026-10-25)
+
+A merchant's store (WooCommerce, Shopify or its own code) gets a key after its business check (KYC) is approved. For each order it asks the platform for a checkout session and sends the buyer to the returned address, a payment page with the platform's brand. The buyer needs no account; one order is one session and a paid order cannot be paid again; the store learns the result through webhooks. The merchant never sees which processor or master merchant the platform uses. Design decisions are D37 in `DECISIONS.md`.
+
+### 16.16.a Contracts (the Integrator's part)
+
+- Goal: `invoices.createForOrder`, `invoices.voidForOrder`, `payments.createLink`, `payments.revokeLink` (resolves BLOCKERS B1 for this feature only), the events `checkout.session.paid` and `checkout.session.failed`.
+- Files: `types/contracts/{invoice,payment}.ts`, `types/events.ts`, `services/invoice/order-invoice.ts`, `services/payment/order-links.ts`, the two `register.ts`, `docs/execution/CONTRACTS.md`.
+
+### 16.16.b Table
+
+- Goal: `checkout_sessions` (one row per order of a company, claim state `creating`, sealed address, https return addresses).
+- Files: `migrations/S16_028_checkout_sessions.sql` (+ `_down`), `sql/assertions/s16_028_checkout_sessions.sql`.
+
+### 16.16.c Rules, service, routes
+
+- Goal: strict input, the claim, KYC gate, replay, reopen, cancel; `POST/GET/DELETE /api/public/v1/checkout/sessions`; scopes `read:checkout` and `write:checkout` (live keys only after KYC); the event worker that writes the webhook events; the return to the store on the hosted page.
+- Files: `lib/checkout/session-rules.ts`, `services/checkout/sessions.ts`, `app/api/public/v1/checkout/**`, `workers/integrations/checkout-session-events.event.ts`, `lib/integrations/public-registry.ts`, `components/payment/checkout-panel.tsx`, `scripts/verify/step16-checkout.ts`.
+
+### 16.16.d Owner page and closure
+
+- Goal: `(dashboard)/developers/checkout` (KYC state, key, steps), `docs/integrations/checkout-api.md`, VERIFY, PROGRESS.
+
+## 16.17 Find a payment by the last four digits of the card (owner request, 2026-10-25)
+
+Support staff find a payment across all companies by the last four digits of the card, and an owner finds payments of the own company; the result shows the merchant, the payer, the amount and the time. Design decisions are D38 in `DECISIONS.md`.
+
+### 16.17.a Storage and adapters
+
+- Goal: `payments.card_last4` and `card_brand`, the digits and the brand on `CardIdentity`, the adapters that already read them pass them on, the payment core keeps them.
+- Files: `migrations/S16_029_payment_card_last4.sql` (+ `_down`), `sql/assertions/s16_029_payment_card_last4.sql`, `lib/payment/card-facts.ts`, `types/contracts/payment-adapter.ts`, `lib/payment/adapters/*/mapping.ts`, `services/payment/{payments,payment-store}.ts`.
+
+### 16.17.b Search, routes and pages
+
+- Goal: input rules, the search service with the platform guards and the audit entry, `POST /api/admin/payments/card-search`, `POST /api/payments/card-search`, the two pages, permission `payment.card.search`, navigation, strings.
+- Files: `lib/payment/card-search-rules.ts`, `services/payment/card-search.ts`, `app/api/**/card-search/route.ts`, `app/(admin)/admin/payments/card-search`, `app/(dashboard)/payments/card-search`, `components/payment/card-search.tsx`, `scripts/verify/step16-card-search.ts`.

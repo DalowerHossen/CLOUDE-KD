@@ -3,27 +3,34 @@
 import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { t } from '@/lib/i18n';
 
 interface InvoiceActionsProps {
   token: string;
   canPay: boolean;
+  canCancel: boolean;
   /** `mailto:` address of the seller, or an empty text. */
   contactEmail: string;
   invoiceNumber: string;
 }
 
-type Failure = 'pay' | 'download' | null;
+type Failure = 'pay' | 'download' | 'cancel' | null;
 
 /** Pay now, download and print. The link goes in the request body, never in an address. */
 export function InvoiceActions({
   token,
   canPay,
+  canCancel,
   contactEmail,
   invoiceNumber,
 }: InvoiceActionsProps): JSX.Element {
-  const [busy, setBusy] = useState<'pay' | 'download' | null>(null);
+  const [busy, setBusy] = useState<'pay' | 'download' | 'cancel' | null>(null);
   const [failure, setFailure] = useState<Failure>(null);
+  const [asking, setAsking] = useState(false);
+  const [reason, setReason] = useState('');
+  const [cancelled, setCancelled] = useState(false);
 
   async function post(path: string): Promise<Response> {
     return fetch(path, {
@@ -52,6 +59,25 @@ export function InvoiceActions({
     setBusy(null);
   }
 
+  async function cancelInvoice(): Promise<void> {
+    setBusy('cancel');
+    setFailure(null);
+    try {
+      const response = await fetch('/api/portal/invoice-cancel', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token, reason: reason.trim() }),
+        cache: 'no-store',
+      });
+      if (!response.ok) throw new Error('cancel');
+      setCancelled(true);
+      setAsking(false);
+    } catch {
+      setFailure('cancel');
+    }
+    setBusy(null);
+  }
+
   async function download(): Promise<void> {
     setBusy('download');
     setFailure(null);
@@ -76,11 +102,15 @@ export function InvoiceActions({
       {failure === 'pay' ? (
         <Alert variant="destructive">{t('s13Portal.invoice.payFailed')}</Alert>
       ) : null}
+      {failure === 'cancel' ? (
+        <Alert variant="destructive">{t('s13Portal.invoice.cancelFailed')}</Alert>
+      ) : null}
+      {cancelled ? <Alert variant="success">{t('s13Portal.invoice.cancelled')}</Alert> : null}
       {failure === 'download' ? (
         <Alert variant="destructive">{t('s13Portal.invoice.downloadFailed')}</Alert>
       ) : null}
       <div className="flex flex-col gap-sp-8 sm:flex-row">
-        {canPay ? (
+        {canPay && !cancelled ? (
           <Button
             type="button"
             size="lg"
@@ -109,7 +139,50 @@ export function InvoiceActions({
             </a>
           </Button>
         ) : null}
+        {canCancel && !cancelled && !asking ? (
+          <Button type="button" variant="ghost" onClick={() => setAsking(true)}>
+            {t('s13Portal.invoice.cancel')}
+          </Button>
+        ) : null}
       </div>
+      {asking && !cancelled ? (
+        <div
+          className="space-y-sp-8 rounded-md border p-sp-12"
+          role="group"
+          aria-label={t('s13Portal.invoice.cancelTitle')}
+        >
+          <p className="font-medium">{t('s13Portal.invoice.cancelTitle')}</p>
+          <p className="text-sm text-muted-foreground">{t('s13Portal.invoice.cancelBody')}</p>
+          <Label htmlFor="cancel-reason">{t('s13Portal.invoice.cancelReason')}</Label>
+          <Input
+            id="cancel-reason"
+            value={reason}
+            maxLength={300}
+            autoComplete="off"
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <div className="flex gap-sp-8">
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={busy !== null}
+              onClick={() => void cancelInvoice()}
+            >
+              {busy === 'cancel'
+                ? t('s13Portal.invoice.cancelling')
+                : t('s13Portal.invoice.cancelConfirm')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy !== null}
+              onClick={() => setAsking(false)}
+            >
+              {t('s13Portal.invoice.cancelKeep')}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

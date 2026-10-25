@@ -215,6 +215,12 @@ const invoiceState = new Map<string, InvoiceForPayment>();
 const applied: { invoiceId: string; paymentId: string; amount: string }[] = [];
 const disputed: string[] = [];
 registerService('invoices', {
+  createForOrder: async () => {
+    throw new Error('unused');
+  },
+  voidForOrder: async () => {
+    throw new Error('unused');
+  },
   getForPayment: async (id) => {
     const inv = invoiceState.get(id);
     assert.ok(inv, 'unknown invoice');

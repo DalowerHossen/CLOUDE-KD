@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/fastspring/mapping.ts
 // Pure mapping of FastSpring orders and returns to the platform's transaction shape (docs/processors/fastspring.md
 // sections 5, 7 and 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -27,7 +28,11 @@ export function cardIdentity(order: Json): CardIdentity | null {
   if (!payment || str(payment.type) !== 'creditcard') return null;
   const last4 = str(payment.cardEnding);
   if (!last4) return null;
-  return { type: 'fingerprint', value: `${str(payment.creditcard) ?? ''}|${last4}` };
+  return {
+    type: 'fingerprint',
+    value: `${str(payment.creditcard) ?? ''}|${last4}`,
+    ...cardFacts(last4, str(payment.creditcard)),
+  };
 }
 
 /** The amount the invoice is compared with: the pre-tax subtotal when present, else the total. */

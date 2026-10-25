@@ -211,7 +211,12 @@ async function main(): Promise<void> {
       assert.equal(result?.status, 'captured');
       assert.equal(result?.processorTransactionId, TXN);
       assert.ok(result?.amount.eq('120.50'));
-      assert.deepEqual(result?.cardIdentity, { type: 'fingerprint', value: '4242|12/2030|visa' });
+      assert.deepEqual(result?.cardIdentity, {
+        type: 'fingerprint',
+        value: '4242|12/2030|visa',
+        last4: '4242',
+        brand: 'visa',
+      });
       assert.deepEqual(result?.threeDS, {
         requested: false,
         completed: false,

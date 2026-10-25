@@ -33,6 +33,8 @@ import { getRow, toSummary } from './payment-store';
 import { resumePayment, startPayment, type PaymentResult } from './payments';
 import { resolveRoute } from './routing';
 import { originsOfCompany } from './embed-origins';
+import { returnUrl } from '@/lib/checkout/session-rules';
+import { storeReturnForLink } from '@/services/checkout/sessions';
 
 const LINK_COLUMNS =
   'id, company_id, invoice_id, token_id, status, amount, expires_at, use_count, max_uses, created_by, created_at, version';
@@ -219,6 +221,8 @@ export interface CheckoutView {
   sessionExpiresAt: string | null;
   linkExpiresAt: string;
   refundWindowDays: number;
+  /** Set when the link belongs to a checkout session of a store: where the buyer goes back to. */
+  storeReturn: { successUrl: string; cancelUrl: string } | null;
 }
 
 export async function payableInvoice(
@@ -290,6 +294,16 @@ export async function checkoutFor(token: string): Promise<CheckoutView> {
     sessionExpiresAt: session.expiresAt,
     linkExpiresAt: link.expires_at,
     refundWindowDays: REFUND_WINDOW_DAYS,
+    storeReturn: await storeReturnOf(link),
+  };
+}
+
+async function storeReturnOf(link: LinkRow): Promise<CheckoutView['storeReturn']> {
+  const found = await storeReturnForLink(link.company_id, link.id);
+  if (!found) return null;
+  return {
+    successUrl: returnUrl(found.successUrl, found.sessionId, found.orderId, 'paid'),
+    cancelUrl: returnUrl(found.cancelUrl, found.sessionId, found.orderId, 'cancelled'),
   };
 }
 

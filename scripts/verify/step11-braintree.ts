@@ -245,6 +245,8 @@ async function main(): Promise<void> {
     assert.deepEqual(result.cardIdentity, {
       type: 'fingerprint',
       value: '401288|1881|12/2030|VISA',
+      last4: '1881',
+      brand: 'visa',
     });
     assert.deepEqual(result.threeDS, {
       requested: true,
@@ -278,7 +280,12 @@ async function main(): Promise<void> {
       );
       const unknown = await adapter.authorize(ctx, input);
       assert.equal(unknown.avsPostalCodeMatch, null);
-      assert.deepEqual(unknown.cardIdentity, { type: 'fingerprint', value: 'uid:abc123' });
+      assert.deepEqual(unknown.cardIdentity, {
+        type: 'fingerprint',
+        value: 'uid:abc123',
+        last4: '1881',
+        brand: 'visa',
+      });
     },
   );
 

@@ -83,6 +83,25 @@ if (
   );
 if (serviceKey.length < 20) fail('Set SUPABASE_SERVICE_ROLE_KEY (Project settings > API).');
 
+/** A legacy key is a JWT whose payload names its role. The public "anon" key cannot create accounts, so say so before asking Supabase. */
+function keyRole(key) {
+  const part = key.split('.')[1];
+  if (!part) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+    return typeof payload.role === 'string' ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+const roleOfKey = keyRole(serviceKey);
+if (roleOfKey !== null && roleOfKey !== 'service_role')
+  fail(
+    `SUPABASE_SERVICE_ROLE_KEY holds the "${roleOfKey}" key. Use the "service_role" key (Project settings > API Keys, shown as secret), not the public one.`,
+  );
+if (serviceKey.startsWith('sb_publishable_'))
+  fail('SUPABASE_SERVICE_ROLE_KEY holds the publishable key. Use the secret key (sb_secret_...) or the service_role key.');
+
 const headers = {
   apikey: serviceKey,
   authorization: `Bearer ${serviceKey}`,

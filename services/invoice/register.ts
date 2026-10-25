@@ -10,6 +10,7 @@ import type { InvoiceService, PdfService } from '@/types/contracts';
 import { renderEstimatePdf } from '@/services/estimate/pdf';
 import { registerClientHooks } from './client-hooks';
 import './tenant-export';
+import { createOrderInvoice, voidOrderInvoice } from './order-invoice';
 import { applyPayment, getForPayment, markDisputed } from './payments';
 import { renderInvoicePdf, snapshotInvoice } from './snapshots';
 
@@ -29,6 +30,8 @@ async function companyOf(invoiceId: string): Promise<string> {
 
 function createInvoiceContract(): InvoiceService {
   return {
+    createForOrder: createOrderInvoice,
+    voidForOrder: voidOrderInvoice,
     getForPayment,
     applyPayment,
     markDisputed,

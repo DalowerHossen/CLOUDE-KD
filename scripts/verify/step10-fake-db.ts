@@ -28,6 +28,7 @@ const UNIQUE: Record<string, { name: string; cols: string[]; where?: (r: Row) =>
   card_blacklist: [{ name: 'uq_card_blacklist_hmac', cols: ['processor_id', 'identity_hmac'] }],
   payment_allocations: [{ name: 'uq_payment_allocations', cols: ['payment_id', 'invoice_id'] }],
   refunds: [{ name: 'uq_refunds_idempotency', cols: ['company_id', 'idempotency_key'] }],
+  checkout_sessions: [{ name: 'uq_checkout_sessions_order', cols: ['company_id', 'external_ref'] }],
 };
 
 export class FakeDb {
@@ -155,12 +156,22 @@ class Builder implements PromiseLike<Result> {
     this.filters.push((r) => r[col] === v);
     return this;
   }
+  neq(col: string, v: unknown): this {
+    this.filters.push((r) => r[col] !== v);
+    return this;
+  }
   is(col: string, v: unknown): this {
     this.filters.push((r) => (v === null ? r[col] === null || r[col] === undefined : r[col] === v));
     return this;
   }
   in(col: string, list: unknown[]): this {
     this.filters.push((r) => list.includes(r[col]));
+    return this;
+  }
+  gte(col: string, v: unknown): this {
+    this.filters.push(
+      (r) => r[col] !== null && r[col] !== undefined && String(r[col]) >= String(v),
+    );
     return this;
   }
   lt(col: string, v: unknown): this {

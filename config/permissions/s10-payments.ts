@@ -51,6 +51,13 @@ export const permissions: PermissionDefinition[] = [
     approvalLevel: 'L0',
   },
   {
+    action: 'payment.card.search',
+    description:
+      'Find payments across all companies by the last four digits of the card (needs a fresh sign-in check and a written reason; every search is audited)',
+    defaultRoles: ['super_admin', 'ceo', 'admin_staff'],
+    approvalLevel: 'L0',
+  },
+  {
     action: 'payment.webhook.read',
     description: 'See processor webhook deliveries and the dead-letter list',
     defaultRoles: ['super_admin', 'ceo', 'admin_staff'],

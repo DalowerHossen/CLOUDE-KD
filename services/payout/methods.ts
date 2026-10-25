@@ -13,6 +13,13 @@ import {
   NotFoundError,
   ValidationError,
 } from '@/lib/errors';
+import {
+  ACCOUNT_TYPES,
+  PAYOUT_KINDS,
+  PAYOUT_KIND_RULES,
+  hintFor,
+  type PayoutKind,
+} from '@/lib/payout/method-kinds';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor, EncryptedPayload } from '@/types/contracts';
 
@@ -28,7 +35,7 @@ const plain = (min: number, max: number): z.ZodString =>
 
 export const methodInput = z
   .object({
-    kind: z.enum(['bank_transfer', 'wire', 'partner_payout']),
+    kind: z.enum(PAYOUT_KINDS),
     label: plain(1, 80),
     country: z
       .string()
@@ -40,11 +47,8 @@ export const methodInput = z
       .regex(/^[A-Z]{3}$/, 'Use a three-letter currency code.')
       .default('USD'),
     holderName: plain(2, 120),
-    accountNumber: z
-      .string()
-      .trim()
-      .regex(/^[A-Za-z0-9 -]{4,40}$/, 'Enter the account number or IBAN.'),
-    bankName: plain(2, 120),
+    accountNumber: z.string().trim().min(4).max(264),
+    bankName: plain(2, 120).optional(),
     routingCode: z
       .string()
       .trim()
@@ -55,14 +59,38 @@ export const methodInput = z
       .trim()
       .regex(/^([A-Za-z0-9]{8}|[A-Za-z0-9]{11})?$/, 'A SWIFT code has 8 or 11 characters.')
       .optional(),
+    accountType: z.enum(ACCOUNT_TYPES).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((d, ctx) => {
+    const rule = PAYOUT_KIND_RULES[d.kind];
+    if (rule.countries !== null && (!d.country || !rule.countries.includes(d.country)))
+      ctx.addIssue({
+        code: 'custom',
+        path: ['kind'],
+        message: `This way of being paid is only for: ${rule.countries.join(', ')}.`,
+      });
+    if (!rule.accountPattern.test(d.accountNumber))
+      ctx.addIssue({ code: 'custom', path: ['accountNumber'], message: rule.accountMessage });
+    for (const f of rule.fields)
+      if (f.required && f.name !== 'accountNumber' && f.name !== 'holderName') {
+        const value = d[f.name];
+        if (value === undefined || value === '')
+          ctx.addIssue({ code: 'custom', path: [f.name], message: 'This detail is required.' });
+      }
+    if (d.kind === 'ach' && d.routingCode !== undefined && !/^[0-9]{9}$/.test(d.routingCode))
+      ctx.addIssue({
+        code: 'custom',
+        path: ['routingCode'],
+        message: 'An ACH routing number has 9 digits.',
+      });
+  });
 export type MethodInput = z.infer<typeof methodInput>;
 
 export interface MethodView {
   id: string;
   partner: string;
-  kind: 'bank_transfer' | 'wire' | 'partner_payout';
+  kind: PayoutKind;
   label: string;
   country: string | null;
   currency: string;
@@ -166,13 +194,13 @@ export async function addMethod(actor: Actor, input: unknown): Promise<MethodVie
     JSON.stringify({
       holderName: d.holderName,
       accountNumber: d.accountNumber,
-      bankName: d.bankName,
+      bankName: d.bankName ?? '',
       routingCode: d.routingCode ?? '',
       swiftCode: d.swiftCode ?? '',
+      accountType: d.accountType ?? '',
     }),
     companyId,
   );
-  const digits = d.accountNumber.replace(/[^A-Za-z0-9]/g, '');
   const { data, error } = await getAdminSupabase()
     .from('payout_methods')
     .insert({
@@ -181,7 +209,7 @@ export async function addMethod(actor: Actor, input: unknown): Promise<MethodVie
       label: d.label,
       country: d.country ?? null,
       currency: d.currency,
-      hint: `ending ${digits.slice(-4)}`,
+      hint: hintFor(d.kind, d.accountNumber),
       details_encrypted: payload,
       is_default: existing.length === 0,
       created_by: actor.userId,
@@ -275,6 +303,7 @@ export async function readMethodDetails(
   bankName: string;
   routingCode: string;
   swiftCode: string;
+  accountType: string;
 }> {
   const { data, error } = await getAdminSupabase()
     .from('payout_methods')

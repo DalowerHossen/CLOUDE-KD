@@ -235,6 +235,8 @@ async function main(): Promise<void> {
       assert.deepEqual(result?.cardIdentity, {
         type: 'fingerprint',
         value: '411111|1142|3/2030|visa',
+        last4: '1142',
+        brand: 'visa',
       });
     }
     const url = new URL(seen[0]?.url ?? '');

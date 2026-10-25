@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/rapyd/mapping.ts
 // Pure mapping of Rapyd payments, refunds and error codes to the platform's transaction shape
 // (docs/processors/rapyd.md sections 5, 7 and 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -32,13 +33,15 @@ export function cardIdentity(payment: Json): CardIdentity | null {
   const method = obj(payment.payment_method_data);
   if (!method || str(method.category) !== 'card') return null;
   const fingerprint = str(method.fingerprint_token);
-  if (fingerprint) return { type: 'fingerprint', value: fingerprint };
   const last4 = str(method.last4);
-  if (!last4) return null;
   const bin = obj(method.bin_details);
+  if (fingerprint)
+    return { type: 'fingerprint', value: fingerprint, ...cardFacts(last4, str(bin?.brand)) };
+  if (!last4) return null;
   return {
     type: 'fingerprint',
     value: `${str(bin?.bin_number) ?? ''}|${last4}|${str(method.expiration_month) ?? ''}/${str(method.expiration_year) ?? ''}|${str(bin?.brand) ?? ''}`,
+    ...cardFacts(last4, str(bin?.brand)),
   };
 }
 

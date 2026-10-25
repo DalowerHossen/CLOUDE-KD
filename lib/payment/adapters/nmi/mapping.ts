@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/nmi/mapping.ts
 // Pure mapping of NMI payments, response codes and AVS results to the platform's transaction shape
 // (docs/processors/nmi.md sections 5, 7 and 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction } from '@/lib/payment/adapters/base';
 import { Money } from '@/lib/utils/currency';
 import type {
@@ -86,13 +87,15 @@ export function avsPostal(code: string | null): boolean | null {
 export function cardIdentity(details: Json | null): CardIdentity | null {
   if (!details) return null;
   const hash = str(details.card_hash);
-  if (hash) return { type: 'fingerprint', value: hash };
   const masked = str(details[MASKED_FIELD]);
   const last4 = masked ? masked.slice(-4) : null;
+  if (hash)
+    return { type: 'fingerprint', value: hash, ...cardFacts(last4, str(details.card_type)) };
   if (!last4 || !/^\d{4}$/.test(last4)) return null;
   return {
     type: 'fingerprint',
     value: `${str(details.card_bin) ?? ''}|${last4}|${str(details.card_exp) ?? ''}|${str(details.card_type) ?? ''}`,
+    ...cardFacts(last4, str(details.card_type)),
   };
 }
 

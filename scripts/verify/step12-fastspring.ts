@@ -196,7 +196,12 @@ async function main(): Promise<void> {
       assert.equal(result?.status, 'captured');
       assert.equal(result?.amount.toDbString(), '120.5000');
       assert.equal(result?.processorTransactionId, ORDER);
-      assert.deepEqual(result?.cardIdentity, { type: 'fingerprint', value: 'visa|4242' });
+      assert.deepEqual(result?.cardIdentity, {
+        type: 'fingerprint',
+        value: 'visa|4242',
+        last4: '4242',
+        brand: 'visa',
+      });
     }
     assert.equal(seen[0]?.url, `https://api.fastspring.com/orders/${ORDER}`);
   });

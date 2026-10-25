@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/paddle/mapping.ts
 // Pure mapping of Paddle transactions, adjustments and error codes to the platform's transaction shape
 // (docs/processors/paddle.md sections 5, 7 and 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction, fromMinorUnits } from '@/lib/payment/adapters/base';
 import type { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -59,6 +60,7 @@ export function cardIdentity(attempt: Json | null): CardIdentity | null {
   return {
     type: 'fingerprint',
     value: `${last4}|${String(card.expiry_month ?? '')}/${String(card.expiry_year ?? '')}|${str(card.type) ?? ''}`,
+    ...cardFacts(last4, str(card.type)),
   };
 }
 

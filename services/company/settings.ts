@@ -47,6 +47,17 @@ export async function getSection<K extends SectionKey>(
   return { value: merged.data as SectionValue<K>, version: Number(data.version) };
 }
 
+/** The company row carries the country that payment methods and payouts depend on: keep it equal to the profile. */
+async function syncCountry(companyId: string, profile: SectionValue<'profile'>): Promise<void> {
+  const code = profile.country.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return;
+  const { error } = await getAdminSupabase()
+    .from('companies')
+    .update({ country_code: code })
+    .eq('id', companyId);
+  if (error) throw new InternalError(error);
+}
+
 /** Saves a whole section for a person (an actor or a system job acting for the owner). */
 export async function saveSectionFor<K extends SectionKey>(
   companyId: string,
@@ -72,6 +83,7 @@ export async function saveSectionFor<K extends SectionKey>(
     if (error.code === '40001') throw new ConflictError();
     throw new InternalError(error);
   }
+  if (key === 'profile') await syncCountry(companyId, parsed.data as SectionValue<'profile'>);
   await getService('audit').record({
     action: 'company.settings_saved',
     resourceType: 'company_settings',

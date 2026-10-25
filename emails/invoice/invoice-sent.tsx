@@ -37,8 +37,12 @@ export function InvoiceSentEmail(p: InvoiceSentEmailProps): JSX.Element {
           textDecoration: 'none',
         }}
       >
-        View the invoice
+        View and pay the invoice
       </Button>
+      <Text style={{ fontSize: 13, color: '#555555' }}>
+        You do not need an account. On the invoice page you can pay by card, download the invoice,
+        or cancel it if it is not right.
+      </Text>
       <Text style={{ fontSize: 13, color: '#555555' }}>
         If the button does not work, copy this address into your browser: {p.link}
       </Text>

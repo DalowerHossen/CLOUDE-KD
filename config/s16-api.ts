@@ -34,16 +34,18 @@ export const API_RESOURCES = [
   'estimates',
   'payments',
   'webhooks',
+  'checkout',
 ] as const;
 export type ApiResource = (typeof API_RESOURCES)[number];
 
-/** Resources a key may write to. Payments are read only through the API. */
+/** Resources a key may write to. Payments are read only through the API. A `checkout` key makes and cancels hosted checkout sessions. */
 export const WRITABLE_RESOURCES: readonly ApiResource[] = [
   'clients',
   'products',
   'invoices',
   'estimates',
   'webhooks',
+  'checkout',
 ];
 
 /* ---------- outgoing webhooks (16.2) ---------- */
@@ -79,6 +81,8 @@ export const WEBHOOK_EVENTS = [
   'subscription.created',
   'subscription.renewed',
   'subscription.cancelled',
+  'checkout.session.paid',
+  'checkout.session.failed',
 ] as const;
 export type WebhookEventName = (typeof WEBHOOK_EVENTS)[number];
 

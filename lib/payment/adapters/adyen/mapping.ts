@@ -1,6 +1,7 @@
 // path: lib/payment/adapters/adyen/mapping.ts
 // Pure mapping of Adyen session results, refund answers and refusal codes to the platform's transaction shape
 // (docs/processors/adyen.md sections 5, 7 and 8).
+import { cardFacts } from '@/lib/payment/card-facts';
 import { buildTransaction, fromMinorUnits } from '@/lib/payment/adapters/base';
 import type { Money } from '@/lib/utils/currency';
 import type { CardIdentity, DeclineCategory, ProcessorTransaction } from '@/types/contracts';
@@ -58,6 +59,7 @@ export function cardIdentity(result: Json, payment: Json | null): CardIdentity |
   return {
     type: 'fingerprint',
     value: `${str(extra.cardBin) ?? ''}|${last4}|${str(extra.expiryDate) ?? ''}|${brand}`,
+    ...cardFacts(last4, brand),
   };
 }
 

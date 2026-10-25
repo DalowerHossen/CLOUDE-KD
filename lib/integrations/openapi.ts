@@ -70,6 +70,11 @@ export function toJsonSchema(schema: z.ZodTypeAny): Json {
     }
     return out;
   }
+  if (schema instanceof z.ZodRecord)
+    return {
+      type: 'object',
+      additionalProperties: toJsonSchema(schema.def.valueType as z.ZodTypeAny),
+    };
   if (schema instanceof z.ZodObject) {
     const shape = schema.shape as Record<string, z.ZodTypeAny>;
     const properties: Json = {};

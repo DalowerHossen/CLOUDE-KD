@@ -186,7 +186,12 @@ async function main(): Promise<void> {
     assert.equal(result.status, 'authorized');
     assert.equal(result.processorTransactionId, CH);
     assert.ok(result.amount.eq('120.50'));
-    assert.deepEqual(result.cardIdentity, { type: 'fingerprint', value: '9v09mPMLP5NMNM0m' });
+    assert.deepEqual(result.cardIdentity, {
+      type: 'fingerprint',
+      value: '9v09mPMLP5NMNM0m',
+      last4: '5439',
+      brand: 'v',
+    });
     assert.equal(result.avsPostalCodeMatch, true);
     assert.deepEqual(result.threeDS, {
       requested: false,
@@ -501,6 +506,8 @@ async function main(): Promise<void> {
     assert.deepEqual(cardIdentity(card({ fingerprint: undefined }).data as Json), {
       type: 'fingerprint',
       value: '401200|5439|V|12/2029',
+      last4: '5439',
+      brand: 'v',
     });
     assert.equal(
       cardIdentity(card({ fingerprint: undefined, last4digit: undefined }).data as Json),

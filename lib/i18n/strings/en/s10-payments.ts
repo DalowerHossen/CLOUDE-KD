@@ -6,6 +6,37 @@ export const strings = {
     webhooks: 'Webhook deliveries',
     payments: 'Payments',
     gateway: 'Payment overview',
+    cardSearch: 'Find by card',
+  },
+  cardSearch: {
+    title: 'Find a payment by card',
+    description:
+      'Type the last four digits of the card to see who paid, where, how much and when. Four digits match many cards, so a search covers a time window (the last 90 days unless you choose dates) and shows at most 50 payments.',
+    adminDescription:
+      'Find payments of all companies by the last four digits of the card. A search needs a recent sign-in check and a reason, and every search is written to the audit log. Only payments made after this feature was switched on carry the digits.',
+    last4: 'Last four digits',
+    brand: 'Card brand (optional)',
+    from: 'From (date)',
+    to: 'To (date)',
+    amountMin: 'Smallest amount (optional)',
+    amountMax: 'Largest amount (optional)',
+    company: 'Company id (optional)',
+    reason: 'Why are you looking? (at least 10 characters)',
+    search: 'Search',
+    searching: 'Searching...',
+    none: 'No payment found. Payments made before the digits were kept are not found.',
+    columns: {
+      when: 'Date and time',
+      amount: 'Amount',
+      card: 'Card',
+      merchant: 'Paid to',
+      payer: 'Payer',
+      contact: 'Contact',
+      address: 'Address',
+      status: 'Status',
+      invoice: 'Invoice',
+    },
+    failed: 'The search failed.',
   },
   review: {
     title: 'Payment review',
@@ -111,6 +142,8 @@ export const strings = {
     sandbox: 'Test mode: no real money is moved.',
     refundPolicy:
       'Refunds are possible for {days} days after the payment. Contact the seller to ask for one.',
+    backToStore: 'Return to the store',
+    cancelToStore: 'Cancel and return to the store',
   },
   list: {
     title: 'Payments',
