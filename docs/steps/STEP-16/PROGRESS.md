@@ -31,3 +31,8 @@
 - [x] 16.15.a Automatic settlement entries: table (2026-10-24)
 - [x] 16.15.b Automatic settlement entries: rules and services (2026-10-24)
 - [x] 16.15.c Automatic settlement entries: route, page and closure (2026-10-24)
+
+## Owner screens and fixes (owner request, after the first live run)
+
+- Done: sign-out CSRF fix; short owner menu with "Show all features"; personal profile page and API; plan feature "no limit" fix (S16_023) with a self-healing seed; verify script `step16-owner-menu`.
+- Not built (needs its own sub-steps): (a) payment link sent with the invoice only after verification (no verification check exists in the invoice or link services today); (b) a cancel option on the buyer's payment page; (c) a hosted checkout plug-in for Shopify and WooCommerce (today the platform only reads store orders through webhooks and REST); (d) page speed: not measured on the live site; the likely cause is the function region.

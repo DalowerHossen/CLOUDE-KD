@@ -29,4 +29,13 @@ export const nav: NavItem[] = [
     roles: 'any',
     order: 20,
   },
+  {
+    id: 'account-profile',
+    labelKey: 's03Auth.nav.profile',
+    href: '/account/profile',
+    icon: 'user',
+    group: 'account',
+    roles: ['owner', 'staff'],
+    order: 10,
+  },
 ];

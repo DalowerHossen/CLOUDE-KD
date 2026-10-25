@@ -21,6 +21,8 @@ export interface AppShellProps {
   user: ShellUser;
   homeHref: string;
   notificationsHref: string | null;
+  /** Short or full menu; undefined when the role has no short menu. */
+  menuMode?: 'essential' | 'all';
   /** Small label next to the logo, for example "Admin". */
   badge?: string;
   children: ReactNode;
@@ -33,13 +35,14 @@ export function AppShell({
   user,
   homeHref,
   notificationsHref,
+  menuMode,
   badge,
   children,
 }: AppShellProps): JSX.Element {
   return (
     <div className="flex min-h-[100dvh]">
       <SkipLink />
-      <Sidebar items={items} homeHref={homeHref} badge={badge} />
+      <Sidebar items={items} homeHref={homeHref} badge={badge} menuMode={menuMode} />
       <MobileDrawer items={items} homeHref={homeHref} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar

@@ -136,34 +136,60 @@ async function loadAll(): Promise<PlanView[]> {
   });
 }
 
-/** Puts the built-in plans into the database when it has none. Safe when two requests do it at once. */
+let seededInThisProcess = false;
+
+/**
+ * Puts the built-in plans and their features into the database and fills in what is missing (a failed earlier run
+ * can leave a plan without features). Safe when two requests do it at once: a duplicate is skipped.
+ */
 export async function ensurePlansSeeded(): Promise<void> {
+  if (seededInThisProcess) return;
   const admin = getAdminSupabase();
-  const { count, error } = await admin
-    .from('plans')
-    .select('id', { count: 'exact', head: true })
-    .is('deleted_at', null);
-  if (error) throw new InternalError(error);
-  if ((count ?? 0) > 0) return;
   for (const [index, key] of PLAN_KEYS.entries()) {
     const def = PLANS[key];
-    const made = await admin
+    let planId: string;
+    const found = await admin
       .from('plans')
-      .insert({ slug: key, name: def.label, sort_order: (index + 1) * 10, visible: key === 'free' })
       .select('id')
-      .single();
-    if (made.error) {
-      if (made.error.code === '23505') continue;
-      throw new InternalError(made.error);
+      .eq('slug', key)
+      .is('deleted_at', null)
+      .maybeSingle();
+    if (found.error) throw new InternalError(found.error);
+    if (found.data) {
+      planId = String(found.data.id);
+    } else {
+      const made = await admin
+        .from('plans')
+        .insert({
+          slug: key,
+          name: def.label,
+          sort_order: (index + 1) * 10,
+          visible: key === 'free',
+        })
+        .select('id')
+        .single();
+      if (made.error) {
+        if (made.error.code === '23505') continue;
+        throw new InternalError(made.error);
+      }
+      planId = String(made.data.id);
     }
-    const rows = Object.entries(def.entitlements).map(([k, v]) => ({
-      plan_id: made.data.id,
-      entitlement_key: k,
-      value: v,
-    }));
+    const have = await admin
+      .from('plan_entitlements')
+      .select('entitlement_key')
+      .eq('plan_id', planId)
+      .is('deleted_at', null);
+    if (have.error) throw new InternalError(have.error);
+    const present = new Set((have.data ?? []).map((r) => String(r.entitlement_key)));
+    // A value of null means "no limit" and is stored as an empty value (migration S16_023).
+    const rows = Object.entries(def.entitlements)
+      .filter(([k]) => !present.has(k))
+      .map(([k, v]) => ({ plan_id: planId, entitlement_key: k, value: v }));
+    if (rows.length === 0) continue;
     const ins = await admin.from('plan_entitlements').insert(rows);
     if (ins.error && ins.error.code !== '23505') throw new InternalError(ins.error);
   }
+  seededInThisProcess = true;
   invalidatePlanCache();
 }
 
