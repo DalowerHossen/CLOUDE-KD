@@ -18,6 +18,7 @@ import { createLogger } from '@/lib/logger';
 import { createAdapter } from '@/lib/email/adapters';
 import { PermanentEmailError, type EmailAdapter, type OutgoingMessage } from '@/lib/email/types';
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { configHold } from '@/lib/email/hold';
 import { resolveChain, type ResolvedProvider } from './settings-store';
 
 const log = createLogger({ component: 'email-sender' });
@@ -33,9 +34,25 @@ export const outboxRow = z
     body_text: z.string(),
     tracking_token: z.string().nullable(),
     attempts: z.number().int(),
+    created_at: z.string().optional(),
   })
   .strip();
 export type OutboxRow = z.infer<typeof outboxRow>;
+
+const CONFIG_RETRY_MINUTES = 15;
+const CONFIG_ALERT_EVERY_MS = 3_600_000;
+let lastConfigAlertAt = 0;
+
+/** Tells the platform team (once an hour per server) that no e-mail can be sent because the provider's settings are refused. */
+async function alertProviderConfig(message: string): Promise<void> {
+  const now = Date.now();
+  if (now - lastConfigAlertAt < CONFIG_ALERT_EVERY_MS) return;
+  lastConfigAlertAt = now;
+  log.error('e-mail provider settings are refused; messages are held', { message });
+  await tryGetService('security')
+    ?.raiseSecurityEvent('other', { reason: 'email_provider_config', message })
+    .catch(() => undefined);
+}
 
 const startOfDay = (d = new Date()): Date =>
   new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -165,6 +182,8 @@ export async function deliver(row: OutboxRow): Promise<'sent' | 'retry' | 'faile
       return 'failed';
     }
     let lastTemporary = '';
+    let sawTemporary = false;
+    let sawConfig = false;
     let allLimited = true;
     for (const provider of chain) {
       if (await overLimit(provider)) continue;
@@ -197,6 +216,8 @@ export async function deliver(row: OutboxRow): Promise<'sent' | 'retry' | 'faile
         }
         // Temporary trouble or wrong provider settings: the next provider of the chain gets the message.
         lastTemporary = error instanceof Error ? error.message : 'The provider failed.';
+        if (error instanceof PermanentEmailError) sawConfig = true;
+        else sawTemporary = true;
         log.warn('e-mail provider failed', {
           provider: provider.kind,
           scope: provider.scope,
@@ -209,6 +230,21 @@ export async function deliver(row: OutboxRow): Promise<'sent' | 'retry' | 'faile
       await report(row, 'defer', {
         error: 'All providers reached their sending limit.',
         retryAt: nextDay(),
+      });
+      return 'defer';
+    }
+    // Every provider refused its own settings (wrong sign-in, missing server): this is not the message's fault, so it does not use
+    // up an attempt. It waits and is sent as soon as the settings are fixed, unless it is too old to be useful.
+    const hold = configHold(sawConfig, sawTemporary, row.created_at ?? null, new Date());
+    if (hold === 'give_up') {
+      await report(row, 'failed', { error: lastTemporary });
+      return 'failed';
+    }
+    if (hold === 'hold') {
+      await alertProviderConfig(lastTemporary);
+      await report(row, 'defer', {
+        error: lastTemporary,
+        retryAt: new Date(Date.now() + CONFIG_RETRY_MINUTES * 60_000).toISOString(),
       });
       return 'defer';
     }

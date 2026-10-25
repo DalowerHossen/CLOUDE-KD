@@ -362,7 +362,17 @@ export async function voidInvoice(
 ): Promise<InvoiceView> {
   if (!actor.companyId) throw new ValidationError('A company is needed.');
   if (actor.role !== 'owner') throw new ForbiddenError();
-  const companyId = actor.companyId;
+  return voidCore(actor.companyId, id, reason, actor.userId, options);
+}
+
+/** The work of voiding, after the checks of who may do it. `by` is null when the client cancelled through the invoice link. */
+export async function voidCore(
+  companyId: string,
+  id: string,
+  reason: string,
+  by: string | null,
+  options: { acknowledgePayments: boolean },
+): Promise<InvoiceView> {
   const current = await getInvoice(companyId, id);
   if (current.status === 'void') throw new ValidationError('This invoice is already void.');
   if (current.status === 'paid')
@@ -387,7 +397,7 @@ export async function voidInvoice(
   if (r.error) throw new InternalError(r.error);
   if (!r.data || r.data.length === 0) throw new ConflictError();
   await releaseBilledWork(companyId, id).catch(() => undefined);
-  await logInvoiceEvent(companyId, id, 'voided', `Voided: ${reason}`, actor.userId);
+  await logInvoiceEvent(companyId, id, 'voided', `Voided: ${reason}`, by);
   const voided = await getInvoice(companyId, id);
   if (current.number)
     await getService('events').publish({
@@ -405,7 +415,11 @@ export async function voidInvoice(
     resourceType: 'invoice',
     resourceId: id,
     companyId,
-    metadata: { reason, partiallyPaid: !Money.parse(voided.amountPaid).isZero(), by: actor.userId },
+    metadata: {
+      reason,
+      partiallyPaid: !Money.parse(voided.amountPaid).isZero(),
+      by: by ?? 'client',
+    },
   });
   return voided;
 }

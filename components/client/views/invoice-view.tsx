@@ -73,7 +73,7 @@ function zero(value: string): boolean {
 
 /** The client's page for one invoice: the same content as the PDF, with pay, download, print and contact buttons. */
 export async function renderInvoiceView(subject: PortalSubject, token: string): Promise<ReactNode> {
-  const { data, status, canPay, steps } = await getPortalInvoice(subject);
+  const { data, status, canPay, canCancel, steps } = await getPortalInvoice(subject);
   const seller = data.seller;
   const statusKey = STATUS_KEYS[status];
   const timeline: ReadonlyArray<readonly [string, boolean]> = [
@@ -187,6 +187,7 @@ export async function renderInvoiceView(subject: PortalSubject, token: string): 
       <InvoiceActions
         token={token}
         canPay={canPay}
+        canCancel={canCancel}
         contactEmail={seller.email}
         invoiceNumber={data.number}
       />

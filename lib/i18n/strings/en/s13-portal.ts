@@ -47,6 +47,16 @@ export const strings = {
       "Your card details are typed only in the payment provider's secure form. We never see them.",
   },
   invoice: {
+    cancel: 'Cancel this invoice',
+    cancelTitle: 'Cancel this invoice?',
+    cancelBody:
+      'Use this if the invoice is not right or you do not want it. Nothing has been paid on it. The seller is told. This cannot be undone here.',
+    cancelReason: 'Why? (optional)',
+    cancelConfirm: 'Yes, cancel the invoice',
+    cancelKeep: 'Keep the invoice',
+    cancelling: 'Cancelling...',
+    cancelled: 'The invoice was cancelled and the seller was told.',
+    cancelFailed: 'The invoice could not be cancelled. Please contact the seller.',
     billTo: 'Bill to',
     shipTo: 'Ship to',
     from: 'From',
