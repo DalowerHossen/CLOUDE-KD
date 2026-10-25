@@ -33,7 +33,6 @@ export function LoginForm({
 }): JSX.Element {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
-  const [needCaptcha, setNeedCaptcha] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
   const [remember, setRemember] = useState(false);
@@ -64,7 +63,6 @@ export function LoginForm({
       else router.replace('/login/two-factor-setup');
       return;
     }
-    if (result.issues.some((i) => i.path === 'turnstileToken')) setNeedCaptcha(true);
     setMessage(result.status === 429 ? t('s03Auth.login.rateLimited') : t('s03Auth.login.failed'));
     setResetKey((k) => k + 1);
   }
@@ -106,7 +104,7 @@ export function LoginForm({
         />
         <Label htmlFor="login-remember">{t('s03Auth.login.remember')}</Label>
       </div>
-      {needCaptcha ? <Turnstile siteKey={siteKey} onToken={setToken} resetKey={resetKey} /> : null}
+      <Turnstile siteKey={siteKey} onToken={setToken} resetKey={resetKey} />
       <SubmitButton className="w-full">{t('s03Auth.login.submit')}</SubmitButton>
       <OAuthButtons providers={providers} />
       <div className="flex flex-col gap-1 text-sm">

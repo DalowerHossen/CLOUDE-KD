@@ -3,7 +3,9 @@
 import { z } from 'zod';
 import { t } from '@/lib/i18n';
 
-const errorBody = z.object({ error: z.object({ message: z.string() }) });
+const errorBody = z.object({
+  error: z.object({ message: z.string(), correlation_id: z.string().optional() }),
+});
 
 export async function sendJson(
   url: string,
@@ -18,7 +20,9 @@ export async function sendJson(
     });
     if (response.ok) return null;
     const parsed = errorBody.safeParse(await response.json().catch(() => null));
-    return parsed.success ? parsed.data.error.message : t('s07Company.adminOps.error');
+    if (!parsed.success) return t('s07Company.adminOps.error');
+    const id = parsed.data.error.correlation_id;
+    return id ? `${parsed.data.error.message} (${id})` : parsed.data.error.message;
   } catch {
     return t('s07Company.adminOps.error');
   }

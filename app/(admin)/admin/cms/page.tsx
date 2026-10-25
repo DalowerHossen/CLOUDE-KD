@@ -37,58 +37,55 @@ const columns: readonly DataColumn<PageListItem>[] = [
   },
 ];
 
-export default async function AdminCmsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ kind?: string }>;
-}): Promise<JSX.Element> {
-  await requirePagePermission('cms.read', 'platform', 'cms');
-  const kind =
-    (await searchParams).kind === 'legal'
-      ? 'legal'
-      : (await searchParams).kind === 'help'
-        ? 'help'
-        : 'page';
-  let rows: PageListItem[] | null;
+const KINDS = ['page', 'legal', 'help'] as const;
+type Kind = (typeof KINDS)[number];
+const TITLE: Record<Kind, 'tabPages' | 'tabLegal' | 'tabHelp'> = {
+  page: 'tabPages',
+  legal: 'tabLegal',
+  help: 'tabHelp',
+};
+
+async function load(kind: Kind): Promise<PageListItem[] | null> {
   try {
-    rows = await listPages(kind);
+    return await listPages(kind);
   } catch {
-    rows = null;
+    return null;
   }
+}
+
+/** Site pages, legal and policy pages and help articles are all shown here, one section each, so none is hidden behind a tab. */
+export default async function AdminCmsPage(): Promise<JSX.Element> {
+  await requirePagePermission('cms.read', 'platform', 'cms');
+  const lists = await Promise.all(KINDS.map(load));
   return (
     <div className="space-y-sp-24">
       <PageHeader title={t('s06Public.cms.title')} description={t('s06Public.cms.description')} />
-      <nav className="flex gap-sp-12 text-sm" aria-label={t('s06Public.cms.title')}>
-        <Link
-          className={kind === 'page' ? 'font-semibold underline' : 'underline'}
-          href="/admin/cms"
-        >
-          {t('s06Public.cms.tabPages')}
-        </Link>
-        <Link
-          className={kind === 'legal' ? 'font-semibold underline' : 'underline'}
-          href="/admin/cms?kind=legal"
-        >
-          {t('s06Public.cms.tabLegal')}
-        </Link>
-        <Link
-          className={kind === 'help' ? 'font-semibold underline' : 'underline'}
-          href="/admin/cms?kind=help"
-        >
-          {t('s06Public.cms.tabHelp')}
-        </Link>
+      <nav className="flex flex-wrap gap-sp-12 text-sm" aria-label={t('s06Public.cms.title')}>
+        {KINDS.map((k) => (
+          <a key={k} className="underline" href={`#cms-${k}`}>
+            {t(`s06Public.cms.${TITLE[k]}`)}
+          </a>
+        ))}
       </nav>
-      {rows === null ? (
-        <ErrorState description={t('s06Public.cms.loadError')} />
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={rows}
-          getRowId={(r) => r.slug}
-          caption={t('s06Public.cms.title')}
-        />
-      )}
-      {kind !== 'legal' ? <NewPageForm kind={kind} /> : null}
+      {KINDS.map((kind, i) => {
+        const rows = lists[i] ?? null;
+        return (
+          <section key={kind} id={`cms-${kind}`} className="space-y-sp-12">
+            <h2 className="text-h3 font-semibold">{t(`s06Public.cms.${TITLE[kind]}`)}</h2>
+            {rows === null ? (
+              <ErrorState description={t('s06Public.cms.loadError')} />
+            ) : (
+              <DataTable
+                columns={columns}
+                rows={rows}
+                getRowId={(r) => r.slug}
+                caption={t(`s06Public.cms.${TITLE[kind]}`)}
+              />
+            )}
+            {kind !== 'legal' ? <NewPageForm kind={kind} /> : null}
+          </section>
+        );
+      })}
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { JsonForm } from '@/app/(dashboard)/wallet/_components/json-form';
 import { AccountButton, ConnectAccountForm } from '@/components/social/social-forms';
 import { PageHeader } from '@/components/shared/page-header';
 import { ErrorState } from '@/components/shared/state-views';
+import { Alert } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -19,13 +21,19 @@ import { getService } from '@/lib/container';
 import { t, type StringKey } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { listAccounts, type SocialAccountView } from '@/services/social/accounts';
+import { metaLoginAvailable } from '@/services/social/meta-connect';
 import { listGroups, type HashtagGroupView } from '@/services/social/hashtags';
 import { SocialTabs } from './tabs';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Social media' };
 
-export default async function SocialAccountsPage(): Promise<JSX.Element> {
+export default async function SocialAccountsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ connect?: string }>;
+}): Promise<JSX.Element> {
+  const { connect } = await searchParams;
   const actor = await requirePagePermission('social.read', 'tenant', 'social_account');
   const companyId = actor.companyId as string;
   const permissions = getService('permissions');
@@ -45,6 +53,26 @@ export default async function SocialAccountsPage(): Promise<JSX.Element> {
         description={t('s16Social.accounts.description')}
         actions={<SocialTabs current="/social" />}
       />
+      {connect === 'done' ? (
+        <Alert variant="success">{t('s16Social.accounts.connectDone')}</Alert>
+      ) : null}
+      {connect === 'cancelled' ? <Alert>{t('s16Social.accounts.connectCancelled')}</Alert> : null}
+      {connect === 'failed' ? (
+        <Alert variant="destructive">{t('s16Social.accounts.connectFailed')}</Alert>
+      ) : null}
+      {canManage && metaLoginAvailable() ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('s16Social.accounts.facebookButton')}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t('s16Social.accounts.facebookHint')}</p>
+          </CardHeader>
+          <CardContent>
+            <form action="/api/social/connect/facebook/start" method="get">
+              <Button type="submit">{t('s16Social.accounts.facebookButton')}</Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
       {canManage ? (
         <Card>
           <CardHeader>

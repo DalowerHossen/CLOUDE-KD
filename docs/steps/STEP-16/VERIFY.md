@@ -178,3 +178,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-card-search.ts` (7 checks): card facts keep four digits and a clean brand; the adapters (Adyen, BlueSnap, Braintree with and without the unique id, Square, Paddle, PayPal, Verifone with and without a token) give the digits and the brand and the identity HMAC is the same with and without them; the input rules (four digits, window, amounts, reason, strict keys); an owner sees only the own company, in the window, with the payer facts; platform staff see all companies with the merchant and site and the audit entry holds the reason and the count but no person; the platform search is refused without a platform role, the permission, a fresh sign-in check or room in the rate limit.
 - `sql/assertions/s16_029_payment_card_last4.sql`: the columns, their checks and the two indexes.
 - Not verified: a real payment through a processor returning the digits (sandbox), the pages in a browser. Stripe and Authorize.Net payments carry no digits yet.
+
+## 16.18 Connect with Facebook
+
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-meta-connect.ts` (9 checks): the login address; the state held only as a hash; another owner, another company or a made-up state cannot finish; code to short token to long token to Pages with a fake Facebook and the app secret never in a recorded address; no token stored in clear; the state works once; the page gets names only; picking connects Page and Instagram with the Page token (no expiry) and refuses a Page without the create-content task or an Instagram pick without an account; the pending list is gone after use; a refused code stops the login.
+- `sql/assertions/s16_030_social_connect.sql`: RLS, one session per state, a 64 character hash.
+- Not verified: a real login against Facebook, App Review, a real post.

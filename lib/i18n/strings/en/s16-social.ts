@@ -2,6 +2,22 @@
 // Strings of the social media pages (STEP 16). English only.
 export const strings = {
   nav: { social: 'Social media' },
+  connect: {
+    title: 'Connect with Facebook',
+    description: 'Choose the Pages and Instagram accounts you want to post to.',
+    choose: 'Accounts to connect',
+    page: 'Facebook Page: {name}',
+    instagram: 'Instagram account: @{name}',
+    noRole: 'you cannot create posts on this Page',
+    noPages:
+      'Facebook did not give us any Page. You need a Facebook Page where you can create content, and you must tick the Pages in the Facebook login.',
+    submit: 'Connect the chosen accounts',
+    connecting: 'Connecting...',
+    failed: 'The accounts could not be connected.',
+    continue: 'Continue',
+    expired: 'This login ran out or was already used. Start again from the social media page.',
+    back: 'Back to social media',
+  },
   common: {
     loadError: 'The data could not be loaded. Try again.',
     done: 'Saved.',
@@ -33,6 +49,13 @@ export const strings = {
       'Connect your pages and profiles, write posts and publish them now or at a time you choose. Use the sandbox account to try everything without posting anywhere.',
     empty: 'No accounts connected yet.',
     connectTitle: 'Connect an account',
+    facebookButton: 'Connect with Facebook',
+    facebookHint:
+      'Log in with Facebook and choose your Pages and the Instagram accounts connected to them. You do not need to copy any token.',
+    connectDone: 'Your accounts were connected.',
+    connectCancelled: 'The Facebook login was cancelled. Nothing was connected.',
+    connectFailed:
+      'The Facebook login did not work. Try again, or connect an account by hand below.',
     provider: 'Network',
     name: 'Name to show here',
     externalId:

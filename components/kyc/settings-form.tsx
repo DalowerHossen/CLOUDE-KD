@@ -21,7 +21,7 @@ import {
 
 type DocChoice = 'required' | 'optional' | 'off';
 interface Failure {
-  error?: { code?: string; message?: string };
+  error?: { code?: string; message?: string; correlation_id?: string };
 }
 
 const choiceOf = (p: KycProfile, d: KycDocType): DocChoice =>
@@ -89,7 +89,9 @@ export function KycSettingsForm({
           text:
             json?.error?.code === 'step_up_required'
               ? t('s07Company.kycSettings.needStepUp')
-              : (json?.error?.message ?? t('s07Company.kycSettings.failed')),
+              : json?.error?.message
+                ? `${json.error.message}${json.error.correlation_id ? ` (${json.error.correlation_id})` : ''}`
+                : t('s07Company.kycSettings.failed'),
         });
       } else {
         setVersion(json?.data?.version ?? version + 1);

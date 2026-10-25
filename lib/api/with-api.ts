@@ -134,6 +134,38 @@ async function readBody(
   }
 }
 
+const lastErrorRecord = new Map<string, number>();
+
+/**
+ * Keeps a short, value-free note of a server failure in the security events (once a minute per route and server), so a platform
+ * administrator can read what failed behind "Something went wrong" together with its correlation id. Never throws.
+ */
+async function recordServerError(
+  route: string,
+  thrown: unknown,
+  correlationId: string,
+): Promise<void> {
+  const now = Date.now();
+  if (now - (lastErrorRecord.get(route) ?? 0) < 60_000) return;
+  lastErrorRecord.set(route, now);
+  const e = thrown as { name?: unknown; message?: unknown; code?: unknown; cause?: unknown } | null;
+  const cause = e?.cause as { code?: unknown; message?: unknown } | undefined;
+  const text = (v: unknown): string => (typeof v === 'string' ? v.slice(0, 200) : '');
+  try {
+    await getService('security').raiseSecurityEvent('other', {
+      reason: 'api_internal_error',
+      route,
+      correlationId,
+      name: text(e?.name),
+      message: text(e?.message),
+      code: text(e?.code) || text(cause?.code),
+      causeMessage: text(cause?.message),
+    });
+  } catch {
+    // Recording must never make the failure worse.
+  }
+}
+
 export function withApi<
   B extends z.ZodTypeAny = z.ZodUndefined,
   Q extends z.ZodTypeAny = z.ZodUndefined,
@@ -312,7 +344,10 @@ export function withApi<
             baseLog.warn('idempotency release failed', { route: options.id });
           }
         }
-        if (error.status >= 500) baseLog.error('request failed', { error: thrown });
+        if (error.status >= 500) {
+          baseLog.error('request failed', { error: thrown });
+          await recordServerError(options.id, thrown, correlationId);
+        }
         return errorResponse(error, correlationId);
       }
     });
