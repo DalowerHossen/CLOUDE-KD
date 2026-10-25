@@ -44,6 +44,8 @@ export const DOMAIN_EVENT_NAMES = [
   'expense.created',
   'payroll.run_approved',
   'payroll.run_paid',
+  'checkout.session.paid',
+  'checkout.session.failed',
 ] as const;
 
 export type DomainEventName = (typeof DOMAIN_EVENT_NAMES)[number];

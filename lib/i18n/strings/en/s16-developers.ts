@@ -22,6 +22,34 @@ export const strings = {
     'write:estimates': 'Create and change estimates',
     'read:webhooks': 'Read webhook endpoints',
     'write:webhooks': 'Manage webhook endpoints',
+    'read:checkout': 'Read hosted checkout sessions',
+    'write:checkout': 'Make and cancel hosted checkout sessions',
+  },
+  checkout: {
+    link: 'Store checkout',
+    title: 'Store checkout',
+    description:
+      'Take payments from your WooCommerce, Shopify or own web store on a payment page that carries our brand. Your store asks for a payment page for each order and sends the buyer to it; the buyer needs no account. You are told about the result with a webhook.',
+    kycTitle: 'Your business check (KYC)',
+    kycApproved: 'Approved. You can make live checkout keys.',
+    kycOther:
+      'Not approved yet (status: {status}). Live checkout keys are available as soon as your business check is approved.',
+    kycLink: 'Open the business check',
+    keyTitle: 'Make a checkout key',
+    keyHint:
+      'Choose the scopes "Make and cancel hosted checkout sessions" and "Read hosted checkout sessions". The key is shown once. Keep it on your store server, never in a web page.',
+    stepsTitle: 'How your store uses it',
+    step1:
+      'When the buyer presses pay, your store sends POST {base}/api/public/v1/checkout/sessions with the key as a Bearer token, an Idempotency-Key header and the order (order id, amount, buyer, two https return addresses).',
+    step2:
+      'Send the buyer to the checkout_url of the answer. Asking again for the same order id returns the same page, and an order that is paid cannot be paid again.',
+    step3:
+      'Make a webhook endpoint for the events checkout.session.paid and checkout.session.failed. Mark the order paid when checkout.session.paid arrives (check the signature, and check the order id and the amount).',
+    step4:
+      'Cancelled orders: send DELETE {base}/api/public/v1/checkout/sessions/<id>. Paid orders are refunded from your payments page, not cancelled.',
+    webhooksLink: 'Open webhooks',
+    keysLink: 'Open API keys',
+    docsLink: 'Read the API documentation',
   },
   keys: {
     title: 'API keys',

@@ -219,3 +219,26 @@ The main merchant's app posts sales, refunds and chargebacks of its sub-merchant
 ### 16.15.c Route, page and closure
 
 - Goal: `POST /api/gateway/settlement/v1/entries`, key management routes and the section on the settlement page, docs, VERIFY, HANDOFF, PROGRESS.
+
+## 16.16 White-label hosted checkout API (owner request, 2026-10-25)
+
+A merchant's store (WooCommerce, Shopify or its own code) gets a key after its business check (KYC) is approved. For each order it asks the platform for a checkout session and sends the buyer to the returned address, a payment page with the platform's brand. The buyer needs no account; one order is one session and a paid order cannot be paid again; the store learns the result through webhooks. The merchant never sees which processor or master merchant the platform uses. Design decisions are D37 in `DECISIONS.md`.
+
+### 16.16.a Contracts (the Integrator's part)
+
+- Goal: `invoices.createForOrder`, `invoices.voidForOrder`, `payments.createLink`, `payments.revokeLink` (resolves BLOCKERS B1 for this feature only), the events `checkout.session.paid` and `checkout.session.failed`.
+- Files: `types/contracts/{invoice,payment}.ts`, `types/events.ts`, `services/invoice/order-invoice.ts`, `services/payment/order-links.ts`, the two `register.ts`, `docs/execution/CONTRACTS.md`.
+
+### 16.16.b Table
+
+- Goal: `checkout_sessions` (one row per order of a company, claim state `creating`, sealed address, https return addresses).
+- Files: `migrations/S16_028_checkout_sessions.sql` (+ `_down`), `sql/assertions/s16_028_checkout_sessions.sql`.
+
+### 16.16.c Rules, service, routes
+
+- Goal: strict input, the claim, KYC gate, replay, reopen, cancel; `POST/GET/DELETE /api/public/v1/checkout/sessions`; scopes `read:checkout` and `write:checkout` (live keys only after KYC); the event worker that writes the webhook events; the return to the store on the hosted page.
+- Files: `lib/checkout/session-rules.ts`, `services/checkout/sessions.ts`, `app/api/public/v1/checkout/**`, `workers/integrations/checkout-session-events.event.ts`, `lib/integrations/public-registry.ts`, `components/payment/checkout-panel.tsx`, `scripts/verify/step16-checkout.ts`.
+
+### 16.16.d Owner page and closure
+
+- Goal: `(dashboard)/developers/checkout` (KYC state, key, steps), `docs/integrations/checkout-api.md`, VERIFY, PROGRESS.

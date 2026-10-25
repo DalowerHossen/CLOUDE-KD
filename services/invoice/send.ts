@@ -100,7 +100,7 @@ function eventLines(
 }
 
 /** The work of sending, after the checks: number, seller block and status in one database transaction. */
-async function finalizeSend(
+export async function finalizeSend(
   companyId: string,
   id: string,
   by: string,

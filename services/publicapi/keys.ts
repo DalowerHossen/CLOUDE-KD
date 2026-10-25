@@ -6,7 +6,13 @@
 import 'server-only';
 import { MAX_KEYS_PER_COMPANY } from '@/config/s16-api';
 import { getService } from '@/lib/container';
-import { ConflictError, InternalError, NotFoundError, ValidationError } from '@/lib/errors';
+import {
+  ConflictError,
+  ForbiddenError,
+  InternalError,
+  NotFoundError,
+  ValidationError,
+} from '@/lib/errors';
 import {
   expiryFromDays,
   hashKey,
@@ -26,7 +32,7 @@ import { mapIntegrationError } from './db-errors';
 import { seedSandbox } from './sandbox';
 
 const COLUMNS =
-  'id, company_id, name, key_prefix, key_hash, last_chars, mode, scopes, rate_limit_per_minute, expires_at, revoked_at, rotated_from, created_at, last_used_at, last_used_ip, version';
+  'id, company_id, name, key_prefix, key_hash, last_chars, mode, scopes, rate_limit_per_minute, expires_at, revoked_at, rotated_from, created_by, created_at, last_used_at, last_used_ip, version';
 
 interface Row {
   id: string;
@@ -41,6 +47,7 @@ interface Row {
   expires_at: string | null;
   revoked_at: string | null;
   rotated_from: string | null;
+  created_by: string | null;
   created_at: string;
   last_used_at: string | null;
   last_used_ip: string | null;
@@ -72,6 +79,8 @@ export interface KeyAuth {
   scopes: string[];
   rateLimitPerMinute: number;
   lastUsedAt: string | null;
+  /** The owner who made the key; a checkout session is made on this person's behalf. */
+  createdBy: string | null;
 }
 
 const toView = (r: Row, now: Date): KeyView => ({
@@ -175,6 +184,19 @@ async function insertKey(
   return { view: toView(data as unknown as Row, new Date()), secret: made.secret };
 }
 
+/** Live checkout credentials are only for companies whose business check (KYC) is approved. */
+async function requireKycForCheckout(
+  companyId: string,
+  mode: KeyMode,
+  scopes: readonly string[],
+): Promise<void> {
+  if (mode !== 'live' || !scopes.some((x) => x.endsWith(':checkout'))) return;
+  if (!(await getService('kyc').isVerified(companyId)))
+    throw new ForbiddenError(
+      'Checkout credentials are available after your business check (KYC) is approved.',
+    );
+}
+
 export async function createKey(
   actor: Actor,
   input: unknown,
@@ -184,6 +206,7 @@ export async function createKey(
   if (!parsed.success)
     throw new ValidationError(parsed.error.issues[0]?.message ?? 'The key is not valid.');
   const d = parsed.data;
+  await requireKycForCheckout(companyId, d.mode, d.scopes);
   const live = await listKeys(companyId);
   if (live.filter((k) => k.state === 'active').length >= MAX_KEYS_PER_COMPANY)
     throw new ConflictError(`A company can have ${MAX_KEYS_PER_COMPANY} active keys at most.`);
@@ -216,6 +239,8 @@ export async function updateKey(actor: Actor, id: string, input: unknown): Promi
   if (d.rateLimitPerMinute !== undefined) patch.rate_limit_per_minute = d.rateLimitPerMinute;
   const current = await getRow(companyId, id);
   if (current.revoked_at !== null) throw new ConflictError('A revoked key cannot be changed.');
+  if (d.scopes !== undefined)
+    await requireKycForCheckout(companyId, current.mode === 'sandbox' ? 'sandbox' : 'live', d.scopes);
   const { data, error } = await getAdminSupabase()
     .from('api_keys')
     .update(patch)
@@ -301,5 +326,6 @@ export async function authenticateKey(secret: string, now: Date): Promise<KeyAut
     scopes: r.scopes,
     rateLimitPerMinute: r.rate_limit_per_minute,
     lastUsedAt: r.last_used_at,
+    createdBy: r.created_by,
   };
 }

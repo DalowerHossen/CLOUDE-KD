@@ -111,6 +111,8 @@ export const strings = {
     sandbox: 'Test mode: no real money is moved.',
     refundPolicy:
       'Refunds are possible for {days} days after the payment. Contact the seller to ask for one.',
+    backToStore: 'Return to the store',
+    cancelToStore: 'Cancel and return to the store',
   },
   list: {
     title: 'Payments',

@@ -34,7 +34,23 @@ export interface CreatePaymentInput {
   returnUrl: string;
 }
 
+export interface OrderPaymentLink {
+  linkId: Uuid;
+  /** The address of the hosted payment page the buyer is sent to. */
+  url: string;
+  expiresAt: string;
+}
+
 export interface PaymentService {
+  /** A payment link for an invoice of the company, made on behalf of a person (no session needed). */
+  createLink(input: {
+    companyId: Uuid;
+    invoiceId: Uuid;
+    createdBy: Uuid;
+    validHours: number | null;
+  }): Promise<OrderPaymentLink>;
+  /** Stops a payment link from working. Safe to call for a link that is already stopped. */
+  revokeLink(input: { companyId: Uuid; linkId: Uuid }): Promise<void>;
   createPayment(input: CreatePaymentInput): Promise<PaymentSummary>;
   refund(
     paymentId: Uuid,

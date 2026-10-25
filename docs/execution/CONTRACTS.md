@@ -24,9 +24,9 @@ All money values in contracts use the `Money` type (decimal.js wrapper, USD, 4 d
 | `notification.ts` | `notification` | 05 | all | `notify({ userId or companyId, type, data })` |
 | `pdf.ts` | `pdf` | 09 | 10,13,15 | `render(kind, data)` -> bytes; kinds: invoice, estimate, receipt, payslip, report, evidence-pack |
 | `client.ts` | `clients` | 08 | 09,10,13 | `getById(id)`; `getBilling(id)` -> name, email, billing postal code, country |
-| `invoice.ts` | `invoices` | 09 | 10,13,14,15,16 | `getForPayment(invoiceId)` -> amountDue, currency=USD, billingPostalCode, billingCountry, status, version; `applyPayment({ invoiceId, paymentId, amount })`; `markDisputed`; `snapshot(invoiceId)` |
+| `invoice.ts` | `invoices` | 09 | 10,13,14,15,16 | `getForPayment(invoiceId)` -> amountDue, currency=USD, billingPostalCode, billingCountry, status, version; `applyPayment({ invoiceId, paymentId, amount })`; `markDisputed`; `snapshot(invoiceId)`; `createForOrder({ companyId, createdBy, reference, customerName, customerEmail, customerCountry, customerPostalCode, description, amount })` -> `{ invoiceId, invoiceNumber }` (a sent one-line invoice for an outside order); `voidForOrder({ companyId, invoiceId, voidedBy, reason })` |
 | `payment-adapter.ts` | (static types) | 01 types, 10 re-exports | 10,11,12 | `ProcessorAdapter` interface, `ProcessorId` union (16 ids), `ProcessorCapabilities`, `DeclineCategory`, `CredentialField`, `ProcessorMode` (see PAYMENT_PROCESSORS.md section 5) |
-| `payment.ts` | `payments` | 10 | 09,13,14,15,16 | `createPayment({ invoiceId, idempotencyKey, ... })`; `refund(paymentId, amount)`; `getPayment(id)`; `listReview()` |
+| `payment.ts` | `payments` | 10 | 09,13,14,15,16 | `createPayment({ invoiceId, idempotencyKey, ... })`; `refund(paymentId, amount)`; `getPayment(id)`; `listReview()`; `createLink({ companyId, invoiceId, createdBy, validHours })` -> `{ linkId, url, expiresAt }`; `revokeLink({ companyId, linkId })` |
 | `entitlement.ts` | `entitlement` | 01 (config-based base in `lib/entitlement/`), 14 (database-backed, registered with `override: true`) | all | `has(companyId, key)`; `limit(companyId, key)` |
 | `wallet.ts` | `wallet` | 14 | 10,13 | `credit`, `debit`, `hold`, `release` (ledger entries, serializable) |
 | `kyc.ts` | `kyc` | 07 | 10,14 | `status(companyId)`; `isVerified(companyId)` |
