@@ -9,6 +9,8 @@ export interface CspInput {
   supabaseOrigin?: string;
   /** Payment profile only: the processor's script, frame and API origins. */
   processorOrigins?: readonly string[];
+  /** Embed page only: the web sites that may show this page in a frame. Without it nobody may. */
+  frameAncestors?: readonly string[];
   production: boolean;
   reportUri?: string;
 }
@@ -29,6 +31,9 @@ export function buildCsp(input: CspInput): string {
     .map(originOf)
     .filter((o): o is string => o !== null);
   const nonce = `'nonce-${input.nonce}'`;
+  const ancestors = (input.frameAncestors ?? []).filter((o) =>
+    /^https?:\/\/[A-Za-z0-9.:-]+$/.test(o),
+  );
 
   const connect = ["'self'"];
   if (supabase) connect.push(supabase, supabase.replace('https://', 'wss://'));
@@ -56,7 +61,7 @@ export function buildCsp(input: CspInput): string {
     ['font-src', ["'self'"]],
     ['connect-src', connect],
     ['frame-src', frames.length > 0 ? frames : ["'none'"]],
-    ['frame-ancestors', ["'none'"]],
+    ['frame-ancestors', ancestors.length > 0 ? ancestors : ["'none'"]],
     ['base-uri', ["'self'"]],
     ['form-action', ["'self'"]],
     ['object-src', ["'none'"]],
@@ -81,5 +86,9 @@ export function buildTrustedTypesPolicy(reportUri?: string): string {
 
 /** Pages that take card details or payment confirmations use the strict payment profile. */
 export function profileForPath(pathname: string): CspProfile {
-  return pathname.startsWith('/pay/') || pathname.startsWith('/portal/pay') ? 'payment' : 'default';
+  return pathname.startsWith('/pay/') ||
+    pathname.startsWith('/portal/pay') ||
+    pathname.startsWith('/embed/')
+    ? 'payment'
+    : 'default';
 }

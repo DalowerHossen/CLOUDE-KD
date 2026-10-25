@@ -31,12 +31,13 @@ import { getProcessorRow, loadCurrentCredentials } from './credential-store';
 import { getRow, toSummary } from './payment-store';
 import { resumePayment, startPayment, type PaymentResult } from './payments';
 import { resolveRoute } from './routing';
+import { originsOfCompany } from './embed-origins';
 
 const LINK_COLUMNS =
   'id, company_id, invoice_id, token_id, status, amount, expires_at, use_count, max_uses, created_by, created_at, version';
 const PAYABLE = ['sent', 'viewed', 'partially_paid', 'overdue'];
 
-interface LinkRow {
+export interface LinkRow {
   id: string;
   company_id: string;
   invoice_id: string;
@@ -180,7 +181,7 @@ export async function revokePaymentLink(actor: Actor, id: string): Promise<void>
 }
 
 /** The public side: finds the link behind a token. Every refusal looks the same (404). */
-async function resolveLink(token: string): Promise<LinkRow> {
+export async function resolveLink(token: string): Promise<LinkRow> {
   const verified = await getService('tokens').verify(token);
   if (!verified.valid || verified.docType !== 'payment') throw new NotFoundError();
   const { data, error } = await getAdminSupabase()
@@ -219,7 +220,7 @@ export interface CheckoutView {
   refundWindowDays: number;
 }
 
-async function payableInvoice(
+export async function payableInvoice(
   link: LinkRow,
 ): Promise<{ invoice: InvoiceForPayment; amount: Money }> {
   const invoice = await getService('invoices').getForPayment(link.invoice_id);
@@ -311,9 +312,13 @@ export async function payViaLink(
     returnUrl: string;
     idempotencyKey: string;
     payerIp: string;
+    /** Set when the payment starts in a checkout frame on a merchant's web site (the embedded checkout). */
+    embedOrigin?: string | null;
   },
 ): Promise<PaymentResult> {
   const link = await resolveLink(token);
+  if (input.embedOrigin && !(await originsOfCompany(link.company_id)).includes(input.embedOrigin))
+    throw new ForbiddenError();
   const { invoice, amount } = await payableInvoice(link);
   const result = await startPayment(
     {
@@ -327,6 +332,14 @@ export async function payViaLink(
     { amount, linkId: link.id },
   );
   await noteUse(link, result);
+  if (input.embedOrigin)
+    await getService('audit').record({
+      action: 'payment.embed.started',
+      resourceType: 'payment',
+      resourceId: result.id,
+      companyId: link.company_id,
+      metadata: { linkId: link.id, embedOrigin: input.embedOrigin, status: result.status },
+    });
   return result;
 }
 

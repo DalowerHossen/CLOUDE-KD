@@ -144,3 +144,14 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 | Request signature, link path, https-only link, webhook digest, result reading                                                            | passes      | `scripts/verify/step16-kyc-sumsub.ts` (6 checks)                        |
 | A real call to Sumsub and a real webhook                                                                                                 | **not run** | needs sandbox keys                                                      |
 | Sign-up with a chosen plan, trial of that plan, modules tied to the plan                                                                 | **not run** | needs a running app and database; type-checked only                     |
+
+## Embedded checkout SDK
+
+| Check                                                                                                                     | Result      | Evidence                                                      |
+| ------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------- |
+| Origins table: RLS, https only, no path or wildcard, unique per company                                                   | passes      | `sql/assertions/s16_025_embed_origins.sql`                    |
+| Origin, style, message rules; frame-ancestors; CSRF rule for payer routes; colour tokens                                  | passes      | `scripts/verify/step16-embed.ts` (6 checks)                   |
+| SDK file is current                                                                                                       | passes      | `node scripts/build-embed-sdk.mjs --check`                    |
+| SDK in a real browser against a stand-in server: frame, resize, complete event, 403 and 404 messages                      | passes      | one-off run (not kept in the repository)                      |
+| No card fields in our code                                                                                                | passes      | `scripts/check-no-pan.sh`                                     |
+| Real processor secure form inside a cross-site frame, 3D Secure inside the frame, `frame-ancestors` enforced by a browser | **not run** | needs a running site, sandbox credentials and a second domain |

@@ -122,6 +122,7 @@ export const SIGNAL_THRESHOLDS = {
 export const FINGERPRINT_EXCLUDED_PREFIXES: readonly string[] = [
   '/pay/',
   '/portal/pay',
+  '/embed/',
   '/login',
   '/signup',
   '/forgot-password',
