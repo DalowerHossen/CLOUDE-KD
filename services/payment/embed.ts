@@ -31,9 +31,14 @@ export async function ancestorsFor(token: string): Promise<readonly string[]> {
 /**
  * For the SDK: may this web site show this link? `origin` is the Origin header of the browser request (null for a caller
  * that is not a browser page). A link that cannot be paid is 404 whatever the origin; a listed-origin mismatch is 403.
+ * `allowedOrigin` is the entry of the merchant's own list that matched (never the raw header), for the CORS answer.
  */
-export async function embedConfigFor(token: string, origin: string | null): Promise<EmbedConfig> {
+export async function embedConfigFor(
+  token: string,
+  origin: string | null,
+): Promise<{ config: EmbedConfig; allowedOrigin: string | null }> {
   const { origins, expiresAt } = await embeddableOrigins(token);
-  if (origin !== null && !origins.includes(origin)) throw new ForbiddenError();
-  return { available: true, linkExpiresAt: expiresAt };
+  const allowedOrigin = origin === null ? null : (origins.find((o) => o === origin) ?? null);
+  if (origin !== null && allowedOrigin === null) throw new ForbiddenError();
+  return { config: { available: true, linkExpiresAt: expiresAt }, allowedOrigin };
 }
