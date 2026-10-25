@@ -54,6 +54,16 @@ const PLAIN_ROUTES = new Set([
   'app/api/storage/download/[token]/route.ts',
   'app/api/health/route.ts',
   'app/api/health/ready/route.ts',
+  // Authenticated by something other than a session: a secret key in the header (gateway calls and settlement entries),
+  // a link token (client portal pages), or nothing at all because the answer is public (logo, API description, short link).
+  'app/api/gateway/settlement/v1/entries/route.ts',
+  'app/api/gateway/v1/[...path]/route.ts',
+  'app/api/portal/logo/[company]/route.ts',
+  'app/api/portal/pdf/route.ts',
+  'app/api/public/v1/openapi.json/route.ts',
+  'app/api/social/l/[code]/route.ts',
+  // The permission check is inside exportAccountingReport (services/accounting/report-export.ts).
+  'app/api/accounting/reports/[report]/export/route.ts',
 ]);
 
 for (const { path, text } of files) {
@@ -82,7 +92,18 @@ for (const { path, text } of files) {
     !PLAIN_PREFIXES.some((p) => path.startsWith(p))
   ) {
     // Route builders (for example buildApprovalRoutes) create their handlers with withApi.
-    if (!text.includes('withApi(') && !/\bbuild\w+Routes\(|soloModeRoute/.test(text))
+    // Other recognised builders: the public API (key authenticated), the export response (session, permission, audit), and a
+    // plain handler that reads the signed-in person, checks a permission and answers errors itself (files and downloads).
+    const guardedPlain =
+      /\bwithPublicApi\(|\bexportResponse\(/.test(text) ||
+      (/getService\('auth'\)\.getActor\(\)/.test(text) &&
+        /getService\('permissions'\)|permissions\.can\(|\.can\(/.test(text) &&
+        /errorResponse\(/.test(text));
+    if (
+      !text.includes('withApi(') &&
+      !/\bbuild\w+Routes\(|soloModeRoute/.test(text) &&
+      !guardedPlain
+    )
       fail(path, 'API route does not use withApi');
   }
 }

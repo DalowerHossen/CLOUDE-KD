@@ -1,5 +1,5 @@
 // path: scripts/build-cron-manifest.mjs
-// Writes netlify/functions/cron-jobs.generated.mts: the name and the schedule of every job in cron/jobs/*.ts, so the
+// Writes netlify/cron-jobs.generated.mts: the name and the schedule of every job in cron/jobs/*.ts, so the
 // Netlify scheduled function (netlify/functions/cron-tick.mts) knows what to call without loading the application.
 //   node scripts/build-cron-manifest.mjs           writes the file
 //   node scripts/build-cron-manifest.mjs --check   fails when the file is out of date
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(root, 'cron/jobs');
-const target = path.join(root, 'netlify/functions/cron-jobs.generated.mts');
+const target = path.join(root, 'netlify/cron-jobs.generated.mts');
 
 const jobs = [];
 for (const file of fs
@@ -31,7 +31,7 @@ if (names.size !== jobs.length) {
   process.exit(1);
 }
 
-const output = `// path: netlify/functions/cron-jobs.generated.mts
+const output = `// path: netlify/cron-jobs.generated.mts
 // GENERATED - do not edit. Source: cron/jobs/sNN-*.ts (run: node scripts/build-cron-manifest.mjs)
 export const CRON_JOBS: readonly { name: string; schedule: string }[] = [
 ${jobs.map((j) => `  { name: '${j.name}', schedule: '${j.schedule}' },`).join('\n')}

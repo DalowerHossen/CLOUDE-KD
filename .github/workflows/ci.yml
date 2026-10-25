@@ -66,6 +66,34 @@ jobs:
           persist-credentials: false
       - name: Apply migrations from zero, re-apply, run assertions
         run: bash scripts/db-apply.sh --clean
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: More connections for the concurrency checks
+        # The invoice numbering check opens 100 sessions at once; the default limit of the server is 100 in total.
+        run: |
+          psql -v ON_ERROR_STOP=1 -c "alter system set max_connections = 400"
+          docker restart "$(docker ps -q --filter ancestor=postgres:15)"
+          for i in $(seq 1 30); do pg_isready -h localhost -U postgres && break; sleep 2; done
+      - name: Concurrency and export checks (need the database)
+        run: bash scripts/verify-all.sh db
+
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verification scripts (behaviour of the code, no database)
+        run: bash scripts/verify-all.sh app
 
   lighthouse:
     runs-on: ubuntu-latest

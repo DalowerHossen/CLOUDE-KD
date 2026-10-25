@@ -13,6 +13,7 @@ import {
 import { resolveCorrelationId } from '@/lib/logger/correlation';
 import { dayText } from '@/services/accounting/journal-rules';
 import { EXPENSE_REPORT_KEYS, exportExpenseReport } from '@/services/expense/reports';
+import { assertApiModuleEnabled } from '@/services/company/module-access';
 
 export const runtime = 'nodejs';
 
@@ -33,6 +34,7 @@ export async function GET(
     if (!key.success) throw new NotFoundError();
     const actor = await getService('auth').getActor();
     if (!actor) throw new UnauthorizedError();
+    await assertApiModuleEnabled(new URL(request.url).pathname, actor.companyId);
     if (!actor.companyId) throw new NotFoundError();
     if (!(await getService('permissions').can(actor, 'expense.read', { type: 'expense' })))
       throw new ForbiddenError();

@@ -5,6 +5,7 @@ import { getService } from '@/lib/container';
 import { ForbiddenError, ValidationError } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { getContext } from '@/lib/logger/correlation';
+import { hasSecureForm } from '@/config/processors';
 import { describeCredentials, type CredentialFieldStatus } from '@/lib/payment/credentials';
 import { describeSwitch, hasChoice, requireMode } from '@/lib/payment/modes';
 import { hasAdapter, isKnownProcessor, listRegistry, loadAdapter } from '@/lib/payment/registry';
@@ -44,6 +45,8 @@ export interface ProcessorSummary {
   sandboxUrl: string | null;
   /** False when no adapter file exists in code: such a processor cannot be configured or enabled. */
   available: boolean;
+  /** False when no secure card form exists in code for this processor: it cannot be enabled. */
+  hasSecureForm: boolean;
   enabled: boolean;
   environment: ProcessorEnvironment | null;
   activeMode: string | null;
@@ -80,6 +83,7 @@ function summaryOf(
     docsUrl: m.docsUrl,
     sandboxUrl: m.sandboxUrl,
     available: entry.available,
+    hasSecureForm: hasSecureForm(m.id),
     enabled: row?.enabled ?? false,
     environment: row?.environment ?? null,
     activeMode: row?.active_mode ?? null,
@@ -299,6 +303,10 @@ export async function runProcessorAction(
     case 'enable':
     case 'disable': {
       const enabled = input.action === 'enable';
+      if (enabled && !hasSecureForm(id))
+        throw new ValidationError(
+          'This processor has no card form in this build yet, so it cannot be enabled. Payers would see an error at checkout.',
+        );
       await setEnabled({
         processorId: id,
         enabled,

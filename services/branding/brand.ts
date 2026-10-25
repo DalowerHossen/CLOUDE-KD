@@ -7,7 +7,7 @@ import { InternalError } from '@/lib/errors';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { getSection } from '@/services/company/settings';
 import { planHas } from '@/services/company/plan';
-import { DEFAULT_SECONDARY, type FontKey } from './theme';
+import { DEFAULT_SECONDARY, type FontKey } from '@/lib/branding/theme';
 
 export interface TenantBrand {
   companyId: string;

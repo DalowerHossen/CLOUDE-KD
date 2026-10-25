@@ -21,6 +21,7 @@ import {
   type EntitlementMap,
 } from '@/lib/payment/plan-rules';
 import { Money } from '@/lib/utils/currency';
+import { createLogger } from '@/lib/logger';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 import { cached, invalidatePlanCache } from '@/services/entitlement/cache';
@@ -136,6 +137,8 @@ async function loadAll(): Promise<PlanView[]> {
   });
 }
 
+const SEED_RETRY_MS = 5 * 60_000;
+let lastSeedFailureAt = 0;
 let seededInThisProcess = false;
 
 /**
@@ -144,6 +147,22 @@ let seededInThisProcess = false;
  */
 export async function ensurePlansSeeded(): Promise<void> {
   if (seededInThisProcess) return;
+  // A failed top-up (for example a migration that is not applied yet) must not take every page down: the plans are read
+  // from the database on top of the built-in values, so a missing row only means the built-in value is used. The next
+  // try waits five minutes.
+  if (Date.now() - lastSeedFailureAt < SEED_RETRY_MS) return;
+  try {
+    await seedPlans();
+  } catch (error) {
+    lastSeedFailureAt = Date.now();
+    createLogger({ service: 'plans' }).error(
+      'the built-in plans could not be put into the database',
+      { error },
+    );
+  }
+}
+
+async function seedPlans(): Promise<void> {
   const admin = getAdminSupabase();
   for (const [index, key] of PLAN_KEYS.entries()) {
     const def = PLANS[key];

@@ -11,6 +11,7 @@ import {
 } from '@/lib/errors';
 import { resolveCorrelationId } from '@/lib/logger/correlation';
 import { assetDocumentLink } from '@/services/asset/assets';
+import { assertApiModuleEnabled } from '@/services/company/module-access';
 
 export const runtime = 'nodejs';
 
@@ -24,6 +25,7 @@ export async function GET(
     if (!z.string().uuid().safeParse(id).success) throw new NotFoundError();
     const actor = await getService('auth').getActor();
     if (!actor) throw new UnauthorizedError();
+    await assertApiModuleEnabled(new URL(request.url).pathname, actor.companyId);
     if (!actor.companyId) throw new NotFoundError();
     if (!(await getService('permissions').can(actor, 'accounting.read', { type: 'fixed_asset' })))
       throw new ForbiddenError();

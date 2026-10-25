@@ -16,6 +16,7 @@ import { resolveCorrelationId } from '@/lib/logger/correlation';
 import type { ReportResult } from '@/lib/reports/types';
 import type { Actor } from '@/types/contracts';
 import { buildReportFile, type ExportFormat } from '@/services/report/export';
+import { assertApiModuleEnabled } from '@/services/company/module-access';
 
 const FORMATS = z.enum(['csv', 'xlsx', 'pdf']);
 
@@ -33,6 +34,7 @@ export async function exportResponse(request: Request, spec: ExportSpec): Promis
   try {
     const actor = await getService('auth').getActor();
     if (!actor) throw new UnauthorizedError();
+    await assertApiModuleEnabled(new URL(request.url).pathname, actor.companyId);
     if (!actor.companyId) throw new NotFoundError();
     if (!(await getService('permissions').can(actor, spec.permission, { type: spec.resourceType })))
       throw new ForbiddenError();

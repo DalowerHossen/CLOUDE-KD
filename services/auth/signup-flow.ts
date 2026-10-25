@@ -195,11 +195,15 @@ export async function resendVerificationFor(
   userId: string,
   email: string,
   companyId: string | null,
+  ip: string,
 ): Promise<boolean> {
   const { data } = await getAdminSupabase().auth.admin.getUserById(userId);
   if (!data.user || data.user.email_confirmed_at) return false;
-  const rate = await getService('security').rateLimit(`resend-verification:${userId}`, 'strict');
-  if (!rate.allowed) return false;
+  // Three per quarter of an hour from one address and ten an hour in total, so nobody can flood the mailbox of the holder.
+  const security = getService('security');
+  const perAddress = await security.rateLimit(`resend-verification:${userId}:${ip}`, 'mail-link');
+  const total = await security.rateLimit(`resend-verification:${userId}`, 'mail-day');
+  if (!perAddress.allowed || !total.allowed) return false;
   await sendVerification(normalizeIdentifier(email), companyId);
   await flushOutbox();
   return true;
@@ -216,5 +220,5 @@ export async function resendVerification(
   }
   const user = await lookupUserByEmail(input.email);
   if (!user) return;
-  await resendVerificationFor(user.userId, input.email, user.companyId);
+  await resendVerificationFor(user.userId, input.email, user.companyId, ip);
 }

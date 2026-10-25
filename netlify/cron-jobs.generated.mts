@@ -1,4 +1,4 @@
-// path: netlify/functions/cron-jobs.generated.mts
+// path: netlify/cron-jobs.generated.mts
 // GENERATED - do not edit. Source: cron/jobs/sNN-*.ts (run: node scripts/build-cron-manifest.mjs)
 export const CRON_JOBS: readonly { name: string; schedule: string }[] = [
   { name: 'approvals-escalate', schedule: '*/5 * * * *' },

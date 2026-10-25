@@ -18,6 +18,8 @@ const ALLOWED_HOST_FILES = new Set([
   'lib/analytics/providers.ts',
   'lib/analytics/start-provider.ts',
   'services/analytics/pixels.ts',
+  // The list of hosts that must never be allowed on a payment page.
+  'lib/payment/csp.ts',
 ]);
 const SENSITIVE = ['app/(auth)', 'app/(client-portal)', 'app/(dashboard)', 'app/(admin)'];
 const LOADER_USERS = new Set([

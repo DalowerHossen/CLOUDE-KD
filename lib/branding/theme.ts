@@ -1,4 +1,4 @@
-// path: services/branding/theme.ts
+// path: lib/branding/theme.ts
 // Pure brand helpers (no database, safe to import anywhere): colour maths, the contrast rules, the safe font list and the
 // CSS variables a branded page sets. Branded pages always draw in the light theme, so the colours a tenant chose keep the
 // contrast that was checked when they were saved.

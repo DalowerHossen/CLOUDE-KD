@@ -1,7 +1,7 @@
 // path: components/client/branded-frame.tsx
 import type { CSSProperties, ReactNode } from 'react';
 import type { TenantBrand } from '@/services/branding/brand';
-import { themeCssVars } from '@/services/branding/theme';
+import { themeCssVars } from '@/lib/branding/theme';
 
 interface BrandedFrameProps {
   brand: TenantBrand;

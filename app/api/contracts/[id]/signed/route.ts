@@ -12,6 +12,7 @@ import {
 import { resolveCorrelationId } from '@/lib/logger/correlation';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { getContract } from '@/services/contract/contracts';
+import { assertApiModuleEnabled } from '@/services/company/module-access';
 
 export const runtime = 'nodejs';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -26,6 +27,7 @@ export async function GET(
     if (!UUID.test(id)) throw new NotFoundError();
     const actor = await getService('auth').getActor();
     if (!actor) throw new UnauthorizedError();
+    await assertApiModuleEnabled(new URL(request.url).pathname, actor.companyId);
     if (!actor.companyId) throw new NotFoundError();
     if (!(await getService('permissions').can(actor, 'contract.read', { type: 'contract' })))
       throw new ForbiddenError();

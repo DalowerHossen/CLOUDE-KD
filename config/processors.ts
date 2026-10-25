@@ -177,3 +177,28 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
     'https://*.braintree-api.com',
   ],
 };
+
+/**
+ * Processors whose secure card form exists in code (components/payment/processors/<id>/). A processor without one cannot be
+ * enabled and is never offered at checkout, because the payer would see an error instead of a card form. The list is kept in
+ * step with components/payment/processors/index.generated.ts by scripts/verify/step16-secure-forms.ts.
+ */
+export const PROCESSORS_WITH_SECURE_FORM: readonly ProcessorId[] = [
+  'stripe',
+  'adyen',
+  'authorizenet',
+  'bluesnap',
+  'braintree',
+  'custom',
+  'fastspring',
+  'payarc',
+  'paypal',
+  'payproglobal',
+  'rapyd',
+  'square',
+  'verifone',
+];
+
+export function hasSecureForm(id: ProcessorId): boolean {
+  return PROCESSORS_WITH_SECURE_FORM.includes(id);
+}

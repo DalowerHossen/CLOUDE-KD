@@ -1,8 +1,8 @@
 // path: netlify/functions/cron-tick.mts
 // The scheduler of the platform. Netlify runs this function every minute (UTC); it calls POST /api/cron/<job> with the
-// CRON_SECRET for every job whose schedule (cron/jobs/*.ts, copied into cron-jobs.generated.mts) matches this minute.
+// CRON_SECRET for every job whose schedule (cron/jobs/*.ts, copied into netlify/cron-jobs.generated.mts) matches this minute.
 // The application then runs the job under its own leader lock, so a job never runs twice at once.
-import { CRON_JOBS } from './cron-jobs.generated.mjs';
+import { CRON_JOBS } from '../cron-jobs.generated.mjs';
 
 // One field of a five-field cron line: a star, a number, a list, a range, or a step (for example every 10 or 10-30 every 5).
 export function fieldMatches(spec: string, value: number, min: number, max: number): boolean {
