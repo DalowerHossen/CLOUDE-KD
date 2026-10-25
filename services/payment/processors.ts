@@ -25,6 +25,7 @@ import {
   switchMode,
   type ProcessorRow,
 } from './credential-store';
+import { resetHealthState } from './health';
 import { mapPaymentDbError } from './rpc';
 
 export interface ModeView {
@@ -309,6 +310,8 @@ export async function runProcessorAction(
         environment: row.environment,
         mode: row.active_mode,
       });
+      // Enabled again by a person: the health counters start from zero.
+      if (enabled) await resetHealthState(id).catch(() => undefined);
       return { enabled };
     }
     case 'set_environment': {
