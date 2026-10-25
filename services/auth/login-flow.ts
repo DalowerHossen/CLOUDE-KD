@@ -90,7 +90,9 @@ export async function startLogin(input: {
   const passwordCheck = await checkPassword(input.email, input.password);
   if (passwordCheck === 'unconfirmed' && user) {
     // The person proved the password, so telling them what is missing reveals nothing new. A new link is sent at once.
-    await resendVerificationFor(user.userId, input.email, user.companyId).catch(() => false);
+    await resendVerificationFor(user.userId, input.email, user.companyId, input.ip).catch(
+      () => false,
+    );
     return { status: 'email_unconfirmed' };
   }
   if (passwordCheck !== 'ok' || !user || !user.active) {

@@ -12,7 +12,7 @@ import { getAdminSupabase } from '@/lib/supabase/admin';
 import { getSection, saveSection } from '@/services/company/settings';
 import type { Actor } from '@/types/contracts';
 import { DEFAULT_EXTRAS, getExtras, getTenantBrand } from './brand';
-import { checkBrandColors, DEFAULT_SECONDARY } from './theme';
+import { checkBrandColors, DEFAULT_SECONDARY } from '@/lib/branding/theme';
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a six digit hex value such as #1d4ed8.');
 

@@ -47,6 +47,8 @@ export const strings = {
   loadError: 'The processors could not be loaded.',
   empty: 'No processors are listed.',
   notAvailable: 'No adapter in this build yet',
+  noSecureForm:
+    'This processor has no card form in this build yet, so it cannot be enabled. Payers would see an error at checkout.',
   notAvailableHelp:
     'This processor cannot be configured until its adapter is added to the platform.',
   docs: 'Documentation',

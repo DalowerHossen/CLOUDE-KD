@@ -19,6 +19,7 @@ import {
   PAYMENT_LINK_VALID_HOURS,
   REFUND_WINDOW_DAYS,
 } from '@/config/payment-risk';
+import { hasSecureForm } from '@/config/processors';
 import { loadAdapter } from '@/lib/payment/registry';
 import { defaultMode } from '@/lib/payment/modes';
 import { threeDSPolicyFor } from '@/lib/payment/verification';
@@ -254,7 +255,7 @@ export async function checkoutFor(token: string): Promise<CheckoutView> {
   if (!decision)
     throw new ConflictError('Online payment is not available for this invoice right now.');
   const processor = await getProcessorRow(decision.processorId);
-  if (!processor.enabled)
+  if (!processor.enabled || !hasSecureForm(decision.processorId))
     throw new ConflictError('Online payment is not available for this invoice right now.');
   const adapter = await loadAdapter(decision.processorId);
   const { values } = await loadCurrentCredentials(decision.processorId);

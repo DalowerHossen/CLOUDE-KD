@@ -11,7 +11,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
 import { FONT_KEYS } from '@/lib/company/sections';
 import { t } from '@/lib/i18n';
-import { checkBrandColors, themeCssVars, type FontKey } from '@/services/branding/theme';
+import { checkBrandColors, themeCssVars, type FontKey } from '@/lib/branding/theme';
 
 const brandShape = z.object({
   primaryColor: z.string(),

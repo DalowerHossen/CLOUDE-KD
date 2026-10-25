@@ -54,6 +54,20 @@ export async function requestReset(input: z.infer<typeof forgotSchema>, ip: stri
     });
     return;
   }
+  // Every request replaces the earlier link, so an unlimited number would let a stranger keep the real link dead, and would
+  // flood the mailbox. Three per quarter of an hour from one address, ten an hour in total; the answer stays the same.
+  const security = getService('security');
+  const perAddress = await security.rateLimit(`reset-request:${user.userId}:${ip}`, 'mail-link');
+  const total = await security.rateLimit(`reset-request:${user.userId}`, 'mail-day');
+  if (!perAddress.allowed || !total.allowed) {
+    await recordLoginEvent({
+      identifierHash: identifier,
+      type: 'reset_suppressed',
+      userId: user.userId,
+      detail: { why: 'throttled' },
+    });
+    return;
+  }
   const token = randomBase64Url(32);
   const issued = await getAdminSupabase().rpc('kd_reset_token_issue', {
     p_identifier: identifier,

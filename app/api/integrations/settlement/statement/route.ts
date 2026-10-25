@@ -13,6 +13,7 @@ import {
 import { resolveCorrelationId } from '@/lib/logger/correlation';
 import { PLATFORM_ROLES } from '@/types/contracts';
 import { statementOf } from '@/services/gateway/balances';
+import { assertApiModuleEnabled } from '@/services/company/module-access';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -21,6 +22,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const actor = await getService('auth').getActor();
     if (!actor) throw new UnauthorizedError();
+    await assertApiModuleEnabled(new URL(request.url).pathname, actor.companyId);
     if (PLATFORM_ROLES.includes(actor.role) || !actor.companyId) throw new NotFoundError();
     if (
       !(await getService('permissions').can(actor, 'settlement.read', {

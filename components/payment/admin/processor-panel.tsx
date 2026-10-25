@@ -271,13 +271,18 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
                   </Button>
                 ) : (
                   <Button
-                    disabled={busy || !connected || state.lastTestOk !== true}
+                    disabled={
+                      busy || !connected || state.lastTestOk !== true || !summary.hasSecureForm
+                    }
                     onClick={() => void act({ action: 'enable', expectedVersion: state.version })}
                   >
                     {t('s10Processors.actions.enable')}
                   </Button>
                 )}
               </div>
+              {!summary.hasSecureForm ? (
+                <p className="text-xs text-destructive">{t('s10Processors.noSecureForm')}</p>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 {t('s10Processors.environment.changeHelp')}
               </p>

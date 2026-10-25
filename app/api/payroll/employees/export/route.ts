@@ -10,6 +10,7 @@ import {
 } from '@/lib/errors';
 import { resolveCorrelationId } from '@/lib/logger/correlation';
 import { exportEmployeesCsv } from '@/services/payroll/employees';
+import { assertApiModuleEnabled } from '@/services/company/module-access';
 
 export const runtime = 'nodejs';
 
@@ -18,6 +19,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const actor = await getService('auth').getActor();
     if (!actor) throw new UnauthorizedError();
+    await assertApiModuleEnabled(new URL(request.url).pathname, actor.companyId);
     if (!actor.companyId) throw new NotFoundError();
     if (
       !(await getService('permissions').can(actor, 'payroll.employee.manage', { type: 'employee' }))

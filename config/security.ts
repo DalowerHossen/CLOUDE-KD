@@ -62,6 +62,9 @@ export const RATE_POLICIES: Readonly<Record<string, RatePolicy>> = {
   webhook: { limit: 600, windowSeconds: 60 },
   upload: { limit: 30, windowSeconds: 60 },
   download: { limit: 60, windowSeconds: 60 },
+  // Mail with a link (password reset, e-mail confirmation): per account and address, and per account in total.
+  'mail-link': { limit: 3, windowSeconds: 900 },
+  'mail-day': { limit: 10, windowSeconds: 3600 },
 };
 
 /** An address denied this many times inside the window is banned for BAN_SECONDS (brute-force protection). */

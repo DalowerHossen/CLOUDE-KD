@@ -17,7 +17,7 @@ import {
   hexToHslTriplet,
   readableOn,
   themeCssVars,
-} from '@/services/branding/theme';
+} from '@/lib/branding/theme';
 
 let checks = 0;
 const check = (name: string, fn: () => void | Promise<void>): Promise<void> =>
