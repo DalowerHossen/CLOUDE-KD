@@ -256,3 +256,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: input rules, the search service with the platform guards and the audit entry, `POST /api/admin/payments/card-search`, `POST /api/payments/card-search`, the two pages, permission `payment.card.search`, navigation, strings.
 - Files: `lib/payment/card-search-rules.ts`, `services/payment/card-search.ts`, `app/api/**/card-search/route.ts`, `app/(admin)/admin/payments/card-search`, `app/(dashboard)/payments/card-search`, `components/payment/card-search.tsx`, `scripts/verify/step16-card-search.ts`.
+
+## 16.18 Connect with Facebook (owner request, 2026-10-25)
+
+- Goal: the owner connects Pages and Instagram through the platform's Meta app. Decisions are D40.
+- Files: `migrations/S16_030_social_connect.sql` (+ `_down`), `sql/assertions/s16_030_social_connect.sql`, `lib/env/s16.ts`, `config/env/s16.env.fragment`, `config/s16-social.ts`, `lib/social/meta-oauth.ts`, `services/social/meta-connect.ts`, `app/api/social/connect/facebook/{start,callback,select}`, `(dashboard)/social/connect`, `components/social/facebook-picker.tsx`, `scripts/verify/step16-meta-connect.ts`.

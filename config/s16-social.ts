@@ -71,3 +71,21 @@ export const STATS_REFRESH_HOURS = 6;
 export const STATS_WINDOW_DAYS = 30;
 export const STATS_BATCH = 20;
 export const ANALYTICS_MAX_DAYS = 365;
+
+/* ---------- "Connect with Facebook" (the platform's Meta app) ---------- */
+export const FACEBOOK_DIALOG_URL = `https://www.facebook.com/${FACEBOOK_API_VERSION}/dialog/oauth`;
+/** Callback path; the full address is the site address plus this path and must be listed as a valid OAuth redirect URI in the Meta app. */
+export const META_CALLBACK_PATH = '/api/social/connect/facebook/callback';
+/** Permissions asked at login (Pages API getting started and Instagram API with Facebook Login, read 2026-10-25). */
+export const META_LOGIN_SCOPES: readonly string[] = [
+  'pages_show_list',
+  'pages_manage_posts',
+  'pages_read_engagement',
+  'pages_manage_metadata',
+  'instagram_basic',
+  'instagram_content_publish',
+];
+/** How long a login may take before the pending connection is thrown away. */
+export const CONNECT_SESSION_MINUTES = 15;
+/** The most accounts connected from one login. */
+export const CONNECT_MAX_PICKS = 10;

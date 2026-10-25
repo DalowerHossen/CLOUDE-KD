@@ -168,6 +168,10 @@ class Builder implements PromiseLike<Result> {
     this.filters.push((r) => list.includes(r[col]));
     return this;
   }
+  gt(col: string, v: unknown): this {
+    this.filters.push((r) => r[col] !== null && r[col] !== undefined && String(r[col]) > String(v));
+    return this;
+  }
   gte(col: string, v: unknown): this {
     this.filters.push(
       (r) => r[col] !== null && r[col] !== undefined && String(r[col]) >= String(v),
