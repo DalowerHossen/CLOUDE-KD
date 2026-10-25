@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { COUNTRY_CODES, countryName } from '@/lib/company/countries';
+import { countryName, sortedCountryCodes } from '@/lib/company/countries';
 import { INDUSTRY_LIST } from '@/lib/company/presets';
 import { DUE_DAYS, FONT_KEYS, previewNumber, type Industry } from '@/lib/company/sections';
 import { t } from '@/lib/i18n';
@@ -272,7 +272,7 @@ export function Wizard({ initial }: { initial: OnboardingView }): JSX.Element {
               onChange={(e) => setCompany({ ...company, country: e.target.value })}
             >
               <option value="">{t('s07Company.onboarding.company.chooseCountry')}</option>
-              {COUNTRY_CODES.map((c) => (
+              {sortedCountryCodes.map((c) => (
                 <option key={c} value={c}>
                   {countryName(c)}
                 </option>

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { COUNTRY_CODES, countryName } from '@/lib/company/countries';
+import { countryName, sortedCountryCodes } from '@/lib/company/countries';
 import { t, type StringKey } from '@/lib/i18n';
 import type { KycCase } from '@/services/gateway/kyc-review';
 
@@ -161,7 +161,7 @@ export function BusinessForm({
             onChange={(e) => setCountry(e.target.value)}
           >
             <option value="">{t('s16Gateway.applicant.chooseCountry')}</option>
-            {COUNTRY_CODES.map((c) => (
+            {sortedCountryCodes.map((c) => (
               <option key={c} value={c}>
                 {countryName(c)}
               </option>

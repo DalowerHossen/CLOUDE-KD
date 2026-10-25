@@ -7,12 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import { COUNTRY_CODES, countryName } from '@/lib/company/countries';
-import { DOC_TYPES, MAX_DOC_BYTES, MIN_IMAGE, type DocType } from '@/lib/kyc/rules';
+import { countryName, sortedCountryCodes } from '@/lib/company/countries';
+import { MAX_PDF_BYTES, prepareImage } from '@/lib/kyc/image-prep';
+import { DOC_TYPES, MIN_IMAGE, type DocType } from '@/lib/kyc/rules';
 import { t, type StringKey } from '@/lib/i18n';
 import type { KycView } from '@/services/kyc/owner';
 
-const errorBody = z.object({ error: z.object({ message: z.string() }) });
+const errorBody = z.object({
+  error: z.object({ message: z.string(), correlation_id: z.string().nullish() }),
+});
 type OwnerRow = KycView['owners'][number];
 const EMPTY_OWNER: OwnerRow = {
   fullName: '',
@@ -29,33 +32,20 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(text);
 }
 
-function imageSize(file: File): Promise<{ width: number; height: number } | null> {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(null);
-    };
-    img.src = url;
-  });
-}
-
 export function KycPanel({
   view,
   endpoint = '/api/kyc',
+  previewBase = '/api/kyc/documents',
 }: {
   view: KycView;
   /** Where the panel saves; the sub-merchant verification uses its own address with the secure link in it. */
   endpoint?: string;
+  /** Where an uploaded document is shown from; empty when the screen has no such address. */
+  previewBase?: string;
 }): JSX.Element {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [notes, setNotes] = useState<Record<string, { ok: boolean; text: string }>>({});
   const [previews, setPreviews] = useState<Partial<Record<DocType, string>>>({});
   const [expiry, setExpiry] = useState<Partial<Record<DocType, string>>>({});
   const [owners, setOwners] = useState<OwnerRow[]>(
@@ -64,9 +54,15 @@ export function KycPanel({
   const readOnly =
     view.status === 'submitted' || view.status === 'in_review' || view.status === 'approved';
 
-  async function call(key: string, method: string, body: unknown, ok: string): Promise<boolean> {
-    setBusy(key);
-    setMessage(null);
+  const note = (scope: string, ok: boolean, text: string): void =>
+    setNotes((n) => ({ ...n, [scope]: { ok, text } }));
+
+  async function call(scope: string, method: string, body: unknown, ok: string): Promise<boolean> {
+    setBusy(scope);
+    setNotes((n) => {
+      const { [scope]: _gone, ...rest } = n;
+      return rest;
+    });
     try {
       const response = await fetch(endpoint, {
         method,
@@ -74,17 +70,25 @@ export function KycPanel({
         body: JSON.stringify(body),
       });
       if (response.ok) {
-        setMessage({ ok: true, text: ok });
+        note(scope, true, ok);
         router.refresh();
         return true;
       }
       const err = errorBody.safeParse(await response.json().catch(() => null));
-      setMessage({
-        ok: false,
-        text: err.success ? err.data.error.message : t('s07Company.kyc.error'),
-      });
+      const ref =
+        err.success && err.data.error.correlation_id ? err.data.error.correlation_id : null;
+      const base = err.success
+        ? err.data.error.message
+        : response.status === 413
+          ? t('s07Company.kyc.tooBigForHost')
+          : t('s07Company.kyc.error');
+      note(
+        scope,
+        false,
+        `${base}${ref ? ` ${t('s07Company.kyc.errorRef', { ref })}` : ` (HTTP ${response.status})`}`,
+      );
     } catch {
-      setMessage({ ok: false, text: t('s07Company.kyc.error') });
+      note(scope, false, t('s07Company.kyc.error'));
     } finally {
       setBusy(null);
     }
@@ -92,37 +96,57 @@ export function KycPanel({
   }
 
   async function upload(type: DocType, file: File): Promise<void> {
-    if (file.size > MAX_DOC_BYTES)
-      return setMessage({ ok: false, text: t('s07Company.kyc.tooBig') });
+    const fail = (text: string): void => note(type, false, text);
     if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type))
-      return setMessage({ ok: false, text: t('s07Company.kyc.wrongType') });
-    if (file.type !== 'application/pdf') {
-      const size = await imageSize(file);
-      if (
-        !size ||
-        Math.max(size.width, size.height) < MIN_IMAGE.width ||
-        Math.min(size.width, size.height) < MIN_IMAGE.height
-      )
-        return setMessage({
-          ok: false,
-          text: t('s07Company.kyc.tooSmall', { width: MIN_IMAGE.width, height: MIN_IMAGE.height }),
-        });
-      setPreviews((p) => ({ ...p, [type]: URL.createObjectURL(file) }));
+      return fail(t('s07Company.kyc.wrongType'));
+    let sendBlob: Blob = file;
+    let sendName = file.name;
+    let sendMime = file.type;
+    if (file.type === 'application/pdf') {
+      if (file.size > MAX_PDF_BYTES) return fail(t('s07Company.kyc.pdfTooBig'));
+    } else {
+      setBusy(type);
+      note(type, true, t('s07Company.kyc.preparing'));
+      try {
+        const prepared = await prepareImage(file);
+        if (
+          Math.max(prepared.originalWidth, prepared.originalHeight) < MIN_IMAGE.width ||
+          Math.min(prepared.originalWidth, prepared.originalHeight) < MIN_IMAGE.height
+        ) {
+          setBusy(null);
+          return fail(
+            t('s07Company.kyc.tooSmall', { width: MIN_IMAGE.width, height: MIN_IMAGE.height }),
+          );
+        }
+        sendBlob = prepared.blob;
+        sendMime = 'image/jpeg';
+        sendName = `${file.name.replace(/\.[^.]+$/, '') || 'photo'}.jpg`;
+        setPreviews((p) => ({ ...p, [type]: URL.createObjectURL(prepared.blob) }));
+      } catch {
+        setBusy(null);
+        return fail(t('s07Company.kyc.unreadable'));
+      }
     }
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const bytes = new Uint8Array(await sendBlob.arrayBuffer());
     await call(
       type,
       'POST',
       {
         docType: type,
-        name: file.name,
-        mimeType: file.type,
+        name: sendName,
+        mimeType: sendMime,
         dataBase64: toBase64(bytes),
         expiresOn: expiry[type] || null,
       },
       t('s07Company.kyc.uploaded'),
     );
   }
+
+  const docsDone = DOC_TYPES.filter((d) =>
+    view.documents.some((x) => x.docType === d && x.status !== 'rejected'),
+  ).length;
+  const ownersDone = view.owners.length > 0;
+  const rejectedDocs = view.documents.some((d) => d.status === 'rejected');
 
   const banner = t(`s07Company.kyc.banner.${view.status}` as StringKey);
   return (
@@ -166,7 +190,7 @@ export function KycPanel({
             const isId = type === 'id_front' || type === 'id_back';
             return (
               <li key={type} className="space-y-2 rounded-lg border p-sp-12 text-sm">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">
                     {t(`s07Company.kyc.docs.${type}` as StringKey)}
                   </span>
@@ -174,13 +198,36 @@ export function KycPanel({
                     <Badge variant={doc.status === 'rejected' ? 'destructive' : 'outline'}>
                       {t(`s07Company.kyc.docState.${doc.status}` as StringKey)}
                     </Badge>
-                  ) : null}
+                  ) : (
+                    <Badge variant="outline">{t('s07Company.kyc.missing')}</Badge>
+                  )}
                 </div>
-                {doc ? <p className="text-muted-foreground">{doc.name}</p> : null}
+                {doc ? (
+                  <p className="text-muted-foreground">
+                    <span aria-hidden="true">[x] </span>
+                    {t('s07Company.kyc.uploadedFile', { name: doc.name })}
+                  </p>
+                ) : null}
                 {doc?.rejectReason ? <p className="text-destructive">{doc.rejectReason}</p> : null}
-                {previews[type] ? (
+                {previews[type] || (doc && previewBase && doc.mimeType.startsWith('image/')) ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previews[type]} alt="" className="max-h-32 rounded-md border" />
+                  <img
+                    src={previews[type] ?? `${previewBase}/${doc?.id ?? ''}`}
+                    alt={t('s07Company.kyc.previewAlt', {
+                      name: t(`s07Company.kyc.docs.${type}` as StringKey),
+                    })}
+                    className="max-h-48 w-auto rounded-md border"
+                  />
+                ) : null}
+                {doc && previewBase && doc.mimeType === 'application/pdf' ? (
+                  <a
+                    className="inline-block underline"
+                    href={`${previewBase}/${doc.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('s07Company.kyc.openPdf')}
+                  </a>
                 ) : null}
                 {!readOnly ? (
                   <>
@@ -200,7 +247,6 @@ export function KycPanel({
                         type="file"
                         className="sr-only"
                         accept="image/jpeg,image/png,image/webp,application/pdf"
-                        {...(isId ? { capture: 'environment' as const } : {})}
                         disabled={busy !== null}
                         onChange={(e) => {
                           const f = e.target.files?.[0];
@@ -210,6 +256,19 @@ export function KycPanel({
                       />
                     </label>
                   </>
+                ) : null}
+                {busy === type ? (
+                  <p role="status" className="text-muted-foreground">
+                    {t('s07Company.kyc.uploading')}
+                  </p>
+                ) : null}
+                {notes[type] ? (
+                  <p
+                    role={notes[type].ok ? 'status' : 'alert'}
+                    className={notes[type].ok ? 'text-muted-foreground' : 'text-destructive'}
+                  >
+                    {notes[type].text}
+                  </p>
                 ) : null}
               </li>
             );
@@ -270,7 +329,7 @@ export function KycPanel({
                     }
                   >
                     <option value="">-</option>
-                    {COUNTRY_CODES.map((c) => (
+                    {sortedCountryCodes.map((c) => (
                       <option key={c} value={c}>
                         {countryName(c)}
                       </option>
@@ -332,14 +391,40 @@ export function KycPanel({
               </Button>
             </div>
           </fieldset>
+          {notes.owners ? (
+            <p
+              role={notes.owners.ok ? 'status' : 'alert'}
+              className={
+                notes.owners.ok ? 'text-sm text-muted-foreground' : 'text-sm text-destructive'
+              }
+            >
+              {notes.owners.text}
+            </p>
+          ) : null}
         </form>
       </section>
 
       {!readOnly ? (
-        <section className="space-y-2">
+        <section className="space-y-2 rounded-lg border bg-card p-sp-16" aria-labelledby="submit">
+          <h2 id="submit" className="text-h4 font-semibold">
+            {t('s07Company.kyc.stepsTitle')}
+          </h2>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <span aria-hidden="true">{docsDone === DOC_TYPES.length ? '[x]' : '[ ]'} </span>
+              {t('s07Company.kyc.stepDocs', { done: docsDone, total: DOC_TYPES.length })}
+            </li>
+            <li>
+              <span aria-hidden="true">{ownersDone ? '[x]' : '[ ]'} </span>
+              {ownersDone ? t('s07Company.kyc.stepOwnersDone') : t('s07Company.kyc.stepOwners')}
+            </li>
+            {rejectedDocs ? (
+              <li className="text-destructive">{t('s07Company.kyc.stepReplace')}</li>
+            ) : null}
+          </ul>
           <Button
             type="button"
-            disabled={!view.ready || busy !== null}
+            disabled={!view.ready || rejectedDocs || busy !== null}
             onClick={() => void call('submit', 'PATCH', {}, t('s07Company.kyc.submitted'))}
           >
             {t('s07Company.kyc.submit')}
@@ -347,15 +432,18 @@ export function KycPanel({
           {!view.ready ? (
             <p className="text-sm text-muted-foreground">{t('s07Company.kyc.notReady')}</p>
           ) : null}
+          {notes.submit ? (
+            <p
+              role={notes.submit.ok ? 'status' : 'alert'}
+              className={
+                notes.submit.ok ? 'text-sm text-muted-foreground' : 'text-sm text-destructive'
+              }
+            >
+              {notes.submit.text}
+            </p>
+          ) : null}
         </section>
       ) : null}
-      <p
-        aria-live="polite"
-        role="status"
-        className={`text-sm ${message && !message.ok ? 'text-destructive' : 'text-muted-foreground'}`}
-      >
-        {message?.text}
-      </p>
     </div>
   );
 }

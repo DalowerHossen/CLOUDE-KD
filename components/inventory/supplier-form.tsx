@@ -8,7 +8,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { COUNTRY_CODES, countryName } from '@/lib/company/countries';
+import { countryName, sortedCountryCodes } from '@/lib/company/countries';
 import { t } from '@/lib/i18n';
 import type { CustomFieldDef } from '@/services/client/custom-fields';
 import type { SupplierView } from '@/services/supplier/suppliers';
@@ -231,7 +231,7 @@ export function SupplierForm({
                 onChange={(e) => setS({ ...s, addressCountry: e.target.value })}
               >
                 <option value="">{t('s08Crm.suppliers.chooseCountry')}</option>
-                {COUNTRY_CODES.map((c) => (
+                {sortedCountryCodes.map((c) => (
                   <option key={c} value={c}>
                     {countryName(c)}
                   </option>

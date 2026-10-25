@@ -8,7 +8,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
-import { COUNTRY_CODES, countryName } from '@/lib/company/countries';
+import { countryName, sortedCountryCodes } from '@/lib/company/countries';
 import { DISPLAY_CURRENCIES } from '@/lib/company/sections';
 import { t } from '@/lib/i18n';
 import type { CustomFieldDef } from '@/services/client/custom-fields';
@@ -161,7 +161,7 @@ function payload(s: FormState): Record<string, unknown> {
   };
 }
 
-const countries = COUNTRY_CODES.map((c) => ({ value: c, label: countryName(c) }));
+const countries = sortedCountryCodes.map((c) => ({ value: c, label: countryName(c) }));
 
 function AddressFields({
   prefix,

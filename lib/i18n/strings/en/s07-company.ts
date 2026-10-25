@@ -61,7 +61,7 @@ export const strings = {
     },
     documents: 'Documents',
     documentsHelp:
-      'Photos or PDF files, 5 MB at most. Photos must be sharp and show the whole document. On a phone you can take the photo with the camera.',
+      'Photos are made smaller on your device before they are sent. A PDF can be 4 MB at most. Photos must be sharp and show the whole document. On a phone you can take the photo with the camera.',
     docs: {
       id_front: 'ID card or passport, front',
       id_back: 'ID card or passport, back',
@@ -77,6 +77,21 @@ export const strings = {
     tooSmall:
       'The picture is too small to read. It needs at least {width} by {height} pixels. Take a closer, sharper photo.',
     uploaded: 'Document uploaded.',
+    missing: 'Not uploaded',
+    uploadedFile: 'Uploaded: {name}',
+    previewAlt: 'Preview of {name}',
+    openPdf: 'Open the PDF',
+    preparing: 'Preparing the photo...',
+    uploading: 'Uploading...',
+    unreadable: 'The file could not be read as a picture. Take a new photo.',
+    pdfTooBig: 'A PDF can be 4 MB at most. Compress it or take a photo of the document instead.',
+    tooBigForHost: 'The file is too large to send. Take a photo instead or use a smaller file.',
+    errorRef: '(reference {ref})',
+    stepsTitle: 'Before you submit',
+    stepDocs: 'Documents uploaded: {done} of {total}',
+    stepOwners: 'Add at least one owner and press Save owners.',
+    stepOwnersDone: 'Owners saved.',
+    stepReplace: 'Replace the documents that were rejected.',
     owners: 'Owners and controlling persons',
     ownersHelp:
       'List every person who owns 25 percent or more, or controls the business. Their details are encrypted.',

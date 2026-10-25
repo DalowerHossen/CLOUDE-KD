@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
-import { COUNTRY_CODES, countryName } from '@/lib/company/countries';
+import { countryName, sortedCountryCodes } from '@/lib/company/countries';
 import { t } from '@/lib/i18n';
 import type { WarehouseView } from '@/services/inventory/warehouses';
 
@@ -209,7 +209,7 @@ export function WarehousesManager({
                 onChange={(e) => setDraft({ ...draft, addressCountry: e.target.value })}
               >
                 <option value="">-</option>
-                {COUNTRY_CODES.map((c) => (
+                {sortedCountryCodes.map((c) => (
                   <option key={c} value={c}>
                     {countryName(c)}
                   </option>

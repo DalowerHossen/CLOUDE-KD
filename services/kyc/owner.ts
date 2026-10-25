@@ -28,6 +28,7 @@ export interface DocumentView {
   id: string;
   docType: DocType;
   name: string;
+  mimeType: string;
   status: 'pending' | 'accepted' | 'rejected';
   rejectReason: string;
   expiresOn: string | null;
@@ -96,7 +97,7 @@ export async function kycView(companyId: string): Promise<KycView> {
     };
   const docs = await getAdminSupabase()
     .from('kyc_documents')
-    .select('id, doc_type, file_name, status, reject_reason, document_expires_on')
+    .select('id, doc_type, file_name, mime_type, status, reject_reason, document_expires_on')
     .eq('submission_id', String(row.id))
     .is('deleted_at', null);
   if (docs.error) throw new InternalError(docs.error);
@@ -104,6 +105,7 @@ export async function kycView(companyId: string): Promise<KycView> {
     id: String(d.id),
     docType: String(d.doc_type) as DocType,
     name: String(d.file_name),
+    mimeType: String(d.mime_type),
     status: String(d.status) as DocumentView['status'],
     rejectReason: String(d.reject_reason),
     expiresOn: d.document_expires_on ? String(d.document_expires_on) : null,
@@ -245,7 +247,7 @@ export async function uploadDocument(
       document_expires_on: input.expiresOn,
       duplicate_of_company: typeof dup.data === 'string' ? dup.data : null,
     })
-    .select('id, doc_type, file_name, status, reject_reason, document_expires_on')
+    .select('id, doc_type, file_name, mime_type, status, reject_reason, document_expires_on')
     .single();
   if (error) throw new InternalError(error);
   if (typeof dup.data === 'string')
@@ -265,6 +267,7 @@ export async function uploadDocument(
     id: String(data.id),
     docType: input.docType,
     name: String(data.file_name),
+    mimeType: String(data.mime_type),
     status: 'pending',
     rejectReason: '',
     expiresOn: data.document_expires_on ? String(data.document_expires_on) : null,
@@ -334,4 +337,34 @@ export async function assertOwnSubmission(companyId: string, submissionId: strin
     .maybeSingle();
   if (error) throw new InternalError(error);
   if (!data) throw new NotFoundError();
+}
+
+/**
+ * Opens one of the company's own KYC documents so the owner can see what was uploaded. Only a person of the same
+ * company gets it, every view is written to the audit log, and the answer is never cached.
+ */
+export async function openOwnDocument(
+  actor: Actor,
+  documentId: string,
+): Promise<{ bytes: Uint8Array; mimeType: string; name: string }> {
+  const companyId = actor.companyId;
+  if (!companyId) throw new NotFoundError();
+  const { data, error } = await getAdminSupabase()
+    .from('kyc_documents')
+    .select('id, file_id, file_name, mime_type')
+    .eq('id', documentId)
+    .eq('company_id', companyId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) throw new InternalError(error);
+  if (!data) throw new NotFoundError();
+  await getService('audit').record({
+    action: 'kyc.document_viewed_by_owner',
+    resourceType: 'kyc_document',
+    resourceId: String(data.id),
+    companyId,
+    metadata: { by: actor.userId },
+  });
+  const file = await getService('storage').get(String(data.file_id));
+  return { bytes: file.bytes, mimeType: String(data.mime_type), name: String(data.file_name) };
 }
