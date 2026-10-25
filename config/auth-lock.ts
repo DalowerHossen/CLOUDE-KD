@@ -37,4 +37,5 @@ export const IMPERSONATION_MAX_SECONDS = 3600;
 export const LOGIN_MIN_RESPONSE_MS = 600;
 
 /** Captcha after this many failures from one address. Sign-up and reset always require it. */
-export const LOGIN_CAPTCHA_AFTER_FAILURES = 3;
+/** The security check (Cloudflare Turnstile) is asked at every sign-in: 0 failures are enough to ask for it. */
+export const LOGIN_CAPTCHA_AFTER_FAILURES = 0;
