@@ -127,3 +127,9 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - The platform checks e-mail (an enabled platform sender), payment processors (one enabled), plans (two active) and analytics (any identifier) by itself and shows "found / not found". Branding, domains, payout partners and WhatsApp have no platform-level record to check, so they show "cannot be checked here". A check never marks a step done: the operator confirms every step.
 - Only payout partners, WhatsApp and analytics may be skipped; the service refuses a skip of the others.
 - "Run the wizard again" soft-deletes the eight step rows and writes an audit entry (`platform.setup_reset`); the approval mode and earlier audit entries stay. The older `security` key stays valid in the database but is no longer a step.
+
+## D43 Admin home figures (2026-10-26)
+
+- MRR, ARR and subscription revenue come from the existing revenue report (`services/subscription/analytics.ts`), not a second calculation. Payment volume is the captured amount of payments this month (UTC), summed with decimal money, up to 50,000 rows. Invoices this month count by issue date.
+- The health score starts at 100 and loses points per signal with a cap (database 50, critical alerts 10 each up to 30, high alerts 5 each up to 15, incidents 10 each up to 20, failing log destinations 5 each up to 10). 90 and above is good, 60 and above needs a look, below is poor. The weights are a judgement, not a standard; the reasons are shown beside the number.
+- A figure that cannot be read shows "Not available yet"; it never blocks the page. The live activity feed is a page load, not a push stream.

@@ -190,3 +190,8 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-setup-wizard.ts` (6 checks): the eight steps in order; each accepted; skip limited to the optional ones; reset, approval mode and the older security step; unknown steps, choices and extra fields refused; the migration lists exactly the steps of the code.
 - `sql/assertions/s16_031_platform_setup_steps.sql`: the eight keys are accepted, an unknown key is refused.
 - Not verified: the page in a browser; the migration on the live database (not applied); the detection against live data.
+
+## 16.20 Admin home metrics
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-admin-health.ts` (5 checks): 100 when clean, the caps, the 0 to 100 range, the levels.
+- Not verified: the page in a browser, the money figures against live data, the speed of the page with many payments.

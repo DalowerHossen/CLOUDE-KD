@@ -267,3 +267,8 @@ Support staff find a payment across all companies by the last four digits of the
 - Goal: FEATURE_LIST H1 (2654-2664). After the approval mode, eight steps: branding, e-mail, payment processors, plans, domains, payout partners, WhatsApp, analytics; a completion checklist; a re-run. Decisions are D42.
 - 16.19.a Data: `migrations/S16_031_platform_setup_steps.sql` (+ `_down`), `sql/assertions/s16_031_platform_setup_steps.sql`, `lib/company/ops-input.ts` (`WIZARD_STEPS`, `OPTIONAL_WIZARD_STEPS`, `setupSchema`).
 - 16.19.b Service and page: `services/company/platform-setup.ts` (live "found / not found" per step, skip rule, re-run), `app/(admin)/admin/setup/_components/setup-wizard.tsx`, strings `s07Company.adminOps.wiz*`, `scripts/verify/step16-setup-wizard.ts`.
+
+## 16.20 Admin home metrics (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST A1 (2354-2365): MRR and ARR, subscription revenue this month and this year, invoices this month, payment volume this month, a platform health score, quick actions. Counters, queues and the activity feed already existed. Decisions are D43.
+- Files: `lib/admin/health-score.ts`, `services/company/admin-metrics.ts`, `app/(admin)/admin/page.tsx`, strings `s07Company.adminPeople.*`, `scripts/verify/step16-admin-health.ts`.
