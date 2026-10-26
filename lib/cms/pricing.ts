@@ -20,6 +20,8 @@ export const PRICING_ROWS: readonly Row[] = [
   { key: 'clients.max', label: 'Clients' },
   { key: 'staff.seats', label: 'Team members' },
   { key: 'storage.gigabytes', label: 'File storage', format: (n) => `${n} GB` },
+  { key: 'emails.monthly', label: 'E-mails per month' },
+  { key: 'api.requests_monthly', label: 'API calls per month' },
   { key: 'token.expiry_days', label: 'Client link validity', format: (n) => `up to ${n} days` },
   { key: 'recurring.enabled', label: 'Recurring invoices' },
   { key: 'projects.enabled', label: 'Projects and time tracking' },

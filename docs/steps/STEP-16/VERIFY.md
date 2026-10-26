@@ -207,3 +207,32 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-system-controls.ts` (6 checks): maintenance window, input rules, kill switch and cap input, cap in force, the configuration screen never holds a value, the migration key.
 - `sql/assertions/s16_033_platform_controls.sql`: one row per key, known key only, one engaged switch per flag, release and engage again, one cap per company with a range, closed to clients.
 - Not verified: maintenance, kill switch and cap in a running site, the three pages in a browser, the migration on the live database (not applied), the retry of a real failed job.
+
+## 16.23 Custom limits per company
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-tenant-overrides.ts` (5 checks): input rules by kind, refusals, an override over the plan with the plan untouched, null as no limit, expiry.
+- `sql/assertions/s16_034_tenant_limit_overrides.sql`: one per feature, value types, closed to clients. Not run yet against a database.
+- Applied to the live database on 2026-10-26; the assertion ran there and rolled back (passed). Not verified: the panel in a browser, a real quota bar after an override.
+
+## 16.24 Company insight, support bundle and global search
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-tenant-insight.ts` (7 checks): calm company, sign-in drop rule, late invoice and tickets, worst case range, days late, search text rules, the support bundle reads no secret columns.
+- Not verified: the company page and the search page in a browser, the figures against live data, the speed of pattern search on a large database, a real download of the bundle.
+
+## 16.25 Live check, plan quotas, payment search
+
+- Live database, read only: all columns used by 16.20 to 16.24 exist; the admin home counters and the per-company sign-in, ticket and e-mail counts equal independent counts. Money sums could not be checked (no money in the database). The services themselves were not run against the live database (no service key in this session).
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-plan-quotas.ts` (4 checks) and `step16-tenant-insight.ts` (8 checks, now with payment search).
+- Not verified: the API quota refusing a real call, the quota bars in a browser.
+
+## 16.26 What's new and product tours
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-release-notes.ts` (5 checks): note rules, tour limit and in-app links only, seen input, unseen notes, migration limit equals the code limit.
+- `sql/assertions/s16_035_release_notes.sql`: title length, kinds, tour length and type, one read per person and note, closed to clients. Not run yet (migration not applied).
+- Not verified: the pages in a browser, the banner, a real tour.
+
+## 16.27 Exit survey and downgrade-save
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-retention.ts` (7 checks): the seven reasons equal the migration, survey and offer input, offer choice, stay rate, the two routes accept an optional survey.
+- `sql/assertions/s16_036_retention.sql`: known triggers, reasons and outcomes, coupon shape, detail length, closed to clients. Not run yet (migration not applied).
+- Not verified: the flow in a browser, a real cancel or downgrade with the survey, the coupon check against live coupons.

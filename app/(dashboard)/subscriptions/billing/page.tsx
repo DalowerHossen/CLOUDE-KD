@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getService } from '@/lib/container';
 import { t, type StringKey } from '@/lib/i18n';
+import { Money } from '@/lib/utils/currency';
+import { RetentionFlow } from './_components/retention-flow';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { entitlementsOf } from '@/services/entitlement/entitlement';
 import { meters, type MeterView } from '@/services/entitlement/usage';
@@ -50,6 +52,17 @@ export default async function BillingPage(): Promise<JSX.Element> {
     (p) => p.visible || p.slug === sub?.planSlug || p.slug === planSlug,
   );
   const active = sub !== null && ['trialing', 'active', 'past_due', 'grace'].includes(sub.status);
+  // Plans that cost less per month than the current one: the "move to a lower plan" flow offers these. Money is compared as Money.
+  const current = plans.find((p) => p.slug === (sub?.planSlug ?? planSlug));
+  const lowerPlans = current
+    ? choosable
+        .filter(
+          (p) =>
+            p.slug !== current.slug &&
+            Money.parse(p.priceMonthly).lt(Money.parse(current.priceMonthly)),
+        )
+        .map((p) => ({ slug: p.slug, name: p.name }))
+    : [];
   const pendingName = sub?.pendingPlanSlug
     ? (plans.find((p) => p.slug === sub?.pendingPlanSlug)?.name ?? sub.pendingPlanSlug)
     : null;
@@ -248,20 +261,27 @@ export default async function BillingPage(): Promise<JSX.Element> {
               empty={<EmptyState title={t('s14Wallet.billing.invoicesEmpty')} />}
             />
           </section>
+          {canManage && sub && active && lowerPlans.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('s16Growth.flow.downgradeTitle')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RetentionFlow
+                  trigger="downgrade"
+                  lowerPlans={lowerPlans}
+                  interval={sub.interval}
+                />
+              </CardContent>
+            </Card>
+          ) : null}
           {canManage && sub && active && !sub.cancelAtPeriodEnd ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t('s14Wallet.billing.cancelTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <JsonForm
-                  endpoint="/api/subscriptions/cancel"
-                  submitLabel={t('s14Wallet.billing.cancel')}
-                  doneText={t('s14Wallet.billing.cancelled')}
-                  fields={[
-                    { name: 'reason', label: t('s14Wallet.billing.cancelReason'), required: true },
-                  ]}
-                />
+                <RetentionFlow trigger="cancel" lowerPlans={[]} interval={sub.interval} />
               </CardContent>
             </Card>
           ) : null}

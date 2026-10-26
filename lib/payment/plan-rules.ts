@@ -197,5 +197,7 @@ export const METERED_KEYS: readonly EntitlementKey[] = [
   'clients.max',
   'staff.seats',
   'storage.gigabytes',
+  'emails.monthly',
+  'api.requests_monthly',
 ];
 export { ENTITLEMENT_KEYS };

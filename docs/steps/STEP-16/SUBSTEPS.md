@@ -286,3 +286,28 @@ Support staff find a payment across all companies by the last four digits of the
 - 16.22.b Rules and services: `lib/platform/controls.ts`, `services/platform/{controls,jobs,config-status}.ts`, `MaintenanceError`, `companyCapHit` in `services/security/rate-limit.ts`.
 - 16.22.c Enforcement: `lib/api/with-api.ts` and `lib/integrations/public-api.ts` (maintenance, company cap), `app/(dashboard)/layout.tsx` (maintenance notice), `services/company/module-access.ts` (kill switch).
 - 16.22.d Screens: `/admin/system`, `/admin/system/jobs`, `/admin/system/config`, routes `app/api/admin/system/*`, permissions `system.read` and `system.manage`, navigation, strings, `scripts/verify/step16-system-controls.ts`.
+
+## 16.23 Custom limits per company (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST A4 2395. Decisions are D46.
+- Files: `migrations/S16_034_tenant_limit_overrides.sql` (+ `_down`), `sql/assertions/s16_034_tenant_limit_overrides.sql`, `lib/platform/tenant-overrides.ts`, `services/entitlement/{overrides,entitlement}.ts`, `services/platform/tenant-overrides.ts`, `app/api/admin/system/tenant-overrides/route.ts`, `app/(admin)/admin/_components/limit-overrides-panel.tsx`, the company page, `scripts/verify/step16-tenant-overrides.ts`.
+
+## 16.24 Company insight, support bundle and global search (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST A4 2397 to 2400, 2403 and 2405: API use, e-mail use, health score with churn signals, support export, search over all companies. Storage and quota bars reuse the existing quota meters. Decisions are D47.
+- Files: `lib/platform/{tenant-insight,global-search}.ts`, `services/platform/{tenant-insight,tenant-export,global-search}.ts`, `app/api/admin/system/tenant-export/route.ts`, `app/(admin)/admin/_components/{tenant-insight-panel,support-export-button}.tsx`, `app/(admin)/admin/search/page.tsx`, the company page, navigation, strings, `scripts/verify/step16-tenant-insight.ts`.
+
+## 16.25 Checked against live data, plan quotas for e-mail and API, payment search (owner request, 2026-10-26)
+
+- Goal: the figures of 16.20 and 16.24 compared with the live database; e-mail and API calls become plan features with quota bars (they were plain figures); payments can be found in the platform search. Decisions are D48.
+- Files: `services/subscription/analytics.ts`, `services/platform/tenant-insight.ts`, `config/plans.ts`, `lib/payment/plan-rules.ts`, `lib/cms/pricing.ts`, `lib/i18n/strings/en/s14-wallet.ts`, `services/entitlement/usage.ts`, `lib/integrations/public-api.ts`, `lib/platform/global-search.ts`, `services/platform/global-search.ts`, `scripts/verify/step16-plan-quotas.ts`, `scripts/verify/step16-tenant-insight.ts`.
+
+## 16.26 What's new and product tours (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST M2 2795 and 2796. Decisions are D49.
+- Files: `migrations/S16_035_release_notes.sql` (+ `_down`), `sql/assertions/s16_035_release_notes.sql`, `lib/platform/release-notes.ts`, `services/platform/release-notes.ts`, `app/api/whats-new/route.ts`, `app/api/admin/releases/route.ts`, `app/(dashboard)/whats-new`, `app/(admin)/admin/releases`, `app/(dashboard)/layout.tsx` (unseen banner), `config/permissions/s16-releases.ts`, navigation, strings `s16Growth`, `scripts/verify/step16-release-notes.ts`.
+
+## 16.27 Exit survey and downgrade-save (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST M2 2792 and 2793. Decisions are D50.
+- Files: `migrations/S16_036_retention.sql` (+ `_down`), `sql/assertions/s16_036_retention.sql`, `lib/platform/retention.ts`, `services/platform/retention.ts`, `app/api/retention/{offer,saved}/route.ts`, `app/api/admin/retention/route.ts`, `app/api/subscriptions/{cancel,change}/route.ts`, `app/(dashboard)/subscriptions/billing` (flow), `app/(admin)/admin/retention`, `config/permissions/s16-retention.ts`, navigation, strings, `scripts/verify/step16-retention.ts`.

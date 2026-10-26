@@ -13,6 +13,9 @@ paths = [
   '''^config/env/[A-Za-z0-9._-]+\.fragment$''',
 ]
 # The navigation files have lines like labelKey: 's09Invoicing.nav.tax'; the word "Key" in the name makes the generic rule take them for keys.
+# The pattern describes a whole line, so it is matched against the line: by default a regex is matched against the found value
+# alone ('s09Invoicing.nav.tax'), which never contains the word labelKey, and the line was reported whenever its entropy was high.
+regexTarget = "line"
 regexes = [
   '''labelKey:\s*'[A-Za-z0-9.]+'''',
 ]

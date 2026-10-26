@@ -34,6 +34,12 @@ import { hitKey, recordUsage } from '@/services/publicapi/usage';
 import type { AuditEntryInput } from '@/types/contracts';
 import { keyFromHeader, rateHeaders, scopeAllows, scopeFor, type RateState } from './api-key-rules';
 
+/** Seconds until the first moment of next month (UTC), at least 60: when the monthly API quota starts again. */
+function secondsToMonthEnd(now: Date): number {
+  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1);
+  return Math.max(60, Math.ceil((next - now.getTime()) / 1000));
+}
+
 const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const DEFAULT_MAX_BODY_BYTES = 1_048_576;
 
@@ -181,6 +187,12 @@ export function withPublicApi<
             const hit = await companyCapHit(key.companyId, cap);
             if (!hit.allowed) throw new RateLimitError(hit.retryAfterSeconds);
           }
+          const { apiQuotaReached } = await import('@/services/entitlement/usage');
+          if (await apiQuotaReached(key.companyId))
+            throw new RateLimitError(
+              secondsToMonthEnd(now),
+              'The monthly API quota of your plan is used up. It starts again next month, or upgrade your plan.',
+            );
         }
 
         const needed = scopeFor(method, options.resource);

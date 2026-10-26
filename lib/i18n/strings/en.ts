@@ -32,6 +32,7 @@ import { strings as s16Commerce } from './en/s16-commerce';
 import { strings as s16Compliance } from './en/s16-compliance';
 import { strings as s16Developers } from './en/s16-developers';
 import { strings as s16Gateway } from './en/s16-gateway';
+import { strings as s16Growth } from './en/s16-growth';
 import { strings as s16Messaging } from './en/s16-messaging';
 import { strings as s16Migration } from './en/s16-migration';
 import { strings as s16Ocr } from './en/s16-ocr';
@@ -40,6 +41,6 @@ import { strings as s16Social } from './en/s16-social';
 import { strings as s16System } from './en/s16-system';
 import { strings as s16Whatsapp } from './en/s16-whatsapp';
 
-export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Batches, s09Credits, s09Dashboard, s09Dunning, s09Estimates, s09Invoicing, s09Projects, s09Recurring, s09Reports, s10Payments, s10Processors, s13Portal, s14Wallet, s15Accounting, s15Expenses, s15Hr, s15Payroll, s16Automation, s16Bankfeed, s16Commerce, s16Compliance, s16Developers, s16Gateway, s16Messaging, s16Migration, s16Ocr, s16Settlement, s16Social, s16System, s16Whatsapp } as const;
+export const en = { s01Core, s02Governance, s03Auth, s04Security, s05Storage, s06Public, s07Company, s08Crm, s09Batches, s09Credits, s09Dashboard, s09Dunning, s09Estimates, s09Invoicing, s09Projects, s09Recurring, s09Reports, s10Payments, s10Processors, s13Portal, s14Wallet, s15Accounting, s15Expenses, s15Hr, s15Payroll, s16Automation, s16Bankfeed, s16Commerce, s16Compliance, s16Developers, s16Gateway, s16Growth, s16Messaging, s16Migration, s16Ocr, s16Settlement, s16Social, s16System, s16Whatsapp } as const;
 
 export type Strings = typeof en;

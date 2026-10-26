@@ -151,3 +151,44 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - A company cap is an extra per-minute ceiling for all users of one company, counted together. It can only limit: the per-address limit (120 a minute) still applies, so a cap above it does not give more room. If the counter cannot be read the request is not refused for this reason.
 - The configuration screen lists names and set/not-set only. It cannot change a value: secrets live in the host's environment settings, and writing them from the site would put a secret store in the database next to the data it protects. Marked as not built: editing from the screen.
 - The job screen shows counts, the oldest overdue job and failed or given-up jobs with the error text, and retries one job. There is no per-run job log and no cron dead-man alert yet.
+
+## D46 Custom limits per company (2026-10-26)
+
+- An override is one value for one plan feature of one company (a number, no limit, or on/off by the kind of feature). It lies over the plan in the one place every entitlement answer comes from, so quota bars, limit checks, locked-feature prompts and the module check all use it. The plan is not changed. An override may end at a date; after that the plan value is back.
+- Super admin only, fresh identity check, audit entry per change. A failed read of the overrides leaves the plan values in force and is logged.
+- Not built: overage price per override, and a bulk change for several companies.
+
+## D47 Company insight, support bundle and global search (2026-10-26)
+
+- The health score starts from the revenue report's own rules (unpaid plan, overdue invoices, failed payouts, chargebacks, little use, no invoice for 60 days). Churn signals add: sign-ins down by more than 60 percent against the 30 days before (only with at least 5 earlier sign-ins), a late plan invoice, and open high or urgent tickets. A quota bar without a limit is left out of the "little use" test. The weights are a judgement, shown beside the score as reasons.
+- API use is read from the daily key usage rows, e-mail use from the outbox (sent, failed, bounced, waiting). There is no per-company e-mail or API plan limit in the catalogue, so these are figures, not bars.
+- The support bundle is super admin only, needs a fresh identity check and a reason, is limited by the export rate policy, and is audited. It holds company and plan facts, people (name, e-mail, role), record counts, tickets, quotas, custom limits and the latest 200 activity entries. It holds no bank details, keys, tokens, card data or documents.
+- Global search covers companies, people, clients, invoice numbers and tickets for super admin and CEO. Matches are by text pattern, 10 per kind. Each search is rate limited per person and audited without its text, because it may be a name or address. Searching client names and e-mail shows customer personal data of companies to platform staff; this follows FEATURE_LIST 2405 ("all data") and is the reason for the audit.
+- Not built: point-in-time restore of one company (2404), a per-company activity export, search of payments, and a search index (a pattern search is used, fine for the current size, slow at millions of rows).
+
+## D48 Live check, plan quotas for e-mail and API, payment search (2026-10-26)
+
+- Checked on the live database (3 companies, 1 subscription, no payments, no paid platform invoices, no API use): every column the new services read exists; the counters of the admin home (3 active, 0 suspended, 0 closed, 3 owners, 0 staff, 1 platform user, 1 verification waiting, 1 open ticket) equal an independent count of the tables; the sign-in, ticket and e-mail figures of each company equal an independent count. The sums of money (revenue, payment volume, MRR) are 0 because there is no money in the database, so those sums are verified by reasoning and scripts only, not by live data.
+- Found and fixed: a company on the free plan has an active subscription and was counted as a paying company (paying companies 1, ARPU 0). The revenue report now counts a company as paying only when its monthly amount is above zero. The company health score now treats a free-plan company as free, so it no longer loses points for "uses very little of its plan".
+- Found, not a code fault: this month 0 e-mails were sent and 11 failed (8 more are waiting), in all three companies. This matches the refused SMTP sign-in.
+- New plan features `emails.monthly` and `api.requests_monthly` (free 100 and 0, pro 2000 and 50000, business 20000 and 500000, enterprise no limit). They show as quota bars on the company pages. The API quota is enforced: when a plan with API access has used its calls of the month the public API answers 429 until next month; a failed read lets the call through. The e-mail quota is shown but not enforced, because sign-in, verification, reset and billing mail must never be blocked by a plan limit.
+- Plans already in the database keep their saved values; the two new keys come from the built-in values until the platform team saves them in the plan editor.
+- The platform search finds payments by id, by the processor's transaction id and by the trace id.
+
+## D49 What's new and product tours (2026-10-26)
+
+- The platform team (super admin and CEO, fresh identity check, audited) publishes plain-text release notes for everyone or owners only; a note may carry a tour of up to 8 steps. A company user sees live notes under "What's new", the notes they have not seen are marked, and a banner on the dashboard counts them. Seen and tour-finished marks are private to the user.
+- A tour is a stepper on the "What's new" page. Each step may link to a page inside the app (a path starting with "/", no outside address). It does not draw highlights over the real screens: pointing at a button on another page would need a script inside every page and breaks whenever a page changes. That contextual overlay is not built.
+- Notes are plain text (no HTML), so there is nothing to clean. A failed read of the unseen count shows no banner and never breaks a page.
+
+## D50 Exit survey and downgrade-save (2026-10-26)
+
+- Before a company cancels, or moves to a cheaper plan, it is asked why (seven fixed reasons and a free text of up to 500 characters). The platform team's offer for that reason (one for that reason wins over one for any reason; the newest wins) is shown with a link to an existing coupon code. The company can keep its plan, which is recorded as "stayed", or go on, which does the real cancel or downgrade and records the answer as "continued". The platform screen shows the answers of the last 180 days by reason and the stay rate.
+- An offer only points to a coupon code that must exist and be switched on; the company still applies the code where it picks a plan. It is not applied for them.
+- The survey is a step in front of the existing cancel and downgrade, not a gate: the routes still work without a survey, a failed offer lookup goes straight on to the action, and a failed survey write is logged and never stops the cancel or the downgrade. A downgrade is recorded only when it really is a downgrade (not for a change of interval or an upgrade).
+- Not built: win-back mail after 30 days idle (2791), the 7-day no-login mail (2790) and milestone celebrations (2794): they need the mail queue, which cannot send until the SMTP sign-in is fixed.
+
+## D51 CI fixes for pull request 39 (2026-10-26)
+
+- The secret scan reported `labelKey: 's16Growth.nav.retention'` in a navigation file as a key (generic rule, entropy 3.76). The project already allowed such lines, but a gitleaks regex is matched against the found value alone by default, so the pattern for the whole line never matched and only low-entropy names passed by luck. `.gitleaks.toml` now sets `regexTarget = "line"`. This was not reproduced locally (the scanner cannot be run in this session); CI is the check.
+- The new "What's new" page was missing from the core menu list and from the crawler rules; both verify scripts caught it. Lesson recorded: run the whole `scripts/verify-all.sh` before pushing, not only the scripts of the sub-step.

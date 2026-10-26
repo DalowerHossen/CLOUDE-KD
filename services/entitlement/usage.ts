@@ -10,6 +10,7 @@ import { meter, METERED_KEYS, upgradeTarget, type Meter } from '@/lib/payment/pl
 import { toInt } from '@/lib/reports/numbers';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { listPlans } from '@/services/plan/plans';
+import { cached } from './cache';
 import { entitlementsOf } from './entitlement';
 
 const log = createLogger({ component: 'usage' });
@@ -63,6 +64,29 @@ export async function usedNow(
       if (error) throw new InternalError(error);
       const bytes = z.coerce.number().parse(data ?? 0);
       return toInt(bytes / 1_073_741_824 + 0.999999, 0);
+    }
+    case 'emails.monthly': {
+      // Messages made this month that were sent or are on their way; failed and suppressed ones do not count.
+      const { count: n, error } = await admin
+        .from('email_outbox')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .in('status', ['sent', 'queued', 'sending'])
+        .gte('created_at', `${currentPeriod(at)}-01T00:00:00.000Z`)
+        .is('deleted_at', null);
+      if (error) throw new InternalError(error);
+      return n ?? 0;
+    }
+    case 'api.requests_monthly': {
+      const { data, error } = await admin
+        .from('api_key_usage')
+        .select('requests')
+        .eq('company_id', companyId)
+        .gte('day', `${currentPeriod(at)}-01`)
+        .is('deleted_at', null)
+        .limit(5000);
+      if (error) throw new InternalError(error);
+      return (data ?? []).reduce((sum, r) => sum + Number(r.requests), 0);
     }
     default:
       return 0;
@@ -180,4 +204,23 @@ export async function snapshotUsage(period: string = currentPeriod()): Promise<n
     }
   }
   return written;
+}
+
+/**
+ * True when the company's plan has the API and its calls this month have reached the plan's limit. A plan without API access
+ * is not judged here (other checks refuse it), and a read that fails lets the call through. Kept for a few seconds.
+ */
+export async function apiQuotaReached(companyId: string): Promise<boolean> {
+  try {
+    return await cached('api-quota', companyId, async () => {
+      const { values } = await entitlementsOf(companyId);
+      if (values['api.access'] !== true) return false;
+      const raw = values['api.requests_monthly'];
+      if (typeof raw !== 'number') return false;
+      return (await usedNow(companyId, 'api.requests_monthly')) >= raw;
+    });
+  } catch (error) {
+    log.error('API quota could not be read; the call goes through', { error });
+    return false;
+  }
 }
