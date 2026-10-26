@@ -9,8 +9,11 @@ import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { tenantDetail } from '@/services/company/admin';
 import { listFlags, type FlagView } from '@/services/company/flags';
+import { tenantInsight } from '@/services/platform/tenant-insight';
 import { listOverrides, type OverrideView } from '@/services/platform/tenant-overrides';
 import { StepUpForm } from '../../account-locks/_components/step-up-form';
+import { SupportExportButton } from '../../_components/support-export-button';
+import { TenantInsightPanel } from '../../_components/tenant-insight-panel';
 import { LimitOverridesPanel } from '../../_components/limit-overrides-panel';
 import { ModulesPanel } from '../../_components/modules-panel';
 import { PeopleActions } from '../../_components/people-actions';
@@ -49,6 +52,7 @@ export default async function TenantPage({
   } catch {
     overrides = [];
   }
+  const insight = await tenantInsight(c.id);
   const canOverride = await perms.can(actor, 'system.manage', { type: 'platform' });
   return (
     <div className="space-y-sp-16">
@@ -92,6 +96,8 @@ export default async function TenantPage({
           </p>
         ) : null}
       </section>
+      <TenantInsightPanel data={insight} />
+      {canOverride ? <SupportExportButton companyId={c.id} slug={c.slug} /> : null}
       <LimitOverridesPanel companyId={c.id} overrides={overrides} canManage={canOverride} />
       <ModulesPanel modules={MODULES} flags={flags} companyId={c.id} canManage={canFlags} />
       <PeopleActions

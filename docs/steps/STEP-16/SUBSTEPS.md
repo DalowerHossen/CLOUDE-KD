@@ -291,3 +291,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: FEATURE_LIST A4 2395. Decisions are D46.
 - Files: `migrations/S16_034_tenant_limit_overrides.sql` (+ `_down`), `sql/assertions/s16_034_tenant_limit_overrides.sql`, `lib/platform/tenant-overrides.ts`, `services/entitlement/{overrides,entitlement}.ts`, `services/platform/tenant-overrides.ts`, `app/api/admin/system/tenant-overrides/route.ts`, `app/(admin)/admin/_components/limit-overrides-panel.tsx`, the company page, `scripts/verify/step16-tenant-overrides.ts`.
+
+## 16.24 Company insight, support bundle and global search (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST A4 2397 to 2400, 2403 and 2405: API use, e-mail use, health score with churn signals, support export, search over all companies. Storage and quota bars reuse the existing quota meters. Decisions are D47.
+- Files: `lib/platform/{tenant-insight,global-search}.ts`, `services/platform/{tenant-insight,tenant-export,global-search}.ts`, `app/api/admin/system/tenant-export/route.ts`, `app/(admin)/admin/_components/{tenant-insight-panel,support-export-button}.tsx`, `app/(admin)/admin/search/page.tsx`, the company page, navigation, strings, `scripts/verify/step16-tenant-insight.ts`.

@@ -212,4 +212,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-tenant-overrides.ts` (5 checks): input rules by kind, refusals, an override over the plan with the plan untouched, null as no limit, expiry.
 - `sql/assertions/s16_034_tenant_limit_overrides.sql`: one per feature, value types, closed to clients. Not run yet against a database.
-- Not verified: the panel in a browser, a real quota bar after an override, the migration on the live database (not applied).
+- Applied to the live database on 2026-10-26; the assertion ran there and rolled back (passed). Not verified: the panel in a browser, a real quota bar after an override.
+
+## 16.24 Company insight, support bundle and global search
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-tenant-insight.ts` (7 checks): calm company, sign-in drop rule, late invoice and tickets, worst case range, days late, search text rules, the support bundle reads no secret columns.
+- Not verified: the company page and the search page in a browser, the figures against live data, the speed of pattern search on a large database, a real download of the bundle.
