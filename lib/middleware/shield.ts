@@ -57,12 +57,18 @@ export async function runShield(request: NextRequest): Promise<NextResponse | nu
     origin: request.headers.get('origin'),
     referer: request.headers.get('referer'),
     appOrigin: new URL(getPublicEnv().NEXT_PUBLIC_APP_URL).origin,
+    requestOrigin: request.nextUrl.origin,
     cookieToken: request.cookies.get(CSRF_COOKIE)?.value,
     headerToken: request.headers.get(CSRF_HEADER),
     secret: env.HMAC_TOKEN_SECRET,
   });
   if (verdict !== 'ok') {
-    await raise('csrf_failure', { verdict, path: pathname });
+    await raise('csrf_failure', {
+      verdict,
+      path: pathname,
+      from: request.headers.get('origin')?.slice(0, 120) ?? null,
+      to: request.nextUrl.origin,
+    });
     return problem(
       403,
       'csrf_failed',

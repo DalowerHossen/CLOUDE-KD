@@ -394,6 +394,36 @@ async function main(): Promise<void> {
       isSameOrigin('https://app.example.com.evil.io', null, 'https://app.example.com'),
       false,
     );
+    assert.equal(isSameOrigin('https://example.com', null, 'https://www.example.com'), true);
+    assert.equal(isSameOrigin('https://www.example.com', null, 'https://example.com'), true);
+    assert.equal(isSameOrigin('https://www.evil.com', null, 'https://www.example.com'), false);
+    assert.equal(isSameOrigin('http://example.com', null, 'https://www.example.com'), false);
+    assert.equal(
+      await checkCsrf({
+        ...base,
+        method: 'POST',
+        pathname: '/api/auth/signup',
+        origin: 'https://site.example.net',
+        appOrigin: 'https://app.example.com',
+        requestOrigin: 'https://site.example.net',
+        cookieToken: undefined,
+        headerToken: null,
+      }),
+      'missing_token',
+    );
+    assert.equal(
+      await checkCsrf({
+        ...base,
+        method: 'POST',
+        pathname: '/api/auth/signup',
+        origin: 'https://evil.example.org',
+        appOrigin: 'https://app.example.com',
+        requestOrigin: 'https://site.example.net',
+        cookieToken: undefined,
+        headerToken: null,
+      }),
+      'bad_origin',
+    );
   });
 
   await check('bot detector: headless, scanners and malformed user agents', () => {

@@ -1,6 +1,7 @@
 // path: app/(auth)/_components/signup-form.tsx
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { z } from 'zod';
 import { FormWrapper, SubmitButton } from '@/components/shared/form-wrapper';
@@ -40,6 +41,13 @@ export function SignupForm({
   const [plan, setPlan] = useState(defaultPlan);
   const [errors, setErrors] = useState<string[]>([]);
   const [resetKey, setResetKey] = useState(0);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!done) return undefined;
+    const timer = setTimeout(() => router.push('/login'), 4000);
+    return () => clearTimeout(timer);
+  }, [done, router]);
 
   async function submit(data: FormData): Promise<void> {
     setErrors([]);
@@ -80,6 +88,12 @@ export function SignupForm({
           title={t('s03Auth.signup.doneTitle')}
           description={t('s03Auth.signup.done')}
         />
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {t('s03Auth.signup.redirecting')}{' '}
+          <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+            {t('s03Auth.signup.goToLogin')}
+          </Link>
+        </p>
         <ResendForm siteKey={siteKey} initialEmail={email} heading={false} />
       </div>
     );

@@ -19,7 +19,7 @@ import { createAdapter } from '@/lib/email/adapters';
 import { PermanentEmailError, type EmailAdapter, type OutgoingMessage } from '@/lib/email/types';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { configHold } from '@/lib/email/hold';
-import { resolveChain, type ResolvedProvider } from './settings-store';
+import { missingEnvironmentSettings, resolveChain, type ResolvedProvider } from './settings-store';
 
 const log = createLogger({ component: 'email-sender' });
 
@@ -178,8 +178,19 @@ export async function deliver(row: OutboxRow): Promise<'sent' | 'retry' | 'faile
     }
     const chain = await resolveChain(row.company_id);
     if (chain.length === 0) {
-      await report(row, 'failed', { error: 'No e-mail provider is set up.' });
-      return 'failed';
+      // Nothing is set up yet: the message waits and goes out as soon as a provider exists, unless it is too old to help.
+      const waiting = configHold(true, false, row.created_at ?? null, new Date());
+      const missing = missingEnvironmentSettings();
+      const reason = `No e-mail provider is set up${missing.length > 0 ? ` (not set: ${missing.join(', ')})` : ''}.`;
+      if (waiting === 'give_up') {
+        await report(row, 'failed', { error: reason });
+        return 'failed';
+      }
+      await report(row, 'defer', {
+        error: reason,
+        retryAt: new Date(Date.now() + CONFIG_RETRY_MINUTES * 60_000).toISOString(),
+      });
+      return 'defer';
     }
     let lastTemporary = '';
     let sawTemporary = false;

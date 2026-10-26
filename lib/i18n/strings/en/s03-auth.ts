@@ -69,6 +69,8 @@ export const strings = {
     haveAccount: 'Already have an account?',
     done: 'If the address can be used, we sent a message with a link to confirm it.',
     doneTitle: 'Check your inbox',
+    redirecting: 'Taking you to the sign-in page in a moment.',
+    goToLogin: 'Go to sign in now',
   },
   verify: {
     title: 'E-mail confirmation',
