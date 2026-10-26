@@ -62,6 +62,7 @@ export const PRIVATE_PREFIXES: readonly string[] = [
   '/team',
   '/timesheets',
   '/wallet',
+  '/whats-new',
   '/whatsapp',
 ];
 

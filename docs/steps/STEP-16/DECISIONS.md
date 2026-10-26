@@ -187,3 +187,8 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - An offer only points to a coupon code that must exist and be switched on; the company still applies the code where it picks a plan. It is not applied for them.
 - The survey is a step in front of the existing cancel and downgrade, not a gate: the routes still work without a survey, a failed offer lookup goes straight on to the action, and a failed survey write is logged and never stops the cancel or the downgrade. A downgrade is recorded only when it really is a downgrade (not for a change of interval or an upgrade).
 - Not built: win-back mail after 30 days idle (2791), the 7-day no-login mail (2790) and milestone celebrations (2794): they need the mail queue, which cannot send until the SMTP sign-in is fixed.
+
+## D51 CI fixes for pull request 39 (2026-10-26)
+
+- The secret scan reported `labelKey: 's16Growth.nav.retention'` in a navigation file as a key (generic rule, entropy 3.76). The project already allowed such lines, but a gitleaks regex is matched against the found value alone by default, so the pattern for the whole line never matched and only low-entropy names passed by luck. `.gitleaks.toml` now sets `regexTarget = "line"`. This was not reproduced locally (the scanner cannot be run in this session); CI is the check.
+- The new "What's new" page was missing from the core menu list and from the crawler rules; both verify scripts caught it. Lesson recorded: run the whole `scripts/verify-all.sh` before pushing, not only the scripts of the sub-step.

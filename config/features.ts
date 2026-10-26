@@ -295,6 +295,7 @@ export const CORE_NAV_IDS: readonly string[] = [
   'account-security',
   'support',
   'notices',
+  'whats-new',
   'feedback',
 ];
 
