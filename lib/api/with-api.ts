@@ -8,11 +8,13 @@ import { isStrictObject } from '@/lib/security/zod-strict';
 import type { NextRequest } from 'next/server';
 import { getService } from '@/lib/container';
 import { moduleForApi } from '@/config/features';
+import { DEFAULT_MAINTENANCE_MESSAGE } from '@/lib/platform/controls';
 import {
   type AppError,
   ForbiddenError,
   IdempotencyConflictError,
   InternalError,
+  MaintenanceError,
   NetworkBlockedError,
   NotFoundError,
   PayloadTooLargeError,
@@ -220,6 +222,19 @@ export function withApi<
           if (options.scope === 'tenant') {
             tenant = await getService('tenant').getTenantContext();
             updateContext({ companyId: tenant.companyId });
+            // Operations controls: maintenance stops company traffic (platform staff pass); a company cap limits one company.
+            if (!PLATFORM_ROLES.includes(actor.role)) {
+              const controls = await import('@/services/platform/controls');
+              const maintenance = await controls.getMaintenance();
+              if (await controls.maintenanceActive())
+                throw new MaintenanceError(maintenance.message || DEFAULT_MAINTENANCE_MESSAGE);
+              const cap = await controls.capFor(tenant.companyId);
+              if (cap !== null) {
+                const { companyCapHit } = await import('@/services/security/rate-limit');
+                const hit = await companyCapHit(tenant.companyId, cap);
+                if (!hit.allowed) throw new RateLimitError(hit.retryAfterSeconds);
+              }
+            }
             // Loaded only for the paths of optional modules, so the other routes (and their checks) do not need the module code.
             if (moduleForApi(request.nextUrl.pathname)) {
               const { assertApiModuleEnabled } = await import('@/services/company/module-access');

@@ -9,6 +9,9 @@ import { navMap } from '@/config/nav-map';
 import { DeviceCollector } from '@/lib/security/device-collector';
 import { currentActor } from '@/services/auth/actor';
 import { enabledModules } from '@/services/company/module-access';
+import { DEFAULT_MAINTENANCE_MESSAGE } from '@/lib/platform/controls';
+import { getMaintenance, maintenanceActive } from '@/services/platform/controls';
+import { PLATFORM_ROLES } from '@/types/contracts';
 import { ImpersonationBanner } from '../(admin)/admin/impersonation/_components/impersonation-banner';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +24,23 @@ export default async function DashboardLayout({
 }): Promise<JSX.Element> {
   const { user, role } = await getShellContext('dashboard');
   const actor = await currentActor();
+  // Planned maintenance: company users see a notice; platform staff keep working.
+  if (actor && !PLATFORM_ROLES.includes(actor.role) && (await maintenanceActive())) {
+    const maintenance = await getMaintenance();
+    return (
+      <main className="mx-auto max-w-xl space-y-sp-8 p-sp-24 text-center" role="status">
+        <h1 className="text-h3 font-semibold">Maintenance</h1>
+        <p className="text-muted-foreground">
+          {maintenance.message || DEFAULT_MAINTENANCE_MESSAGE}
+        </p>
+        {maintenance.endsAt ? (
+          <p className="text-sm text-muted-foreground">
+            Expected back: {maintenance.endsAt.replace('T', ' ').slice(0, 16)} UTC
+          </p>
+        ) : null}
+      </main>
+    );
+  }
   // An optional module that the super admin has not turned on for this company is not in the menu.
   const on = actor?.companyId ? await enabledModules(actor.companyId) : new Set<string>();
   const shown = <T extends { id: string }>(item: T): boolean => {

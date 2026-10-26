@@ -113,6 +113,13 @@ export class RateLimitError extends AppError {
   }
 }
 
+/** Raised for signed-in company and public API calls while the platform is in maintenance. */
+export class MaintenanceError extends AppError {
+  constructor(message: string) {
+    super('service_unavailable', 503, message);
+  }
+}
+
 export class ServiceNotRegisteredError extends AppError {
   readonly serviceId: string;
 

@@ -278,3 +278,11 @@ Support staff find a payment across all companies by the last four digits of the
 - Goal: FEATURE_LIST A2 (2374-2380): delete with a 30 day grace, permanent removal after it, forced password reset, two-step sign-in reset, e-mail change, plan change. Suspend, reactivate, e-mail verification and notes already existed. Decisions are D44.
 - 16.21.a Data: `migrations/S16_032_admin_user_actions.sql` (+ `_down`), `sql/assertions/s16_032_admin_user_actions.sql` (`user_deletions`, `kd_user_purge`, wider action list, `params`).
 - 16.21.b Service and page: `lib/company/admin-input.ts`, `config/approval/s07-admin.ts`, `services/company/admin.ts`, `services/auth/reset-flow.ts` (`sendAdminReset`), `app/(admin)/admin/_components/people-actions.tsx`, `app/(admin)/admin/users/[id]/page.tsx`, `scripts/verify/step16-user-actions.ts`.
+
+## 16.22 Operations controls (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST L1 to L2 (2756-2767): maintenance mode, job queue monitor with retry, configuration screen, global kill switch, request cap per company. Decisions are D45.
+- 16.22.a Data: `migrations/S16_033_platform_controls.sql` (+ `_down`), `sql/assertions/s16_033_platform_controls.sql` (`platform_controls`, `kill_switches`, `tenant_rate_limits`).
+- 16.22.b Rules and services: `lib/platform/controls.ts`, `services/platform/{controls,jobs,config-status}.ts`, `MaintenanceError`, `companyCapHit` in `services/security/rate-limit.ts`.
+- 16.22.c Enforcement: `lib/api/with-api.ts` and `lib/integrations/public-api.ts` (maintenance, company cap), `app/(dashboard)/layout.tsx` (maintenance notice), `services/company/module-access.ts` (kill switch).
+- 16.22.d Screens: `/admin/system`, `/admin/system/jobs`, `/admin/system/config`, routes `app/api/admin/system/*`, permissions `system.read` and `system.manage`, navigation, strings, `scripts/verify/step16-system-controls.ts`.

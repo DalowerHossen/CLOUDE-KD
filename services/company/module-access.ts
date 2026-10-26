@@ -10,6 +10,7 @@ import { enabledKeys, type FlagRow } from '@/lib/features/rules';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { currentActor } from '@/services/auth/actor';
 import { cached } from '@/services/entitlement/cache';
+import { engagedKillSwitches } from '@/services/platform/controls';
 import { entitlementsOf } from '@/services/entitlement/entitlement';
 
 const KEYS = MODULES.map((m) => m.key);
@@ -37,6 +38,9 @@ async function load(companyId: string): Promise<ReadonlySet<string>> {
     const granted = rows.some((r) => r.key === mod.key && r.companyId === companyId && r.enabled);
     if (!granted && values[mod.entitlement] !== true) on.delete(mod.key);
   }
+  // A kill switch of the super admin turns a module off for every company, whatever its own flag says.
+  const killed = await engagedKillSwitches();
+  for (const key of killed) on.delete(key);
   return on;
 }
 

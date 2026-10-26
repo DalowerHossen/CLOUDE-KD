@@ -15,6 +15,7 @@ import {
   ForbiddenError,
   IdempotencyConflictError,
   InternalError,
+  MaintenanceError,
   PayloadTooLargeError,
   RateLimitError,
   UnauthorizedError,
@@ -24,6 +25,7 @@ import {
   normalizeError,
 } from '@/lib/errors';
 import { createLogger, type Logger } from '@/lib/logger';
+import { DEFAULT_MAINTENANCE_MESSAGE } from '@/lib/platform/controls';
 import { resolveCorrelationId, runWithContext, updateContext } from '@/lib/logger/correlation';
 import { sha256Hex } from '@/lib/utils/hash';
 import { idempotencyKeySchema } from '@/schemas/common';
@@ -167,6 +169,19 @@ export function withPublicApi<
           throw new UnauthorizedError('The API key is missing or not valid.');
         }
         updateContext({ companyId: key.companyId });
+        // Operations controls: maintenance stops the public API; a company cap limits one company's calls.
+        {
+          const controls = await import('@/services/platform/controls');
+          const maintenance = await controls.getMaintenance();
+          if (await controls.maintenanceActive())
+            throw new MaintenanceError(maintenance.message || DEFAULT_MAINTENANCE_MESSAGE);
+          const cap = await controls.capFor(key.companyId);
+          if (cap !== null) {
+            const { companyCapHit } = await import('@/services/security/rate-limit');
+            const hit = await companyCapHit(key.companyId, cap);
+            if (!hit.allowed) throw new RateLimitError(hit.retryAfterSeconds);
+          }
+        }
 
         const needed = scopeFor(method, options.resource);
         if (!scopeAllows(key.scopes, needed))
