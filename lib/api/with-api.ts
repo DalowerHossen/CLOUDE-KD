@@ -43,6 +43,18 @@ const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const DEFAULT_MAX_BODY_BYTES = 1_048_576;
 const HARD_MAX_BODY_BYTES = 10_485_760;
 
+const controlsLog = createLogger({ component: 'api-controls' });
+
+/** The operations controls are optional for a request: if their code cannot be loaded the request goes on, and it is logged. */
+async function loadControls(): Promise<typeof import('@/services/platform/controls') | null> {
+  try {
+    return await import('@/services/platform/controls');
+  } catch (error) {
+    controlsLog.error('operations controls could not be loaded', { error });
+    return null;
+  }
+}
+
 export type ApiScope = 'public' | 'tenant' | 'platform';
 
 export interface ApiOptions<
@@ -224,11 +236,11 @@ export function withApi<
             updateContext({ companyId: tenant.companyId });
             // Operations controls: maintenance stops company traffic (platform staff pass); a company cap limits one company.
             if (!PLATFORM_ROLES.includes(actor.role)) {
-              const controls = await import('@/services/platform/controls');
-              const maintenance = await controls.getMaintenance();
-              if (await controls.maintenanceActive())
+              const controls = await loadControls();
+              const maintenance = controls ? await controls.getMaintenance() : null;
+              if (controls && maintenance && (await controls.maintenanceActive()))
                 throw new MaintenanceError(maintenance.message || DEFAULT_MAINTENANCE_MESSAGE);
-              const cap = await controls.capFor(tenant.companyId);
+              const cap = controls ? await controls.capFor(tenant.companyId) : null;
               if (cap !== null) {
                 const { companyCapHit } = await import('@/services/security/rate-limit');
                 const hit = await companyCapHit(tenant.companyId, cap);
