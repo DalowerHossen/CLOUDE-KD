@@ -9,6 +9,7 @@ import type { NextRequest } from 'next/server';
 import { getService } from '@/lib/container';
 import { moduleForApi } from '@/config/features';
 import { DEFAULT_MAINTENANCE_MESSAGE } from '@/lib/platform/controls';
+import type * as PlatformControls_ from '@/services/platform/controls';
 import {
   type AppError,
   ForbiddenError,
@@ -43,10 +44,12 @@ const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const DEFAULT_MAX_BODY_BYTES = 1_048_576;
 const HARD_MAX_BODY_BYTES = 10_485_760;
 
+type PlatformControls = typeof PlatformControls_;
+
 const controlsLog = createLogger({ component: 'api-controls' });
 
 /** The operations controls are optional for a request: if their code cannot be loaded the request goes on, and it is logged. */
-async function loadControls(): Promise<typeof import('@/services/platform/controls') | null> {
+async function loadControls(): Promise<PlatformControls | null> {
   try {
     return await import('@/services/platform/controls');
   } catch (error) {
