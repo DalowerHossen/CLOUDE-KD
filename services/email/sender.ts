@@ -178,8 +178,17 @@ export async function deliver(row: OutboxRow): Promise<'sent' | 'retry' | 'faile
     }
     const chain = await resolveChain(row.company_id);
     if (chain.length === 0) {
-      await report(row, 'failed', { error: 'No e-mail provider is set up.' });
-      return 'failed';
+      // Nothing is set up yet: the message waits and goes out as soon as a provider exists, unless it is too old to help.
+      const waiting = configHold(true, false, row.created_at ?? null, new Date());
+      if (waiting === 'give_up') {
+        await report(row, 'failed', { error: 'No e-mail provider is set up.' });
+        return 'failed';
+      }
+      await report(row, 'defer', {
+        error: 'No e-mail provider is set up.',
+        retryAt: new Date(Date.now() + CONFIG_RETRY_MINUTES * 60_000).toISOString(),
+      });
+      return 'defer';
     }
     let lastTemporary = '';
     let sawTemporary = false;

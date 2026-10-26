@@ -2,6 +2,7 @@
 // Sign-up and e-mail verification. Answers are neutral: an address that already exists gets the same reply as a new one.
 import 'server-only';
 import { createClient } from '@supabase/supabase-js';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { normalizeIdentifier } from '@/lib/auth/lock';
 import { getService, tryGetService } from '@/lib/container';
@@ -63,14 +64,25 @@ async function verificationLink(email: string): Promise<string> {
 async function sendVerification(email: string, companyId: string | null): Promise<void> {
   const mail = tryGetService('email');
   if (!mail) return;
-  const url = await verificationLink(email);
-  await mail.send({
-    template: 'auth.verify-email',
-    to: email,
-    companyId,
-    data: { verifyUrl: url },
-    idempotencyKey: `verify-${randomHex(16)}`,
-  });
+  const deliver = async (): Promise<void> => {
+    const url = await verificationLink(email);
+    await mail.send({
+      template: 'auth.verify-email',
+      to: email,
+      companyId,
+      data: { verifyUrl: url },
+      idempotencyKey: `verify-${randomHex(16)}`,
+    });
+  };
+  // The page does not wait for the mail server: the message goes out after the answer is sent. A failure is logged and
+  // the person can ask for a new link.
+  try {
+    after(() =>
+      deliver().catch((error: unknown) => log.warn('verification e-mail failed', { error })),
+    );
+  } catch {
+    await deliver(); // outside a request (scripts and jobs): send now
+  }
 }
 
 export async function startSignup(input: z.infer<typeof signupSchema>, ip: string): Promise<void> {
