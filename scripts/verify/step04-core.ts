@@ -394,6 +394,10 @@ async function main(): Promise<void> {
       isSameOrigin('https://app.example.com.evil.io', null, 'https://app.example.com'),
       false,
     );
+    assert.equal(isSameOrigin('https://example.com', null, 'https://www.example.com'), true);
+    assert.equal(isSameOrigin('https://www.example.com', null, 'https://example.com'), true);
+    assert.equal(isSameOrigin('https://www.evil.com', null, 'https://www.example.com'), false);
+    assert.equal(isSameOrigin('http://example.com', null, 'https://www.example.com'), false);
   });
 
   await check('bot detector: headless, scanners and malformed user agents', () => {

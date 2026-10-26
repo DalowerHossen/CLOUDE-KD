@@ -68,7 +68,12 @@ export function isSameOrigin(
   appOrigin: string,
 ): boolean {
   const source = origin ?? (referer ? safeOrigin(referer) : null);
-  return source !== null && source === appOrigin;
+  return source !== null && withoutWww(source) === withoutWww(appOrigin);
+}
+
+/** "https://www.example.com" and "https://example.com" are the same site of ours, so either may call the API. */
+function withoutWww(value: string): string {
+  return value.replace(/^(https?:\/\/)www\./i, '$1');
 }
 
 function safeOrigin(value: string): string | null {
