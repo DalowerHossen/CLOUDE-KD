@@ -207,3 +207,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-system-controls.ts` (6 checks): maintenance window, input rules, kill switch and cap input, cap in force, the configuration screen never holds a value, the migration key.
 - `sql/assertions/s16_033_platform_controls.sql`: one row per key, known key only, one engaged switch per flag, release and engage again, one cap per company with a range, closed to clients.
 - Not verified: maintenance, kill switch and cap in a running site, the three pages in a browser, the migration on the live database (not applied), the retry of a real failed job.
+
+## 16.23 Custom limits per company
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-tenant-overrides.ts` (5 checks): input rules by kind, refusals, an override over the plan with the plan untouched, null as no limit, expiry.
+- `sql/assertions/s16_034_tenant_limit_overrides.sql`: one per feature, value types, closed to clients. Not run yet against a database.
+- Not verified: the panel in a browser, a real quota bar after an override, the migration on the live database (not applied).

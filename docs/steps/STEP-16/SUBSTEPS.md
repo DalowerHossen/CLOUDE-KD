@@ -286,3 +286,8 @@ Support staff find a payment across all companies by the last four digits of the
 - 16.22.b Rules and services: `lib/platform/controls.ts`, `services/platform/{controls,jobs,config-status}.ts`, `MaintenanceError`, `companyCapHit` in `services/security/rate-limit.ts`.
 - 16.22.c Enforcement: `lib/api/with-api.ts` and `lib/integrations/public-api.ts` (maintenance, company cap), `app/(dashboard)/layout.tsx` (maintenance notice), `services/company/module-access.ts` (kill switch).
 - 16.22.d Screens: `/admin/system`, `/admin/system/jobs`, `/admin/system/config`, routes `app/api/admin/system/*`, permissions `system.read` and `system.manage`, navigation, strings, `scripts/verify/step16-system-controls.ts`.
+
+## 16.23 Custom limits per company (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST A4 2395. Decisions are D46.
+- Files: `migrations/S16_034_tenant_limit_overrides.sql` (+ `_down`), `sql/assertions/s16_034_tenant_limit_overrides.sql`, `lib/platform/tenant-overrides.ts`, `services/entitlement/{overrides,entitlement}.ts`, `services/platform/tenant-overrides.ts`, `app/api/admin/system/tenant-overrides/route.ts`, `app/(admin)/admin/_components/limit-overrides-panel.tsx`, the company page, `scripts/verify/step16-tenant-overrides.ts`.

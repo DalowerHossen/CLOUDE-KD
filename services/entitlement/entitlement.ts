@@ -9,7 +9,9 @@ import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { EntitlementService } from '@/types/contracts';
 import { baseEntitlements } from '@/lib/payment/plan-rules';
 import { getPlanBySlug } from '@/services/plan/plans';
+import { applyOverrides } from '@/lib/platform/tenant-overrides';
 import { cached } from './cache';
+import { activeOverrides } from './overrides';
 
 export async function planSlugOf(companyId: string): Promise<string> {
   return cached('company-plan', companyId, async () => {
@@ -29,7 +31,9 @@ export async function entitlementsOf(
 ): Promise<{ slug: string; values: EntitlementMap }> {
   const slug = await planSlugOf(companyId);
   const plan = await getPlanBySlug(slug);
-  return { slug, values: plan ? plan.entitlements : baseEntitlements(slug) };
+  const values = plan ? plan.entitlements : baseEntitlements(slug);
+  // A custom limit of the platform team lies over the plan, for this company only.
+  return { slug, values: applyOverrides(values, await activeOverrides(companyId)) };
 }
 
 export function createEntitlementService(): EntitlementService {

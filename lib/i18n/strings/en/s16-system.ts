@@ -2,6 +2,25 @@
 // Strings of the operations pages of the platform team (STEP 16). English only.
 export const strings = {
   nav: { system: 'Operations', jobs: 'Job queue', config: 'Configuration' },
+  tenant: {
+    saved: 'Saved.',
+    overridesTitle: 'Custom limits',
+    overridesHelp:
+      "Lays a value over one feature of this company's plan, for this company only. The plan itself does not change. Quota bars and feature checks use the custom value at once.",
+    overridesEmpty: 'No custom limit is set.',
+    plan: 'plan',
+    unlimited: 'no limit',
+    on: 'on',
+    off: 'off',
+    expired: 'expired',
+    remove: 'Remove',
+    feature: 'Feature',
+    valueSwitch: 'Value',
+    valueLimit: 'Limit (empty means no limit)',
+    reason: 'Reason (at least 10 characters)',
+    endsAt: 'Ends at (optional, UTC)',
+    set: 'Set custom limit',
+  },
   system: {
     title: 'Operations',
     description:

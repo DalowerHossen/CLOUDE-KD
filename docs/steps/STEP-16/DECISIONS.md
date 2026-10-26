@@ -151,3 +151,9 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - A company cap is an extra per-minute ceiling for all users of one company, counted together. It can only limit: the per-address limit (120 a minute) still applies, so a cap above it does not give more room. If the counter cannot be read the request is not refused for this reason.
 - The configuration screen lists names and set/not-set only. It cannot change a value: secrets live in the host's environment settings, and writing them from the site would put a secret store in the database next to the data it protects. Marked as not built: editing from the screen.
 - The job screen shows counts, the oldest overdue job and failed or given-up jobs with the error text, and retries one job. There is no per-run job log and no cron dead-man alert yet.
+
+## D46 Custom limits per company (2026-10-26)
+
+- An override is one value for one plan feature of one company (a number, no limit, or on/off by the kind of feature). It lies over the plan in the one place every entitlement answer comes from, so quota bars, limit checks, locked-feature prompts and the module check all use it. The plan is not changed. An override may end at a date; after that the plan value is back.
+- Super admin only, fresh identity check, audit entry per change. A failed read of the overrides leaves the plan values in force and is logged.
+- Not built: overage price per override, and a bulk change for several companies.

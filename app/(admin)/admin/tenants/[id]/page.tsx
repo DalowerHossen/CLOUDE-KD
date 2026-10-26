@@ -9,7 +9,9 @@ import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { tenantDetail } from '@/services/company/admin';
 import { listFlags, type FlagView } from '@/services/company/flags';
+import { listOverrides, type OverrideView } from '@/services/platform/tenant-overrides';
 import { StepUpForm } from '../../account-locks/_components/step-up-form';
+import { LimitOverridesPanel } from '../../_components/limit-overrides-panel';
 import { ModulesPanel } from '../../_components/modules-panel';
 import { PeopleActions } from '../../_components/people-actions';
 
@@ -41,6 +43,13 @@ export default async function TenantPage({
   } catch {
     flags = [];
   }
+  let overrides: OverrideView[] = [];
+  try {
+    overrides = await listOverrides(c.id);
+  } catch {
+    overrides = [];
+  }
+  const canOverride = await perms.can(actor, 'system.manage', { type: 'platform' });
   return (
     <div className="space-y-sp-16">
       <PageHeader
@@ -83,6 +92,7 @@ export default async function TenantPage({
           </p>
         ) : null}
       </section>
+      <LimitOverridesPanel companyId={c.id} overrides={overrides} canManage={canOverride} />
       <ModulesPanel modules={MODULES} flags={flags} companyId={c.id} canManage={canFlags} />
       <PeopleActions
         subject="tenant"
