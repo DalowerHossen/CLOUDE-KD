@@ -261,3 +261,20 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: the owner connects Pages and Instagram through the platform's Meta app. Decisions are D40.
 - Files: `migrations/S16_030_social_connect.sql` (+ `_down`), `sql/assertions/s16_030_social_connect.sql`, `lib/env/s16.ts`, `config/env/s16.env.fragment`, `config/s16-social.ts`, `lib/social/meta-oauth.ts`, `services/social/meta-connect.ts`, `app/api/social/connect/facebook/{start,callback,select}`, `(dashboard)/social/connect`, `components/social/facebook-picker.tsx`, `scripts/verify/step16-meta-connect.ts`.
+
+## 16.19 Platform setup wizard, eight steps (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST H1 (2654-2664). After the approval mode, eight steps: branding, e-mail, payment processors, plans, domains, payout partners, WhatsApp, analytics; a completion checklist; a re-run. Decisions are D42.
+- 16.19.a Data: `migrations/S16_031_platform_setup_steps.sql` (+ `_down`), `sql/assertions/s16_031_platform_setup_steps.sql`, `lib/company/ops-input.ts` (`WIZARD_STEPS`, `OPTIONAL_WIZARD_STEPS`, `setupSchema`).
+- 16.19.b Service and page: `services/company/platform-setup.ts` (live "found / not found" per step, skip rule, re-run), `app/(admin)/admin/setup/_components/setup-wizard.tsx`, strings `s07Company.adminOps.wiz*`, `scripts/verify/step16-setup-wizard.ts`.
+
+## 16.20 Admin home metrics (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST A1 (2354-2365): MRR and ARR, subscription revenue this month and this year, invoices this month, payment volume this month, a platform health score, quick actions. Counters, queues and the activity feed already existed. Decisions are D43.
+- Files: `lib/admin/health-score.ts`, `services/company/admin-metrics.ts`, `app/(admin)/admin/page.tsx`, strings `s07Company.adminPeople.*`, `scripts/verify/step16-admin-health.ts`.
+
+## 16.21 User actions for the platform team (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST A2 (2374-2380): delete with a 30 day grace, permanent removal after it, forced password reset, two-step sign-in reset, e-mail change, plan change. Suspend, reactivate, e-mail verification and notes already existed. Decisions are D44.
+- 16.21.a Data: `migrations/S16_032_admin_user_actions.sql` (+ `_down`), `sql/assertions/s16_032_admin_user_actions.sql` (`user_deletions`, `kd_user_purge`, wider action list, `params`).
+- 16.21.b Service and page: `lib/company/admin-input.ts`, `config/approval/s07-admin.ts`, `services/company/admin.ts`, `services/auth/reset-flow.ts` (`sendAdminReset`), `app/(admin)/admin/_components/people-actions.tsx`, `app/(admin)/admin/users/[id]/page.tsx`, `scripts/verify/step16-user-actions.ts`.

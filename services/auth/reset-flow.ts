@@ -157,3 +157,47 @@ export async function completeReset(input: z.infer<typeof resetSchema>, ip: stri
     idempotencyKey: `pwchg-${randomHex(16)}`,
   });
 }
+
+/**
+ * Forced reset by the platform team: the person's sessions end and a fresh reset link goes to the address on file. The
+ * old password keeps working until the link is used, unless the person is locked, in which case no link can be issued.
+ */
+export async function sendAdminReset(userId: string): Promise<void> {
+  const admin = getAdminSupabase();
+  const profile = await admin
+    .from('profiles')
+    .select('email, company_id, status')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (profile.error) throw new InternalError(profile.error);
+  if (!profile.data) throw new ValidationError('This person has no profile.');
+  const email = String(profile.data.email);
+  const identifier = await hashIdentifier(email);
+  const token = randomBase64Url(32);
+  const issued = await admin.rpc('kd_reset_token_issue', {
+    p_identifier: identifier,
+    p_user: userId,
+    p_token_hash: await sha256Hex(token),
+    p_ttl_seconds: PASSWORD_RESET_TTL_SECONDS,
+  });
+  if (issued.error) throw new InternalError(issued.error);
+  if (issued.data !== true)
+    throw new ValidationError('This account is locked. Unlock it first, then send the reset.');
+  await recordLoginEvent({
+    identifierHash: identifier,
+    type: 'reset_requested',
+    userId,
+    companyId: profile.data.company_id ? String(profile.data.company_id) : null,
+    detail: { by: 'admin' },
+  });
+  await tryGetService('email')?.send({
+    template: 'auth.reset-password',
+    to: email,
+    companyId: profile.data.company_id ? String(profile.data.company_id) : null,
+    data: {
+      resetUrl: `${getPublicEnv().NEXT_PUBLIC_APP_URL}/reset-password?i=${identifier}&t=${token}`,
+    },
+    idempotencyKey: `reset-${randomHex(16)}`,
+  });
+}

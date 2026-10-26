@@ -121,3 +121,24 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - Likely causes inside the repository: a build for every pull request preview and every pushed commit, and the scheduler waking once a minute (1,440 runs a day, each calling up to 12 job addresses).
 - Changed: only the production branch is built (`scripts/netlify-ignore.sh`, `ignore` in `netlify.toml`); the scheduler wakes every 5 minutes and starts every job whose line matched a minute since the last wake (`dueJobsSince`, `TICK_MINUTES`). A job that wants a faster rhythm than 5 minutes (the e-mail queue, social posts, WhatsApp automation) now runs within 5 minutes, not within 1.
 - Not changed and needing the owner: the Netlify plan or credits themselves (Team > Billing and usage), and the site stays down until they are restored or the billing period renews.
+
+## D42 Setup wizard keeps the operator in charge (2026-10-26)
+
+- The platform checks e-mail (an enabled platform sender), payment processors (one enabled), plans (two active) and analytics (any identifier) by itself and shows "found / not found". Branding, domains, payout partners and WhatsApp have no platform-level record to check, so they show "cannot be checked here". A check never marks a step done: the operator confirms every step.
+- Only payout partners, WhatsApp and analytics may be skipped; the service refuses a skip of the others.
+- "Run the wizard again" soft-deletes the eight step rows and writes an audit entry (`platform.setup_reset`); the approval mode and earlier audit entries stay. The older `security` key stays valid in the database but is no longer a step.
+
+## D43 Admin home figures (2026-10-26)
+
+- MRR, ARR and subscription revenue come from the existing revenue report (`services/subscription/analytics.ts`), not a second calculation. Payment volume is the captured amount of payments this month (UTC), summed with decimal money, up to 50,000 rows. Invoices this month count by issue date.
+- The health score starts at 100 and loses points per signal with a cap (database 50, critical alerts 10 each up to 30, high alerts 5 each up to 15, incidents 10 each up to 20, failing log destinations 5 each up to 10). 90 and above is good, 60 and above needs a look, below is poor. The weights are a judgement, not a standard; the reasons are shown beside the number.
+- A figure that cannot be read shows "Not available yet"; it never blocks the page. The live activity feed is a page load, not a push stream.
+
+## D44 Platform actions on a person (2026-10-26)
+
+- Soft delete = the person is disabled at once (sessions end) and a row in `user_deletions` fixes the end of a 30 day grace. Reactivating the person inside the grace cancels the deletion.
+- Permanent delete is a tombstone, not a row removal: e-mail and name are replaced, memberships are suspended, the sign-in is banned. The profile row stays because invoices, payments and the audit chain point to its id (the same approach as the privacy erase). It is refused before the grace is over and while the person owns a company that is not closed. It is never automatic: the super admin runs it by hand and a certificate hash goes to the audit entry. A removed person cannot be reactivated.
+- Soft delete, forced password reset, two-step reset and e-mail change go through the approval chain like suspend (second person, the super admin acts directly). Permanent delete and plan change are super admin only and are never queued, because the plan change uses the existing super admin plan function.
+- Forced password reset ends all sessions and mails a fresh reset link to the address on file; the old password keeps working only until the link is used. A locked account cannot be sent a link.
+- E-mail change takes effect at once, marks the new address confirmed and ends all sessions. No notice goes to the old address yet (no template exists for it); this is a gap.
+- Platform staff cannot be deleted from this screen. A failed direct action is recorded as `failed` with the reason instead of `applied`.

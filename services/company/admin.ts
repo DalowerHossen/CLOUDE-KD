@@ -14,12 +14,16 @@ import {
 } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import {
+  DELETION_GRACE_DAYS,
   PAGE_SIZE,
   type PeopleAction,
   type TenantListQuery,
   type UserListQuery,
 } from '@/lib/company/admin-input';
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { disableTwoFactor } from '@/services/auth/two-factor-service';
+import { sendAdminReset } from '@/services/auth/reset-flow';
+import { adminSetPlan } from '@/services/subscription/platform';
 import type { Actor } from '@/types/contracts';
 
 const log = createLogger({ component: 'admin-people' });
@@ -176,6 +180,7 @@ export interface UserDetail extends UserRow {
   notes: NoteRow[];
   sessions: number;
   pendingAction: string | null;
+  deletionScheduledFor: string | null;
 }
 export interface NoteRow {
   id: string;
@@ -212,6 +217,17 @@ async function pendingAction(subject: 'user' | 'tenant', id: string): Promise<st
     .is('deleted_at', null)
     .maybeSingle();
   return data ? String(data.action) : null;
+}
+
+async function deletionDate(userId: string): Promise<string | null> {
+  const { data } = await getAdminSupabase()
+    .from('user_deletions')
+    .select('scheduled_for')
+    .eq('user_id', userId)
+    .eq('status', 'scheduled')
+    .is('deleted_at', null)
+    .maybeSingle();
+  return data ? String(data.scheduled_for) : null;
 }
 
 export async function userDetail(userId: string): Promise<UserDetail> {
@@ -278,6 +294,7 @@ export async function userDetail(userId: string): Promise<UserDetail> {
     notes: await notesFor('user', userId),
     sessions: sessions.count ?? 0,
     pendingAction: await pendingAction('user', userId),
+    deletionScheduledFor: await deletionDate(userId),
   };
 }
 
@@ -418,6 +435,11 @@ async function audit(
 
 async function applyUserState(id: string, disable: boolean): Promise<void> {
   const admin = getAdminSupabase();
+  if (!disable) {
+    const current = await admin.from('profiles').select('email').eq('user_id', id).maybeSingle();
+    if (String(current.data?.email ?? '').startsWith('erased+'))
+      throw new ValidationError('This person was removed for good and cannot be restored.');
+  }
   const r = await admin
     .from('profiles')
     .update({ status: disable ? 'disabled' : 'active' })
@@ -432,6 +454,16 @@ async function applyUserState(id: string, disable: boolean): Promise<void> {
       p_except: null,
       p_reason: 'admin_suspended',
     });
+  else {
+    // Bringing a person back also cancels a deletion that is still in its grace period.
+    const cancel = await admin
+      .from('user_deletions')
+      .update({ status: 'cancelled', closed_at: new Date().toISOString() })
+      .eq('user_id', id)
+      .eq('status', 'scheduled')
+      .is('deleted_at', null);
+    if (cancel.error) throw new InternalError(cancel.error);
+  }
 }
 
 async function applyTenantState(id: string, suspend: boolean): Promise<string[]> {
@@ -461,13 +493,140 @@ async function applyTenantState(id: string, suspend: boolean): Promise<string[]>
   return ids;
 }
 
+type UserOnly = Exclude<PeopleAction['action'], 'note' | 'user.verify_email'>;
+interface ExecuteContext {
+  reason: string;
+  requestedBy: string;
+  params: Record<string, unknown>;
+  actor: Actor | null;
+}
+
+async function revokeSessions(id: string, reason: string): Promise<void> {
+  const r = await getAdminSupabase().rpc('kd_revoke_user_sessions', {
+    p_user: id,
+    p_except: null,
+    p_reason: reason,
+  });
+  if (r.error) throw new InternalError(r.error);
+}
+
+async function applySoftDelete(id: string, ctx: ExecuteContext): Promise<void> {
+  const admin = getAdminSupabase();
+  const profile = await admin.from('profiles').select('company_id').eq('user_id', id).maybeSingle();
+  const scheduledFor = new Date(Date.now() + DELETION_GRACE_DAYS * 86_400_000).toISOString();
+  const r = await admin.from('user_deletions').insert({
+    company_id: profile.data?.company_id ? String(profile.data.company_id) : null,
+    user_id: id,
+    requested_by: ctx.requestedBy,
+    reason: ctx.reason,
+    scheduled_for: scheduledFor,
+  });
+  if (r.error) {
+    if (r.error.code === '23505')
+      throw new ConflictError('This person is already scheduled for deletion.');
+    throw new InternalError(r.error);
+  }
+  await applyUserState(id, true);
+}
+
+async function applyChangeEmail(id: string, email: string): Promise<void> {
+  const admin = getAdminSupabase();
+  const taken = await admin
+    .from('profiles')
+    .select('user_id')
+    .eq('email', email)
+    .neq('user_id', id)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (taken.error) throw new InternalError(taken.error);
+  if (taken.data) throw new ConflictError('This e-mail address belongs to another account.');
+  const auth = await admin.auth.admin.updateUserById(id, { email, email_confirm: true });
+  if (auth.error) throw new InternalError(auth.error);
+  const profile = await admin
+    .from('profiles')
+    .update({ email })
+    .eq('user_id', id)
+    .is('deleted_at', null);
+  if (profile.error) throw new InternalError(profile.error);
+  await revokeSessions(id, 'admin_email_change');
+}
+
+async function applyPurge(id: string, actorId: string): Promise<string> {
+  const admin = getAdminSupabase();
+  const { data, error } = await admin.rpc('kd_user_purge', { p_user: id, p_actor: actorId });
+  if (error) {
+    if (error.code === '02000') throw new ValidationError('Schedule a deletion first.');
+    if (error.code === '22023') throw new ValidationError('The grace period is not over yet.');
+    if (error.code === '23514')
+      throw new ValidationError('This person owns a company that is not closed. Close it first.');
+    throw new InternalError(error);
+  }
+  const auth = await admin.auth.admin.updateUserById(id, {
+    email: `erased+${id}@invalid.example`,
+    ban_duration: '876000h',
+    user_metadata: {},
+  });
+  if (auth.error) throw new InternalError(auth.error);
+  await revokeSessions(id, 'admin_purged');
+  return String(data);
+}
+
 async function execute(
-  action: 'user.suspend' | 'user.reactivate' | 'tenant.suspend' | 'tenant.reactivate',
+  action: UserOnly,
   id: string,
-): Promise<void> {
-  if (action === 'user.suspend') await applyUserState(id, true);
-  else if (action === 'user.reactivate') await applyUserState(id, false);
-  else await applyTenantState(id, action === 'tenant.suspend');
+  ctx: ExecuteContext,
+): Promise<Record<string, unknown>> {
+  switch (action) {
+    case 'user.suspend':
+      await applyUserState(id, true);
+      return {};
+    case 'user.reactivate':
+      await applyUserState(id, false);
+      return {};
+    case 'tenant.suspend':
+      await applyTenantState(id, true);
+      return {};
+    case 'tenant.reactivate':
+      await applyTenantState(id, false);
+      return {};
+    case 'user.soft_delete':
+      await applySoftDelete(id, ctx);
+      return { graceDays: DELETION_GRACE_DAYS };
+    case 'user.purge':
+      return { certificate: await applyPurge(id, ctx.requestedBy) };
+    case 'user.force_password_reset':
+      await revokeSessions(id, 'admin_forced_reset');
+      await sendAdminReset(id);
+      return {};
+    case 'user.reset_2fa':
+      await disableTwoFactor(id);
+      await revokeSessions(id, 'admin_2fa_reset');
+      return {};
+    case 'user.change_email':
+      await applyChangeEmail(id, String(ctx.params.email));
+      return { to: String(ctx.params.email) };
+    case 'user.set_plan': {
+      if (!ctx.actor) throw new ForbiddenError();
+      const p = await getAdminSupabase()
+        .from('profiles')
+        .select('company_id')
+        .eq('user_id', id)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (!p.data?.company_id) throw new ValidationError('This person has no company.');
+      await adminSetPlan(ctx.actor, String(p.data.company_id), String(ctx.params.plan), ctx.reason);
+      return { plan: String(ctx.params.plan) };
+    }
+  }
+}
+
+/** Actions only the super admin may run, always at once (never through the approval chain). */
+const SUPER_ADMIN_ONLY: readonly string[] = ['user.purge', 'user.set_plan'];
+
+function paramsOf(input: PeopleAction): Record<string, unknown> {
+  if (input.action === 'user.change_email') return { email: input.email };
+  if (input.action === 'user.set_plan') return { plan: input.plan };
+  return {};
 }
 
 export async function runPeopleAction(
@@ -517,6 +676,13 @@ export async function runPeopleAction(
     // Platform staff are changed only by the super admin.
     if (target.data.platform_role && actor.role !== 'super_admin')
       throw new ForbiddenError('Only the super admin can change platform staff.');
+    if (
+      target.data.platform_role &&
+      (input.action === 'user.soft_delete' || input.action === 'user.purge')
+    )
+      throw new ForbiddenError('Platform staff are removed on the staff screen, not here.');
+    if (SUPER_ADMIN_ONLY.includes(input.action) && actor.role !== 'super_admin')
+      throw new ForbiddenError('Only the super admin can do this.');
   } else {
     const t = await admin
       .from('companies')
@@ -537,6 +703,7 @@ export async function runPeopleAction(
       subject_type: input.action.startsWith('tenant') ? 'tenant' : 'user',
       subject_id: input.id,
       reason: input.reason,
+      params: paramsOf(input),
       requested_by: actor.userId,
       status: actor.role === 'super_admin' ? 'applied' : 'awaiting_approval',
       decided_at: actor.role === 'super_admin' ? new Date().toISOString() : null,
@@ -548,9 +715,30 @@ export async function runPeopleAction(
       throw new ConflictError('A request for this one is already waiting for approval.');
     throw new InternalError(record.error);
   }
+  const ctx: ExecuteContext = {
+    reason: input.reason,
+    requestedBy: actor.userId,
+    params: paramsOf(input),
+    actor,
+  };
   if (actor.role === 'super_admin') {
-    await execute(input.action, input.id);
-    await audit(actor, `${input.action}.applied`, input.id, companyId, { reason: input.reason });
+    let extra: Record<string, unknown>;
+    try {
+      extra = await execute(input.action, input.id, ctx);
+    } catch (error) {
+      await admin
+        .from('admin_actions')
+        .update({
+          status: 'failed',
+          result: error instanceof Error ? error.message.slice(0, 300) : 'failed',
+        })
+        .eq('id', String(record.data.id));
+      throw error;
+    }
+    await audit(actor, `${input.action}.applied`, input.id, companyId, {
+      reason: input.reason,
+      ...extra,
+    });
     return { result: 'applied' };
   }
   const state = await getService('approval').request({
@@ -575,7 +763,7 @@ export async function syncAdminActions(): Promise<number> {
   const admin = getAdminSupabase();
   const { data, error } = await admin
     .from('admin_actions')
-    .select('id, action, subject_id, company_id, approval_request_id')
+    .select('id, action, subject_id, company_id, approval_request_id, reason, requested_by, params')
     .eq('status', 'awaiting_approval')
     .not('approval_request_id', 'is', null)
     .is('deleted_at', null)
@@ -589,7 +777,12 @@ export async function syncAdminActions(): Promise<number> {
     if (!state) continue;
     if (state.status === 'approved') {
       try {
-        await execute(String(row.action) as 'user.suspend', String(row.subject_id));
+        const extra = await execute(String(row.action) as UserOnly, String(row.subject_id), {
+          reason: String(row.reason),
+          requestedBy: String(row.requested_by),
+          params: (row.params ?? {}) as Record<string, unknown>,
+          actor: null,
+        });
         await admin
           .from('admin_actions')
           .update({ status: 'applied', decided_at: new Date().toISOString() })
@@ -599,7 +792,7 @@ export async function syncAdminActions(): Promise<number> {
           resourceType: String(row.action).startsWith('tenant') ? 'company' : 'user',
           resourceId: String(row.subject_id),
           companyId: row.company_id ? String(row.company_id) : null,
-          metadata: { request: String(row.approval_request_id) },
+          metadata: { request: String(row.approval_request_id), ...extra },
         });
       } catch (e) {
         log.error('approved action could not be applied', {

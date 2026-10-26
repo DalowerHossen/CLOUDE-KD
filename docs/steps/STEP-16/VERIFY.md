@@ -184,3 +184,20 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-meta-connect.ts` (9 checks): the login address; the state held only as a hash; another owner, another company or a made-up state cannot finish; code to short token to long token to Pages with a fake Facebook and the app secret never in a recorded address; no token stored in clear; the state works once; the page gets names only; picking connects Page and Instagram with the Page token (no expiry) and refuses a Page without the create-content task or an Instagram pick without an account; the pending list is gone after use; a refused code stops the login.
 - `sql/assertions/s16_030_social_connect.sql`: RLS, one session per state, a 64 character hash.
 - Not verified: a real login against Facebook, App Review, a real post.
+
+## 16.19 Setup wizard
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-setup-wizard.ts` (6 checks): the eight steps in order; each accepted; skip limited to the optional ones; reset, approval mode and the older security step; unknown steps, choices and extra fields refused; the migration lists exactly the steps of the code.
+- `sql/assertions/s16_031_platform_setup_steps.sql`: the eight keys are accepted, an unknown key is refused.
+- Not verified: the page in a browser; the migration on the live database (not applied); the detection against live data.
+
+## 16.20 Admin home metrics
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-admin-health.ts` (5 checks): 100 when clean, the caps, the 0 to 100 range, the levels.
+- Not verified: the page in a browser, the money figures against live data, the speed of the page with many payments.
+
+## 16.21 User actions
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-user-actions.ts` (6 checks): input rules, lower-cased e-mail, plan slug, grace days, approval rules, migration action list equals the code.
+- `sql/assertions/s16_032_admin_user_actions.sql`: new actions accepted, unknown refused, one scheduled deletion per person, purge needs a scheduled deletion and a finished grace, tombstone keeps the row. Not run: no database server in this session.
+- Not verified: any of the actions against Supabase Auth (e-mail change, ban, reset mail), the pages in a browser, the migration on the live database (not applied).
