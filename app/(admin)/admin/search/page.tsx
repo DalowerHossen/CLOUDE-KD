@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Search' };
 
 const p = (k: string): string => t(`s16System.search.${k}` as never);
-const KINDS = ['company', 'user', 'client', 'invoice', 'ticket'] as const;
+const KINDS = ['company', 'user', 'client', 'invoice', 'payment', 'ticket'] as const;
 
 export default async function SearchPage({
   searchParams,

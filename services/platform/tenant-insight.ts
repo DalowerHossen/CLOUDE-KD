@@ -120,6 +120,7 @@ async function healthOf(companyId: string, meterList: MeterView[] | null): Promi
   const admin = getAdminSupabase();
   const since90 = ago(90).toISOString();
   const [
+    company,
     sub,
     overdue,
     payouts,
@@ -130,6 +131,12 @@ async function healthOf(companyId: string, meterList: MeterView[] | null): Promi
     planInvoice,
     tickets,
   ] = await Promise.all([
+    admin
+      .from('companies')
+      .select('plan_key')
+      .eq('id', companyId)
+      .is('deleted_at', null)
+      .maybeSingle(),
     admin
       .from('platform_subscriptions')
       .select('status')
@@ -197,6 +204,7 @@ async function healthOf(companyId: string, meterList: MeterView[] | null): Promi
       .is('deleted_at', null),
   ]);
   for (const r of [
+    company,
     sub,
     overdue,
     payouts,
@@ -208,7 +216,8 @@ async function healthOf(companyId: string, meterList: MeterView[] | null): Promi
     tickets,
   ])
     if (r.error) throw r.error;
-  const status = String(sub.data?.status ?? 'free');
+  // A company on the free plan is judged as free: no unpaid-plan or "uses little of its plan" points.
+  const status = company.data?.plan_key === 'free' ? 'free' : String(sub.data?.status ?? 'free');
   // A quota bar without a limit says nothing about use, so it is left out.
   const percents = (meterList ?? []).filter((m) => m.state !== 'unlimited').map((m) => m.percent);
   return insight({

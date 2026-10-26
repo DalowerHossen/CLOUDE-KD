@@ -218,3 +218,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-tenant-insight.ts` (7 checks): calm company, sign-in drop rule, late invoice and tickets, worst case range, days late, search text rules, the support bundle reads no secret columns.
 - Not verified: the company page and the search page in a browser, the figures against live data, the speed of pattern search on a large database, a real download of the bundle.
+
+## 16.25 Live check, plan quotas, payment search
+
+- Live database, read only: all columns used by 16.20 to 16.24 exist; the admin home counters and the per-company sign-in, ticket and e-mail counts equal independent counts. Money sums could not be checked (no money in the database). The services themselves were not run against the live database (no service key in this session).
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-plan-quotas.ts` (4 checks) and `step16-tenant-insight.ts` (8 checks, now with payment search).
+- Not verified: the API quota refusing a real call, the quota bars in a browser.

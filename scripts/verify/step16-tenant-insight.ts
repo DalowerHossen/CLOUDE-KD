@@ -3,7 +3,13 @@
 // Run: SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-tenant-insight.ts
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MAX_SEARCH, MIN_SEARCH, patternSafe, searchQuery } from '@/lib/platform/global-search';
+import {
+  MAX_SEARCH,
+  MIN_SEARCH,
+  patternSafe,
+  paymentFilter,
+  searchQuery,
+} from '@/lib/platform/global-search';
 import { daysLate, insight, loginDrop, type InsightFacts } from '@/lib/platform/tenant-insight';
 
 const calm: InsightFacts = {
@@ -88,6 +94,21 @@ check('search text: length, no angle brackets, no wildcard', () => {
   assert.equal(patternSafe('a%b_c,d(e)f\\g*h'), 'a b c d e f g h');
   assert.equal(patternSafe('%%%'), '');
 });
+check(
+  'payment search: an id matches by id, other text by transaction and trace id, and wildcards are cleaned',
+  () => {
+    const id = '0192f0a0-0000-7000-8000-000000000001';
+    assert.ok(paymentFilter(id).startsWith(`id.eq.${id},`));
+    assert.equal(
+      paymentFilter('ch3Abc'),
+      'processor_transaction_id.ilike.%ch3Abc%,correlation_id.ilike.%ch3Abc%'.replace(
+        'ch3Abc',
+        'ch3Abc',
+      ),
+    );
+    assert.ok(!paymentFilter('a%b,id.eq.x').includes('%b,id'));
+  },
+);
 check('the support bundle reads no secret columns', () => {
   const src = readFileSync('services/platform/tenant-export.ts', 'utf8');
   const selected = [...src.matchAll(/\.select\(\s*'([^']+)'/g)].map((m) => m[1]).join(',');

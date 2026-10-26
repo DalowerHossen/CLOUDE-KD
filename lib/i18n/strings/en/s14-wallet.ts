@@ -303,6 +303,8 @@ export const strings = {
       'clients.max': 'Clients',
       'staff.seats': 'Team seats',
       'storage.gigabytes': 'Storage (GB)',
+      'emails.monthly': 'E-mails per month',
+      'api.requests_monthly': 'API calls per month',
       'token.expiry_days': 'Client link life (days)',
       'recurring.enabled': 'Recurring invoices',
       'projects.enabled': 'Projects and time tracking',
@@ -346,6 +348,8 @@ export const strings = {
       'clients.max': 'Clients',
       'staff.seats': 'Team seats',
       'storage.gigabytes': 'Storage (GB)',
+      'emails.monthly': 'E-mails this month',
+      'api.requests_monthly': 'API calls this month',
     },
     meterStates: {
       ok: 'Fine',

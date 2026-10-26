@@ -57,7 +57,7 @@ export const strings = {
   search: {
     title: 'Search all companies',
     description:
-      'Find a company, a person, a client, an invoice number or a support ticket across the whole platform. Every search is written to the audit log (the length of the text, not the text).',
+      'Find a company, a person, a client, an invoice number, a payment (its id or the transaction id of the processor) or a support ticket across the whole platform. Every search is written to the audit log (the length of the text, not the text).',
     placeholder: 'Name, e-mail, company, invoice number or ticket (at least 3 letters)',
     go: 'Search',
     short: 'Type at least 3 letters.',
@@ -68,6 +68,7 @@ export const strings = {
     user: 'People',
     client: 'Clients of companies',
     invoice: 'Invoices',
+    payment: 'Payments',
     ticket: 'Support tickets',
   },
   system: {

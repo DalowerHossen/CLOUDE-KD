@@ -5,7 +5,7 @@
 import 'server-only';
 import { getService } from '@/lib/container';
 import { ForbiddenError, InternalError, RateLimitError } from '@/lib/errors';
-import { PER_KIND, patternSafe, type Hit } from '@/lib/platform/global-search';
+import { PER_KIND, patternSafe, paymentFilter, type Hit } from '@/lib/platform/global-search';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
 
@@ -105,6 +105,27 @@ export async function globalSearch(actor: Actor, text: string): Promise<SearchRe
           detail: String(i.status),
           href: null,
           companyId: String(i.company_id),
+          companyName: '',
+        }));
+      },
+    },
+    {
+      kind: 'payment',
+      run: async () => {
+        const r = await admin
+          .from('payments')
+          .select('id, company_id, processor_id, processor_transaction_id, status, amount')
+          .is('deleted_at', null)
+          .or(paymentFilter(t))
+          .limit(PER_KIND);
+        if (r.error) throw r.error;
+        return (r.data ?? []).map((x) => ({
+          kind: 'payment' as const,
+          id: String(x.id),
+          title: String(x.processor_transaction_id ?? x.id),
+          detail: `${String(x.status)} - ${String(x.amount)} USD - ${String(x.processor_id ?? '')}`,
+          href: null,
+          companyId: String(x.company_id),
           companyName: '',
         }));
       },

@@ -26,7 +26,7 @@ export function patternSafe(q: string): string {
     .trim();
 }
 
-export type HitKind = 'company' | 'user' | 'client' | 'invoice' | 'ticket';
+export type HitKind = 'company' | 'user' | 'client' | 'invoice' | 'payment' | 'ticket';
 
 export interface Hit {
   kind: HitKind;
@@ -36,4 +36,14 @@ export interface Hit {
   href: string | null;
   companyId: string | null;
   companyName: string;
+}
+
+const UUID_TEXT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The filter for a payment: its id when the text is one, else the processor's transaction id or the trace id. */
+export function paymentFilter(text: string): string {
+  const t = patternSafe(text);
+  return UUID_TEXT.test(t)
+    ? `id.eq.${t},processor_transaction_id.ilike.%${t}%`
+    : `processor_transaction_id.ilike.%${t}%,correlation_id.ilike.%${t}%`;
 }

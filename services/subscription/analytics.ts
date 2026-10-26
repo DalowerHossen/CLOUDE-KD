@@ -93,7 +93,8 @@ export async function revenueReport(from: string, to: string): Promise<RevenueRe
   ]);
   if (invoices.error) throw new InternalError(invoices.error);
   const plans = new Map(planList.map((p) => [p.slug, p]));
-  const paying = subs.filter((s) => PAYING.includes(s.status));
+  // A company on a free plan has an active subscription but pays nothing: it is not a paying company.
+  const paying = subs.filter((s) => PAYING.includes(s.status) && monthlyOf(s, plans).isPositive());
   const mrr = Money.sum(paying.map((s) => monthlyOf(s, plans)));
   const arpu = paying.length > 0 ? mrr.div(String(paying.length)) : Money.zero();
   const activeAtStart = subs.filter(

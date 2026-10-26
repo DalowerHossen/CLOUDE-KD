@@ -296,3 +296,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: FEATURE_LIST A4 2397 to 2400, 2403 and 2405: API use, e-mail use, health score with churn signals, support export, search over all companies. Storage and quota bars reuse the existing quota meters. Decisions are D47.
 - Files: `lib/platform/{tenant-insight,global-search}.ts`, `services/platform/{tenant-insight,tenant-export,global-search}.ts`, `app/api/admin/system/tenant-export/route.ts`, `app/(admin)/admin/_components/{tenant-insight-panel,support-export-button}.tsx`, `app/(admin)/admin/search/page.tsx`, the company page, navigation, strings, `scripts/verify/step16-tenant-insight.ts`.
+
+## 16.25 Checked against live data, plan quotas for e-mail and API, payment search (owner request, 2026-10-26)
+
+- Goal: the figures of 16.20 and 16.24 compared with the live database; e-mail and API calls become plan features with quota bars (they were plain figures); payments can be found in the platform search. Decisions are D48.
+- Files: `services/subscription/analytics.ts`, `services/platform/tenant-insight.ts`, `config/plans.ts`, `lib/payment/plan-rules.ts`, `lib/cms/pricing.ts`, `lib/i18n/strings/en/s14-wallet.ts`, `services/entitlement/usage.ts`, `lib/integrations/public-api.ts`, `lib/platform/global-search.ts`, `services/platform/global-search.ts`, `scripts/verify/step16-plan-quotas.ts`, `scripts/verify/step16-tenant-insight.ts`.
