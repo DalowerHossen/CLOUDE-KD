@@ -30,8 +30,4 @@ begin
   assert (select email from public.profiles where user_id = s) like 'erased+%', 'email erased';
   assert exists (select 1 from public.profiles where user_id = s), 'the row stays';
   assert not has_table_privilege('authenticated', 'public.user_deletions', 'select'), 'closed to clients';
-  delete from public.user_deletions where user_id = s;
-  delete from public.admin_actions where subject_id = s;
-  delete from public.profiles where user_id = s;
-  delete from auth.users where id = s;
 end $$;
