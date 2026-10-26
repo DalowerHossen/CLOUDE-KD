@@ -261,3 +261,9 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: the owner connects Pages and Instagram through the platform's Meta app. Decisions are D40.
 - Files: `migrations/S16_030_social_connect.sql` (+ `_down`), `sql/assertions/s16_030_social_connect.sql`, `lib/env/s16.ts`, `config/env/s16.env.fragment`, `config/s16-social.ts`, `lib/social/meta-oauth.ts`, `services/social/meta-connect.ts`, `app/api/social/connect/facebook/{start,callback,select}`, `(dashboard)/social/connect`, `components/social/facebook-picker.tsx`, `scripts/verify/step16-meta-connect.ts`.
+
+## 16.19 Platform setup wizard, eight steps (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST H1 (2654-2664). After the approval mode, eight steps: branding, e-mail, payment processors, plans, domains, payout partners, WhatsApp, analytics; a completion checklist; a re-run. Decisions are D42.
+- 16.19.a Data: `migrations/S16_031_platform_setup_steps.sql` (+ `_down`), `sql/assertions/s16_031_platform_setup_steps.sql`, `lib/company/ops-input.ts` (`WIZARD_STEPS`, `OPTIONAL_WIZARD_STEPS`, `setupSchema`).
+- 16.19.b Service and page: `services/company/platform-setup.ts` (live "found / not found" per step, skip rule, re-run), `app/(admin)/admin/setup/_components/setup-wizard.tsx`, strings `s07Company.adminOps.wiz*`, `scripts/verify/step16-setup-wizard.ts`.

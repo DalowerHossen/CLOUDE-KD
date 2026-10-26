@@ -112,10 +112,26 @@ export const flagSchema = z
   .strict();
 export type FlagInput = z.infer<typeof flagSchema>;
 
-export const SETUP_STEPS = ['approval_mode', 'email', 'security'] as const;
+// The eight steps of the first-run wizard, in the order they are shown. "approval_mode" is asked before them and
+// "security" is the older confirmation that stays valid for rows that already exist.
+export const WIZARD_STEPS = [
+  'branding',
+  'email',
+  'gateways',
+  'plans',
+  'domains',
+  'payouts',
+  'whatsapp',
+  'analytics',
+] as const;
+export type WizardStep = (typeof WIZARD_STEPS)[number];
+// Steps the platform can run without; the operator may skip them on purpose.
+export const OPTIONAL_WIZARD_STEPS: readonly WizardStep[] = ['whatsapp', 'analytics', 'payouts'];
+export const SETUP_STEPS = ['approval_mode', ...WIZARD_STEPS, 'security'] as const;
 export const setupSchema = z.discriminatedUnion('step', [
   z.object({ step: z.literal('approval_mode'), choice: z.enum(['solo', 'team']) }).strict(),
-  z.object({ step: z.literal('email'), choice: z.literal('confirmed') }).strict(),
   z.object({ step: z.literal('security'), choice: z.literal('confirmed') }).strict(),
+  z.object({ step: z.enum(WIZARD_STEPS), choice: z.enum(['confirmed', 'skipped']) }).strict(),
+  z.object({ step: z.literal('reset') }).strict(),
 ]);
 export type SetupInput = z.infer<typeof setupSchema>;

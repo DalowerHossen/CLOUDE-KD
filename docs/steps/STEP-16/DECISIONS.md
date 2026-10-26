@@ -121,3 +121,9 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - Likely causes inside the repository: a build for every pull request preview and every pushed commit, and the scheduler waking once a minute (1,440 runs a day, each calling up to 12 job addresses).
 - Changed: only the production branch is built (`scripts/netlify-ignore.sh`, `ignore` in `netlify.toml`); the scheduler wakes every 5 minutes and starts every job whose line matched a minute since the last wake (`dueJobsSince`, `TICK_MINUTES`). A job that wants a faster rhythm than 5 minutes (the e-mail queue, social posts, WhatsApp automation) now runs within 5 minutes, not within 1.
 - Not changed and needing the owner: the Netlify plan or credits themselves (Team > Billing and usage), and the site stays down until they are restored or the billing period renews.
+
+## D42 Setup wizard keeps the operator in charge (2026-10-26)
+
+- The platform checks e-mail (an enabled platform sender), payment processors (one enabled), plans (two active) and analytics (any identifier) by itself and shows "found / not found". Branding, domains, payout partners and WhatsApp have no platform-level record to check, so they show "cannot be checked here". A check never marks a step done: the operator confirms every step.
+- Only payout partners, WhatsApp and analytics may be skipped; the service refuses a skip of the others.
+- "Run the wizard again" soft-deletes the eight step rows and writes an audit entry (`platform.setup_reset`); the approval mode and earlier audit entries stay. The older `security` key stays valid in the database but is no longer a step.

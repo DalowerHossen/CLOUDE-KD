@@ -6,10 +6,31 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
-import type { SetupView } from '@/services/company/platform-setup';
+import type { SetupView, WizardStepView } from '@/services/company/platform-setup';
 import { sendJson } from '../../_components/post-json';
 
 const p = (k: string): string => t(`s07Company.adminOps.${k}` as never);
+
+const LINKS: Record<WizardStepView['key'], string> = {
+  branding: '/admin/cms',
+  email: '/admin/emails',
+  gateways: '/admin/processors',
+  plans: '/admin/plans',
+  domains: '/admin/seo',
+  payouts: '/admin/payouts/settings',
+  whatsapp: '/whatsapp',
+  analytics: '/admin/analytics',
+};
+const NAME: Record<WizardStepView['key'], string> = {
+  branding: 'Branding',
+  email: 'Email',
+  gateways: 'Gateways',
+  plans: 'Plans',
+  domains: 'Domains',
+  payouts: 'Payouts',
+  whatsapp: 'Whatsapp',
+  analytics: 'Analytics',
+};
 
 export function SetupWizard({ view }: { view: SetupView }): JSX.Element {
   const router = useRouter();
@@ -26,18 +47,22 @@ export function SetupWizard({ view }: { view: SetupView }): JSX.Element {
     }
   }
 
-  const done = (key: string): boolean => view.steps.some((s) => s.key === key && s.done);
-  const badge = (key: string): JSX.Element => (
-    <Badge variant="outline">{done(key) ? p('setupDone') : p('setupOpen')}</Badge>
-  );
+  const finished = view.steps.filter((s) => s.done).length;
+  const detectedText = (d: boolean | null): string =>
+    d === null ? p('wizDetectedUnknown') : d ? p('wizDetectedYes') : p('wizDetectedNo');
 
   return (
     <div className="space-y-sp-16">
-      {view.complete ? <p role="status">{p('setupAllDone')}</p> : null}
+      <p role="status" className="text-sm">
+        {p('wizProgress')}: {finished} / {view.steps.length}
+        {view.complete ? ` - ${p('setupAllDone')}` : ''}
+      </p>
       <section className="space-y-sp-8 rounded-lg border bg-card p-sp-16">
         <div className="flex items-center justify-between gap-sp-8">
-          <h2 className="text-h4 font-semibold">1. {p('approvalMode')}</h2>
-          {badge('approval_mode')}
+          <h2 className="text-h4 font-semibold">
+            {p('wizBefore')}: {p('approvalMode')}
+          </h2>
+          <Badge variant="outline">{view.approvalDone ? p('setupDone') : p('setupOpen')}</Badge>
         </div>
         <p className="text-sm text-muted-foreground">{p('approvalModeHelp')}</p>
         <fieldset className="space-y-sp-8 text-sm">
@@ -64,38 +89,57 @@ export function SetupWizard({ view }: { view: SetupView }): JSX.Element {
           {p('apply')}
         </Button>
       </section>
+      {view.steps.map((step, index) => (
+        <section key={step.key} className="space-y-sp-8 rounded-lg border bg-card p-sp-16">
+          <div className="flex flex-wrap items-center justify-between gap-sp-8">
+            <h2 className="text-h4 font-semibold">
+              {index + 1}. {p(`wiz${NAME[step.key]}Title`)}
+            </h2>
+            <div className="flex gap-sp-8">
+              {step.optional ? <Badge variant="outline">{p('wizOptional')}</Badge> : null}
+              <Badge variant="outline">
+                {step.done ? (step.skipped ? p('wizSkipped') : p('setupDone')) : p('setupOpen')}
+              </Badge>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">{p(`wiz${NAME[step.key]}Help`)}</p>
+          <p className="text-sm">{detectedText(step.detected)}</p>
+          <div className="flex flex-wrap items-center gap-sp-8">
+            <Link className="underline" href={LINKS[step.key]}>
+              {p(`wiz${NAME[step.key]}Link`)}
+            </Link>
+            <Button
+              type="button"
+              onClick={() => void save({ step: step.key, choice: 'confirmed' })}
+            >
+              {p('wizMarkDone')}
+            </Button>
+            {step.optional ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void save({ step: step.key, choice: 'skipped' })}
+              >
+                {p('wizSkip')}
+              </Button>
+            ) : null}
+          </div>
+        </section>
+      ))}
       <section className="space-y-sp-8 rounded-lg border bg-card p-sp-16">
-        <div className="flex items-center justify-between gap-sp-8">
-          <h2 className="text-h4 font-semibold">2. {p('emailStep')}</h2>
-          {badge('email')}
-        </div>
-        <p className="text-sm text-muted-foreground">{p('emailHelp')}</p>
-        <div className="flex flex-wrap gap-sp-8">
-          <Link className="underline" href="/admin/emails">
-            {p('emailLink')}
-          </Link>
-          <Button type="button" onClick={() => void save({ step: 'email', choice: 'confirmed' })}>
-            {p('confirm')}
-          </Button>
-        </div>
-      </section>
-      <section className="space-y-sp-8 rounded-lg border bg-card p-sp-16">
-        <div className="flex items-center justify-between gap-sp-8">
-          <h2 className="text-h4 font-semibold">3. {p('securityStep')}</h2>
-          {badge('security')}
-        </div>
-        <p className="text-sm text-muted-foreground">{p('securityHelp')}</p>
-        <div className="flex flex-wrap gap-sp-8">
-          <Link className="underline" href="/admin/security">
-            {p('securityLink')}
-          </Link>
-          <Button
-            type="button"
-            onClick={() => void save({ step: 'security', choice: 'confirmed' })}
-          >
-            {p('confirm')}
-          </Button>
-        </div>
+        <h2 className="text-h4 font-semibold">{p('wizChecklist')}</h2>
+        <ul className="space-y-sp-4 text-sm">
+          {view.steps.map((step) => (
+            <li key={step.key}>
+              {step.done ? '[x]' : '[ ]'} {p(`wiz${NAME[step.key]}Title`)}
+              {step.skipped ? ` (${p('wizSkipped')})` : ''}
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-muted-foreground">{p('wizRerunHelp')}</p>
+        <Button type="button" variant="outline" onClick={() => void save({ step: 'reset' })}>
+          {p('wizRerun')}
+        </Button>
       </section>
       {message ? (
         <p
