@@ -13,9 +13,24 @@ const okBody = z.object({
 });
 
 export interface ActionChoice {
-  action: 'user.suspend' | 'user.reactivate' | 'tenant.suspend' | 'tenant.reactivate';
+  action:
+    | 'user.suspend'
+    | 'user.reactivate'
+    | 'tenant.suspend'
+    | 'tenant.reactivate'
+    | 'user.soft_delete'
+    | 'user.purge'
+    | 'user.force_password_reset'
+    | 'user.reset_2fa';
   label: string;
 }
+
+const DESTRUCTIVE: ActionChoice['action'][] = [
+  'user.suspend',
+  'tenant.suspend',
+  'user.soft_delete',
+  'user.purge',
+];
 
 /** Notes, suspend/reactivate (with a reason) and the e-mail confirmation. Every request goes to the one action route. */
 export function PeopleActions({
@@ -26,6 +41,8 @@ export function PeopleActions({
   canNote,
   canVerifyEmail,
   locked,
+  changeEmail = false,
+  plans = null,
 }: {
   subject: 'user' | 'tenant';
   id: string;
@@ -34,11 +51,17 @@ export function PeopleActions({
   canNote: boolean;
   canVerifyEmail: boolean;
   locked: boolean;
+  /** Shows the e-mail change form (users only). */
+  changeEmail?: boolean;
+  /** Plan slugs for the plan change form; null hides it (super admin only). */
+  plans?: string[] | null;
 }): JSX.Element {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
+  const [email, setEmail] = useState('');
+  const [plan, setPlan] = useState(plans?.[0] ?? '');
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   async function send(body: Record<string, unknown>, clear: () => void): Promise<void> {
@@ -99,7 +122,7 @@ export function PeopleActions({
               <Button
                 key={c.action}
                 type="button"
-                variant={c.action.endsWith('suspend') ? 'destructive' : 'outline'}
+                variant={DESTRUCTIVE.includes(c.action) ? 'destructive' : 'outline'}
                 disabled={busy || locked || reason.trim().length < 10}
                 onClick={() => void send({ action: c.action, id, reason }, () => setReason(''))}
               >
@@ -117,6 +140,68 @@ export function PeopleActions({
               </Button>
             ) : null}
           </div>
+          {changeEmail ? (
+            <div className="space-y-sp-4 border-t pt-sp-8">
+              <label className="block text-sm font-medium" htmlFor={`email-${id}`}>
+                {t('s07Company.adminPeople.newEmailLabel')}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  id={`email-${id}`}
+                  type="email"
+                  autoComplete="off"
+                  maxLength={254}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="min-w-0 flex-1 rounded-md border bg-background px-sp-8 py-sp-4 text-sm"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy || locked || reason.trim().length < 10 || email.trim().length < 3}
+                  onClick={() =>
+                    void send({ action: 'user.change_email', id, reason, email }, () => {
+                      setEmail('');
+                      setReason('');
+                    })
+                  }
+                >
+                  {t('s07Company.adminPeople.changeEmail')}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+          {plans && plans.length > 0 ? (
+            <div className="space-y-sp-4 border-t pt-sp-8">
+              <label className="block text-sm font-medium" htmlFor={`plan-${id}`}>
+                {t('s07Company.adminPeople.planLabel')}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  id={`plan-${id}`}
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value)}
+                  className="rounded-md border bg-background px-sp-8 py-sp-4 text-sm"
+                >
+                  {plans.map((slug) => (
+                    <option key={slug} value={slug}>
+                      {slug}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy || locked || reason.trim().length < 10 || plan === ''}
+                  onClick={() =>
+                    void send({ action: 'user.set_plan', id, reason, plan }, () => setReason(''))
+                  }
+                >
+                  {t('s07Company.adminPeople.changePlan')}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
       {canNote ? (

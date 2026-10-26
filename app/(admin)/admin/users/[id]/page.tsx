@@ -1,4 +1,5 @@
 // path: app/(admin)/admin/users/[id]/page.tsx
+import type { ComponentProps } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -7,6 +8,7 @@ import { getService } from '@/lib/container';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
 import { userDetail } from '@/services/company/admin';
+import { listPlans } from '@/services/plan/plans';
 import { StepUpForm } from '../../account-locks/_components/step-up-form';
 import { PeopleActions } from '../../_components/people-actions';
 
@@ -31,6 +33,31 @@ export default async function UserPage({
     (await perms.can(actor, 'people.manage', { type: 'user' })) && u.userId !== actor.userId;
   const canNote = await perms.can(actor, 'people.note', { type: 'user' });
   const suspended = u.status === 'disabled';
+  const erased = u.email.startsWith('erased+');
+  const isSuper = actor.role === 'super_admin';
+  const graceOver =
+    u.deletionScheduledFor !== null && new Date(u.deletionScheduledFor) <= new Date();
+  const planSlugs =
+    isSuper && canManage && u.companyId && !u.platformRole
+      ? (await listPlans().catch(() => [])).map((x) => x.slug)
+      : null;
+  const choices: ComponentProps<typeof PeopleActions>['choices'] = [];
+  if (!erased) {
+    choices.push(
+      suspended
+        ? { action: 'user.reactivate', label: p('reactivateUser') }
+        : { action: 'user.suspend', label: p('suspendUser') },
+    );
+    if (!u.platformRole) {
+      choices.push(
+        { action: 'user.force_password_reset', label: p('forceReset') },
+        { action: 'user.reset_2fa', label: p('reset2fa') },
+      );
+      if (u.deletionScheduledFor === null)
+        choices.push({ action: 'user.soft_delete', label: p('softDelete') });
+      else if (isSuper && graceOver) choices.push({ action: 'user.purge', label: p('purge') });
+    }
+  }
   return (
     <div className="space-y-sp-16">
       <PageHeader
@@ -69,6 +96,16 @@ export default async function UserPage({
         <p>
           <strong>{p('joined')}:</strong> {u.createdAt.slice(0, 10)}
         </p>
+        {u.deletionScheduledFor ? (
+          <p role="status" className="sm:col-span-2">
+            {p('deletionScheduled', { date: u.deletionScheduledFor.slice(0, 10) })}
+          </p>
+        ) : null}
+        {erased ? (
+          <p role="status" className="sm:col-span-2">
+            {p('erased')}
+          </p>
+        ) : null}
         {u.pendingAction ? (
           <p role="status" className="sm:col-span-2">
             {p('pending', { action: u.pendingAction })}
@@ -82,11 +119,9 @@ export default async function UserPage({
         canNote={canNote}
         canVerifyEmail={canManage}
         locked={u.pendingAction !== null}
-        choices={[
-          suspended
-            ? { action: 'user.reactivate', label: p('reactivateUser') }
-            : { action: 'user.suspend', label: p('suspendUser') },
-        ]}
+        choices={choices}
+        changeEmail={!erased && !u.platformRole}
+        plans={planSlugs}
       />
       {actor.role === 'super_admin' && !u.platformRole && u.email ? (
         <p className="text-sm">

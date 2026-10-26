@@ -195,3 +195,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-admin-health.ts` (5 checks): 100 when clean, the caps, the 0 to 100 range, the levels.
 - Not verified: the page in a browser, the money figures against live data, the speed of the page with many payments.
+
+## 16.21 User actions
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-user-actions.ts` (6 checks): input rules, lower-cased e-mail, plan slug, grace days, approval rules, migration action list equals the code.
+- `sql/assertions/s16_032_admin_user_actions.sql`: new actions accepted, unknown refused, one scheduled deletion per person, purge needs a scheduled deletion and a finished grace, tombstone keeps the row. Not run: no database server in this session.
+- Not verified: any of the actions against Supabase Auth (e-mail change, ban, reset mail), the pages in a browser, the migration on the live database (not applied).
