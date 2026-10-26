@@ -133,6 +133,12 @@ async function resolveRow(
   };
 }
 
+/** Names (never values) of the SMTP_* variables the platform environment still lacks, so a missing setting can be named. */
+export function missingEnvironmentSettings(): string[] {
+  const env = getServerEnv();
+  return (['SMTP_HOST', 'SMTP_PORT', 'SMTP_FROM'] as const).filter((name) => !env[name]);
+}
+
 /** The last fallback: the SMTP_* variables of the platform environment. */
 function environmentProvider(): ResolvedProvider | null {
   const env = getServerEnv();
