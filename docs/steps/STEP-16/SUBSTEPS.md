@@ -301,3 +301,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: the figures of 16.20 and 16.24 compared with the live database; e-mail and API calls become plan features with quota bars (they were plain figures); payments can be found in the platform search. Decisions are D48.
 - Files: `services/subscription/analytics.ts`, `services/platform/tenant-insight.ts`, `config/plans.ts`, `lib/payment/plan-rules.ts`, `lib/cms/pricing.ts`, `lib/i18n/strings/en/s14-wallet.ts`, `services/entitlement/usage.ts`, `lib/integrations/public-api.ts`, `lib/platform/global-search.ts`, `services/platform/global-search.ts`, `scripts/verify/step16-plan-quotas.ts`, `scripts/verify/step16-tenant-insight.ts`.
+
+## 16.26 What's new and product tours (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST M2 2795 and 2796. Decisions are D49.
+- Files: `migrations/S16_035_release_notes.sql` (+ `_down`), `sql/assertions/s16_035_release_notes.sql`, `lib/platform/release-notes.ts`, `services/platform/release-notes.ts`, `app/api/whats-new/route.ts`, `app/api/admin/releases/route.ts`, `app/(dashboard)/whats-new`, `app/(admin)/admin/releases`, `app/(dashboard)/layout.tsx` (unseen banner), `config/permissions/s16-releases.ts`, navigation, strings `s16Growth`, `scripts/verify/step16-release-notes.ts`.

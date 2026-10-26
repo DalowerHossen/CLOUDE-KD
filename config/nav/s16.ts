@@ -146,4 +146,22 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo'],
     order: 86,
   },
+  {
+    id: 'whats-new',
+    labelKey: 's16Growth.nav.whatsNew',
+    href: '/whats-new',
+    icon: 'bell',
+    group: 'account',
+    roles: ['owner', 'staff'],
+    order: 485,
+  },
+  {
+    id: 'admin-releases',
+    labelKey: 's16Growth.nav.releases',
+    href: '/admin/releases',
+    icon: 'bell',
+    group: 'admin',
+    roles: ['super_admin', 'ceo'],
+    order: 76,
+  },
 ];

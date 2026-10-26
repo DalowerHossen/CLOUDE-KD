@@ -174,3 +174,9 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - New plan features `emails.monthly` and `api.requests_monthly` (free 100 and 0, pro 2000 and 50000, business 20000 and 500000, enterprise no limit). They show as quota bars on the company pages. The API quota is enforced: when a plan with API access has used its calls of the month the public API answers 429 until next month; a failed read lets the call through. The e-mail quota is shown but not enforced, because sign-in, verification, reset and billing mail must never be blocked by a plan limit.
 - Plans already in the database keep their saved values; the two new keys come from the built-in values until the platform team saves them in the plan editor.
 - The platform search finds payments by id, by the processor's transaction id and by the trace id.
+
+## D49 What's new and product tours (2026-10-26)
+
+- The platform team (super admin and CEO, fresh identity check, audited) publishes plain-text release notes for everyone or owners only; a note may carry a tour of up to 8 steps. A company user sees live notes under "What's new", the notes they have not seen are marked, and a banner on the dashboard counts them. Seen and tour-finished marks are private to the user.
+- A tour is a stepper on the "What's new" page. Each step may link to a page inside the app (a path starting with "/", no outside address). It does not draw highlights over the real screens: pointing at a button on another page would need a script inside every page and breaks whenever a page changes. That contextual overlay is not built.
+- Notes are plain text (no HTML), so there is nothing to clean. A failed read of the unseen count shows no banner and never breaks a page.

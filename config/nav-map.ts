@@ -17,4 +17,19 @@ import { nav as s14 } from './nav/s14';
 import { nav as s15 } from './nav/s15';
 import { nav as s16 } from './nav/s16';
 
-export const navMap: NavItem[] = [...s01, ...s02, ...s03, ...s04, ...s05, ...s06, ...s07, ...s08, ...s09, ...s10, ...s13, ...s14, ...s15, ...s16];
+export const navMap: NavItem[] = [
+  ...s01,
+  ...s02,
+  ...s03,
+  ...s04,
+  ...s05,
+  ...s06,
+  ...s07,
+  ...s08,
+  ...s09,
+  ...s10,
+  ...s13,
+  ...s14,
+  ...s15,
+  ...s16,
+];

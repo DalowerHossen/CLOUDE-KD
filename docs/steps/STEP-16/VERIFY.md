@@ -224,3 +224,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - Live database, read only: all columns used by 16.20 to 16.24 exist; the admin home counters and the per-company sign-in, ticket and e-mail counts equal independent counts. Money sums could not be checked (no money in the database). The services themselves were not run against the live database (no service key in this session).
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-plan-quotas.ts` (4 checks) and `step16-tenant-insight.ts` (8 checks, now with payment search).
 - Not verified: the API quota refusing a real call, the quota bars in a browser.
+
+## 16.26 What's new and product tours
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-release-notes.ts` (5 checks): note rules, tour limit and in-app links only, seen input, unseen notes, migration limit equals the code limit.
+- `sql/assertions/s16_035_release_notes.sql`: title length, kinds, tour length and type, one read per person and note, closed to clients. Not run yet (migration not applied).
+- Not verified: the pages in a browser, the banner, a real tour.
