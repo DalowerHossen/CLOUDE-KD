@@ -3,11 +3,12 @@
 // Run: SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-cron-tick.ts
 import assert from 'node:assert/strict';
 import { CRON_JOBS } from '../../netlify/cron-jobs.generated.mjs';
-import { dueJobs, fieldMatches, scheduleMatches } from '../../netlify/functions/cron-tick.mjs';
+import { dueJobs, dueJobsSince, fieldMatches, scheduleMatches } from '../../netlify/functions/cron-tick.mjs';
 import { readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
 let checks = 0;
+
 const check = (name: string, fn: () => void): void => {
   try {
     fn();
@@ -51,6 +52,17 @@ check('the list is current and has one entry for every job file', () => {
   assert.equal(run.status, 0, run.stderr);
   const files = readdirSync('cron/jobs').filter((f) => /^s\d{2}-[a-z0-9-]+\.ts$/.test(f));
   assert.equal(CRON_JOBS.length, files.length);
+});
+check('the 5 minute window finds every job whose minute fell inside it, once', () => {
+  const tick = at('2026-10-25T08:10:00');
+  const names = dueJobsSince(tick);
+  assert.equal(new Set(names).size, names.length);
+  assert.ok(names.includes('email-queue'));
+  // social-hourly is "7 * * * *": the tick at 08:10 looks back to 08:06 and finds minute 08:07.
+  assert.ok(dueJobsSince(at('2026-10-25T08:10:00'), 5).length >= dueJobs(tick).length);
+  const hourly = CRON_JOBS.find((j) => j.name === 'social-hourly');
+  assert.equal(hourly?.schedule, '7 * * * *');
+  assert.ok(dueJobsSince(at('2026-10-25T08:10:00')).includes('social-hourly'));
 });
 check('a job runs at least once a day and the every-minute jobs run every minute', () => {
   const everyMinute = CRON_JOBS.filter((j) => j.schedule === '* * * * *').map((j) => j.name);

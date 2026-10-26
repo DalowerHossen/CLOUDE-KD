@@ -4,6 +4,8 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  # Builds only the production branch (scripts/netlify-ignore.sh); previews of pull requests are skipped to save the plan allowance.
+  ignore = "bash scripts/netlify-ignore.sh"
 
 [build.environment]
   NODE_VERSION = "22"

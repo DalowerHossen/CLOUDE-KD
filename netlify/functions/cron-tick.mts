@@ -1,6 +1,7 @@
 // path: netlify/functions/cron-tick.mts
-// The scheduler of the platform. Netlify runs this function every minute (UTC); it calls POST /api/cron/<job> with the
-// CRON_SECRET for every job whose schedule (cron/jobs/*.ts, copied into netlify/cron-jobs.generated.mts) matches this minute.
+// The scheduler of the platform. Netlify runs this function every 5 minutes (UTC); it calls POST /api/cron/<job> with the
+// CRON_SECRET for every job whose schedule (cron/jobs/*.ts, copied into netlify/cron-jobs.generated.mts) matched a minute since
+// the last run. Waking once a minute used up the plan's function allowance (the site answered 503 usage_exceeded).
 // The application then runs the job under its own leader lock, so a job never runs twice at once.
 import { CRON_JOBS } from '../cron-jobs.generated.mjs';
 
@@ -41,6 +42,15 @@ export function dueJobs(at: Date): string[] {
   return CRON_JOBS.filter((j) => scheduleMatches(j.schedule, at)).map((j) => j.name);
 }
 
+/** The scheduler wakes every few minutes, so a job is due when its line matched any minute since the last wake. Each job once. */
+export const TICK_MINUTES = 5;
+export function dueJobsSince(at: Date, minutes: number = TICK_MINUTES): string[] {
+  const names = new Set<string>();
+  for (let back = 0; back < minutes; back += 1)
+    for (const name of dueJobs(new Date(at.getTime() - back * 60_000))) names.add(name);
+  return [...names];
+}
+
 const log = (text: string): void => void process.stdout.write(`${text}\n`);
 
 export default async function handler(): Promise<Response> {
@@ -50,7 +60,7 @@ export default async function handler(): Promise<Response> {
     log('cron-tick: URL or CRON_SECRET is not set; nothing was called');
     return new Response('not configured', { status: 500 });
   }
-  const names = dueJobs(new Date());
+  const names = dueJobsSince(new Date());
   const results = await Promise.allSettled(
     names.map(async (name) => {
       const response = await fetch(`${base}/api/cron/${name}`, {
@@ -69,5 +79,5 @@ export default async function handler(): Promise<Response> {
   });
 }
 
-/** Every minute. Netlify runs scheduled functions only for the published (production) deploy. */
-export const config = { schedule: '* * * * *' };
+/** Every 5 minutes. Netlify runs scheduled functions only for the published (production) deploy. */
+export const config = { schedule: '*/5 * * * *' };
