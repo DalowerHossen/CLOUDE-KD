@@ -201,3 +201,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-user-actions.ts` (6 checks): input rules, lower-cased e-mail, plan slug, grace days, approval rules, migration action list equals the code.
 - `sql/assertions/s16_032_admin_user_actions.sql`: new actions accepted, unknown refused, one scheduled deletion per person, purge needs a scheduled deletion and a finished grace, tombstone keeps the row. Not run: no database server in this session.
 - Not verified: any of the actions against Supabase Auth (e-mail change, ban, reset mail), the pages in a browser, the migration on the live database (not applied).
+
+## 16.22 Operations controls
+
+- `SKIP_ENV_VALIDATION=1 npx tsx --conditions=react-server scripts/verify/step16-system-controls.ts` (6 checks): maintenance window, input rules, kill switch and cap input, cap in force, the configuration screen never holds a value, the migration key.
+- `sql/assertions/s16_033_platform_controls.sql`: one row per key, known key only, one engaged switch per flag, release and engage again, one cap per company with a range, closed to clients.
+- Not verified: maintenance, kill switch and cap in a running site, the three pages in a browser, the migration on the live database (not applied), the retry of a real failed job.

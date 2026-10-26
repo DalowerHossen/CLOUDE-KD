@@ -94,3 +94,22 @@ export async function rateLimit(key: string, policyName: string): Promise<RateLi
     return { allowed: false, remaining: 0, retryAfterSeconds: 30 };
   }
 }
+
+/**
+ * An extra per-minute ceiling for one company (set by the super admin), on top of the per-address limit. Unlike the
+ * address limit it fails open: if the counter cannot be read the request is not refused for this reason.
+ */
+export async function companyCapHit(
+  companyId: string,
+  limitPerMinute: number,
+): Promise<RateLimitResult> {
+  try {
+    return await adapter.hit(`tenant-cap:${companyId}`, {
+      limit: limitPerMinute,
+      windowSeconds: 60,
+    });
+  } catch (error) {
+    log.error('company cap counter failed; not refusing for this reason', { error });
+    return { allowed: true, remaining: limitPerMinute, retryAfterSeconds: 0 };
+  }
+}

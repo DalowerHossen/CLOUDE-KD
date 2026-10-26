@@ -142,3 +142,12 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - Forced password reset ends all sessions and mails a fresh reset link to the address on file; the old password keeps working only until the link is used. A locked account cannot be sent a link.
 - E-mail change takes effect at once, marks the new address confirmed and ends all sessions. No notice goes to the old address yet (no template exists for it); this is a gap.
 - Platform staff cannot be deleted from this screen. A failed direct action is recorded as `failed` with the reason instead of `applied`.
+
+## D45 Operations controls (2026-10-26)
+
+- Maintenance blocks signed-in company API calls and the public API (answer 503 with the message) and replaces the company dashboard by a notice. Platform staff, sign-in, the public site, payment-provider notices (webhooks) and the health address are not blocked, so staff can end it and money in flight is not lost. A start and an end time are optional. A failed read of the switch counts as "off".
+- Turning maintenance on, engaging a kill switch, setting a cap and retrying a job are super admin only with a fresh identity check. The CEO-asks, super-admin-approves path of FEATURE_LIST 3618 is not built; the CEO can look but not change.
+- A kill switch names a flag key. Today it is read by the optional-module check, so `module.*` keys switch a module off for every company, overriding company flags (up to 15 seconds in other processes). Other flags are not read through the switch yet.
+- A company cap is an extra per-minute ceiling for all users of one company, counted together. It can only limit: the per-address limit (120 a minute) still applies, so a cap above it does not give more room. If the counter cannot be read the request is not refused for this reason.
+- The configuration screen lists names and set/not-set only. It cannot change a value: secrets live in the host's environment settings, and writing them from the site would put a secret store in the database next to the data it protects. Marked as not built: editing from the screen.
+- The job screen shows counts, the oldest overdue job and failed or given-up jobs with the error text, and retries one job. There is no per-run job log and no cron dead-man alert yet.
