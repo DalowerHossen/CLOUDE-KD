@@ -306,3 +306,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: FEATURE_LIST M2 2795 and 2796. Decisions are D49.
 - Files: `migrations/S16_035_release_notes.sql` (+ `_down`), `sql/assertions/s16_035_release_notes.sql`, `lib/platform/release-notes.ts`, `services/platform/release-notes.ts`, `app/api/whats-new/route.ts`, `app/api/admin/releases/route.ts`, `app/(dashboard)/whats-new`, `app/(admin)/admin/releases`, `app/(dashboard)/layout.tsx` (unseen banner), `config/permissions/s16-releases.ts`, navigation, strings `s16Growth`, `scripts/verify/step16-release-notes.ts`.
+
+## 16.27 Exit survey and downgrade-save (owner request, 2026-10-26)
+
+- Goal: FEATURE_LIST M2 2792 and 2793. Decisions are D50.
+- Files: `migrations/S16_036_retention.sql` (+ `_down`), `sql/assertions/s16_036_retention.sql`, `lib/platform/retention.ts`, `services/platform/retention.ts`, `app/api/retention/{offer,saved}/route.ts`, `app/api/admin/retention/route.ts`, `app/api/subscriptions/{cancel,change}/route.ts`, `app/(dashboard)/subscriptions/billing` (flow), `app/(admin)/admin/retention`, `config/permissions/s16-retention.ts`, navigation, strings, `scripts/verify/step16-retention.ts`.

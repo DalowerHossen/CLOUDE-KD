@@ -230,3 +230,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-release-notes.ts` (5 checks): note rules, tour limit and in-app links only, seen input, unseen notes, migration limit equals the code limit.
 - `sql/assertions/s16_035_release_notes.sql`: title length, kinds, tour length and type, one read per person and note, closed to clients. Not run yet (migration not applied).
 - Not verified: the pages in a browser, the banner, a real tour.
+
+## 16.27 Exit survey and downgrade-save
+
+- `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-retention.ts` (7 checks): the seven reasons equal the migration, survey and offer input, offer choice, stay rate, the two routes accept an optional survey.
+- `sql/assertions/s16_036_retention.sql`: known triggers, reasons and outcomes, coupon shape, detail length, closed to clients. Not run yet (migration not applied).
+- Not verified: the flow in a browser, a real cancel or downgrade with the survey, the coupon check against live coupons.

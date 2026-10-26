@@ -164,4 +164,13 @@ export const nav: NavItem[] = [
     roles: ['super_admin', 'ceo'],
     order: 76,
   },
+  {
+    id: 'admin-retention',
+    labelKey: 's16Growth.nav.retention',
+    href: '/admin/retention',
+    icon: 'activity',
+    group: 'admin',
+    roles: ['super_admin', 'ceo'],
+    order: 77,
+  },
 ];
