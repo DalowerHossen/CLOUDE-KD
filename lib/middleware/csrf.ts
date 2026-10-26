@@ -92,12 +92,18 @@ export async function checkCsrf(input: {
   origin: string | null;
   referer: string | null;
   appOrigin: string;
+  /** The origin this request itself was sent to. A page served from it may call it, whatever the configured address is. */
+  requestOrigin?: string;
   cookieToken: string | undefined;
   headerToken: string | null;
   secret: string;
 }): Promise<CsrfVerdict> {
   if (!requiresCsrfCheck(input.method, input.pathname)) return 'ok';
-  if (!isSameOrigin(input.origin, input.referer, input.appOrigin)) return 'bad_origin';
+  const fromOwnPage =
+    isSameOrigin(input.origin, input.referer, input.appOrigin) ||
+    (input.requestOrigin !== undefined &&
+      isSameOrigin(input.origin, input.referer, input.requestOrigin));
+  if (!fromOwnPage) return 'bad_origin';
   if (ORIGIN_ONLY_PREFIXES.some((p) => input.pathname.startsWith(p))) return 'ok';
   if (!input.cookieToken || !input.headerToken) return 'missing_token';
   if (!timingSafeEqualStrings(input.cookieToken, input.headerToken)) return 'mismatch';
