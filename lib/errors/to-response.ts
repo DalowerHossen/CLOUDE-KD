@@ -1,12 +1,6 @@
 // path: lib/errors/to-response.ts
 import { ZodError } from 'zod';
-import {
-  AppError,
-  InternalError,
-  RateLimitError,
-  ValidationError,
-  type ErrorCode,
-} from './app-error';
+import { AppError, InternalError, ValidationError, type ErrorCode } from './app-error';
 
 export interface ErrorBody {
   error: {
@@ -26,8 +20,41 @@ export function fromZodError(error: ZodError): ValidationError {
 }
 
 /** Maps any thrown value to an AppError. Unknown errors become a generic InternalError. */
+const ERROR_CODES: ReadonlySet<string> = new Set<ErrorCode>([
+  'validation_error',
+  'unauthorized',
+  'forbidden',
+  'not_found',
+  'conflict',
+  'duplicate',
+  'idempotency_conflict',
+  'rate_limited',
+  'payload_too_large',
+  'network_blocked',
+  'step_up_required',
+  'service_unavailable',
+  'internal_error',
+]);
+
+/**
+ * An error of ours, also when it was made by another copy of the error classes. The production build can load this module
+ * twice (once for the route, once for a service), and `instanceof` then says no for an error that is ours; the shape does not.
+ */
+export function isAppError(error: unknown): error is AppError {
+  if (error instanceof AppError) return true;
+  if (typeof error !== 'object' || error === null) return false;
+  const e = error as { code?: unknown; status?: unknown; message?: unknown; expose?: unknown };
+  return (
+    typeof e.code === 'string' &&
+    ERROR_CODES.has(e.code) &&
+    typeof e.status === 'number' &&
+    typeof e.message === 'string' &&
+    typeof e.expose === 'boolean'
+  );
+}
+
 export function normalizeError(error: unknown): AppError {
-  if (error instanceof AppError) return error;
+  if (isAppError(error)) return error;
   if (error instanceof ZodError) return fromZodError(error);
   return new InternalError(error);
 }
@@ -49,7 +76,9 @@ export function errorResponse(error: AppError, correlationId: string): Response 
     'cache-control': 'no-store',
     'x-correlation-id': correlationId,
   });
-  if (error instanceof RateLimitError) headers.set('retry-after', String(error.retryAfterSeconds));
+  const wait = (error as { retryAfterSeconds?: unknown }).retryAfterSeconds;
+  if (error.code === 'rate_limited' && typeof wait === 'number')
+    headers.set('retry-after', String(wait));
   return new Response(JSON.stringify(toErrorBody(error, correlationId)), {
     status: error.status,
     headers,
