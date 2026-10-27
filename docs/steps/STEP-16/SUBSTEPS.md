@@ -325,4 +325,4 @@ Support staff find a payment across all companies by the last four digits of the
 ## 16.30 Feature list audit, second pass: the Bengali-only lines (owner request, 2026-10-27)
 
 - Goal: the lines that the script could not read are read by a person against the code, part by part, and checked against what each STEP owner wrote down as not built. Report only. Decisions are D54.
-- Files: `docs/steps/STEP-16/AUDIT/MANUAL-PART-NN.md` (parts 1 to 9 so far), `KNOWN_GAPS.md`, `CONFIRMED_FINDINGS.md`.
+- Files: `docs/steps/STEP-16/AUDIT/MANUAL-PART-NN.md` (parts 1 to 41), `MANUAL_SUMMARY.md`, `KNOWN_GAPS.md`, `CONFIRMED_FINDINGS.md`.
