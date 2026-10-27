@@ -22,7 +22,38 @@ export interface AppErrorOptions {
   expose?: boolean;
 }
 
+type ErrorClass = abstract new (...args: never[]) => unknown;
+const probes = new WeakMap<ErrorClass, { code: string; status: number } | null>();
+
+/** The code and status a class gives its errors, found once by making one. A class that needs arguments gives null. */
+function probeOf(cls: ErrorClass): { code: string; status: number } | null {
+  if (!probes.has(cls)) {
+    try {
+      const made = new (cls as unknown as new () => { code: string; status: number })();
+      probes.set(cls, { code: made.code, status: made.status });
+    } catch {
+      probes.set(cls, null);
+    }
+  }
+  return probes.get(cls) ?? null;
+}
+
 export class AppError extends Error {
+  /**
+   * `error instanceof NotFoundError` also holds for an error of that kind made by another copy of the classes. The
+   * production build loads this module more than once (route, page, service), and a plain `instanceof` then says no.
+   */
+  static [Symbol.hasInstance](this: ErrorClass, value: unknown): boolean {
+    if (Function.prototype[Symbol.hasInstance].call(this, value)) return true;
+    if (typeof value !== 'object' || value === null || !(value instanceof Error)) return false;
+    const e = value as { code?: unknown; status?: unknown; expose?: unknown };
+    if (typeof e.code !== 'string' || typeof e.status !== 'number' || typeof e.expose !== 'boolean')
+      return false;
+    if (this === AppError) return true;
+    const probe = probeOf(this);
+    return probe !== null && probe.code === e.code && probe.status === e.status;
+  }
+
   readonly code: ErrorCode;
   readonly status: number;
   readonly details: unknown;
