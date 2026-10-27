@@ -111,6 +111,15 @@ export const nav: NavItem[] = [
     order: 65,
   },
   {
+    id: 'admin-branding',
+    labelKey: 's07Company.nav.adminBranding',
+    href: '/admin/branding',
+    icon: 'layers',
+    group: 'admin',
+    roles: ['super_admin', 'ceo'],
+    order: 72,
+  },
+  {
     id: 'admin-announcements',
     labelKey: 's07Company.nav.adminAnnouncements',
     href: '/admin/announcements',

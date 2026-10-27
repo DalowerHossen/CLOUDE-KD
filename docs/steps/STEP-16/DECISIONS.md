@@ -218,3 +218,10 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - A job that the schedule file runs every minute runs every five minutes here (only `email-queue` stays at one minute), to keep the number of calls to the host low.
 - Four jobs that delete data by a retention rule are not scheduled yet: retention-enforce, file-retention, email-purge, notification-purge. They wait for the owner's decision.
 - Not verified: the limits of the Vercel Hobby plan against the number of calls per day; what each newly enabled job does to live data beyond the HTTP 200 answer.
+
+## D56 Staff input and platform branding (2026-10-27)
+
+- Cause found in the live data: at 15:46 UTC a request of the super admin carried text that the injection heuristic reads as markup (`xss_attempt`). The zero-tolerance rule banned the address for 24 hours, so every admin action answered "This action is not available from your network." (six `network_blocked` events with reason `address_blocked`). The ban of that one address was lifted with `kd_ip_unblock`.
+- For platform roles `withApi` now cleans the input (same sanitizer) and records the markup as a low-severity event (`markup_in_staff_input`); it does not ban. Every other caller keeps the zero-tolerance reaction. The text is sanitized again when it is shown, and strict validation still refuses bad values.
+- The platform brand (name, tagline, footer line, logo from the media library) is stored as the `brand` row of `seo_settings` (no new table) and edited at `/admin/branding` (`seo.read` and `seo.edit`, super admin and CEO). The public header and footer read it; the built-in brand is the fallback.
+- Not done: the logo on e-mails, PDFs and the sign-in pages still uses the built-in mark.

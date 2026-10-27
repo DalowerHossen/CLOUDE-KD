@@ -259,3 +259,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - Live, 2026-10-27 15:55 UTC: 66 `kd-` jobs in `cron.job`, all active; 31 calls in 8 minutes, all answered 200 (`net._http_response`).
 - `scripts/verify-all.sh`: 123 scripts, 0 failed (with the `smtp.ts` change).
 - Not verified: the SMTP refusal text of the queued `notification.generic` messages; it appears in their stored error after the next deploy.
+
+## 16.32 Staff input and platform branding
+
+- `scripts/verify/step16-platform-brand.ts`: 5 checks.
+- Live: `ip_blocks` had one active ban (reason `zero tolerance: xss_attempt`, address 114.130.156.0/24) and none after the unblock.
+- Not verified: saving a post, an author, a page or the branding in a browser; the logo shown on the public site after an upload.

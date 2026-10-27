@@ -332,3 +332,8 @@ Support staff find a payment across all companies by the last four digits of the
 - Goal: the jobs of `cron/schedule.generated.ts` run without a scheduler on the host. Decisions are D55.
 - Files: `migrations/S16_038_job_schedules.sql` (+ `_down`), `sql/assertions/s16_038_job_schedules.sql`.
 - Also: `lib/email/adapters/smtp.ts` now says what the mail server answered (without addresses or links) when it refuses a message, so that a queued message with a permanent refusal can be explained.
+
+## 16.32 Staff input no longer bans staff; platform branding editor (owner request, 2026-10-27)
+
+- Goal: blog posts, authors, pages and price lists can be saved from the admin panel, and the super admin can set the platform name, logo, tagline and footer line. Decisions are D56.
+- Files: `lib/api/with-api.ts`, `lib/brand/platform.ts`, `services/branding/platform.ts`, `app/api/admin/branding/route.ts`, `app/(admin)/admin/branding/`, `components/marketing/` (header, footer, frame), `components/layout/logo.tsx`, `scripts/verify/step16-platform-brand.ts`.

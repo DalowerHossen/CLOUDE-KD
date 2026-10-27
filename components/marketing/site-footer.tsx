@@ -2,27 +2,30 @@
 import Link from 'next/link';
 import { Logo } from '@/components/layout/logo';
 import type { NavItem } from '@/config/nav-types';
+import { logoUrl, type PlatformBrand } from '@/lib/brand/platform';
 import { t, type StringKey } from '@/lib/i18n';
 import { CookieSettingsButton } from './consent-banner';
 
 interface Props {
   items: readonly NavItem[];
+  brand: PlatformBrand;
 }
 
 const label = (item: NavItem): string => t(item.labelKey as StringKey);
 
 /** Footer columns are the top-level footer items; their children (items with `parent`) are the links of the column. */
-export function SiteFooter({ items }: Props): JSX.Element {
+export function SiteFooter({ items, brand }: Props): JSX.Element {
   const columns = items.filter((i) => !i.parent);
   const kids = (id: string): NavItem[] => items.filter((i) => i.parent === id);
   return (
     <footer className="no-print border-t bg-card safe-bottom safe-x">
       <div className="mx-auto grid max-w-7xl gap-sp-24 px-sp-16 py-sp-32 md:grid-cols-[1.5fr_repeat(4,1fr)]">
         <div className="space-y-2">
-          <Logo />
-          <p className="max-w-xs text-caption text-muted-foreground">
-            {t('s06Public.footer.tagline')}
-          </p>
+          <Logo name={brand.name} imageUrl={logoUrl(brand)} />
+          <p className="max-w-xs text-caption text-muted-foreground">{brand.tagline}</p>
+          {brand.footerNote !== '' ? (
+            <p className="max-w-xs text-caption text-muted-foreground">{brand.footerNote}</p>
+          ) : null}
         </div>
         {columns.map((col) => (
           <nav key={col.id} aria-label={label(col)}>
@@ -49,8 +52,7 @@ export function SiteFooter({ items }: Props): JSX.Element {
       <div className="border-t">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-sp-16 py-sp-16 text-caption text-muted-foreground">
           <span>
-            Copyright {new Date().getUTCFullYear()} {t('s01Core.brand.name')}.{' '}
-            {t('s01Core.footer.rights')}
+            Copyright {new Date().getUTCFullYear()} {brand.name}. {t('s01Core.footer.rights')}
           </span>
           <span className="flex flex-wrap items-center gap-x-4">
             <CookieSettingsButton className="min-h-[32px] hover:text-foreground hover:underline" />

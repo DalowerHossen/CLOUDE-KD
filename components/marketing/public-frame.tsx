@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { SkipLink } from '@/components/layout/skip-link';
 import type { NavItem } from '@/config/nav-types';
+import type { PlatformBrand } from '@/lib/brand/platform';
 import type { PixelSettings } from '@/lib/analytics/providers';
 import { NoticeBanner } from '@/components/shared/notice-banner';
 import { ConsentBanner } from './consent-banner';
@@ -15,21 +16,28 @@ interface Props {
   footerItems: readonly NavItem[];
   children: ReactNode;
   pixels: PixelSettings;
+  brand: PlatformBrand;
 }
 
 /** Frame of every public page: skip link, header, main content, footer and the cookie banner. */
-export function PublicFrame({ headerItems, footerItems, children, pixels }: Props): JSX.Element {
+export function PublicFrame({
+  headerItems,
+  footerItems,
+  children,
+  pixels,
+  brand,
+}: Props): JSX.Element {
   return (
     <div className="flex min-h-[100dvh] flex-col">
       <div className="no-print">
         <SkipLink />
       </div>
-      <SiteHeader items={headerItems} />
+      <SiteHeader items={headerItems} brand={brand} />
       <NoticeBanner endpoint="/api/public-site/notices" />
       <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
         {children}
       </main>
-      <SiteFooter items={footerItems} />
+      <SiteFooter items={footerItems} brand={brand} />
       <ConsentBanner />
       <TrackingLoader pixels={pixels} />
       <EasterEgg />
