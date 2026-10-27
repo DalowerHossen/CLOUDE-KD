@@ -236,3 +236,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `SKIP_ENV_VALIDATION=1 npx tsx scripts/verify/step16-retention.ts` (7 checks): the seven reasons equal the migration, survey and offer input, offer choice, stay rate, the two routes accept an optional survey.
 - `sql/assertions/s16_036_retention.sql`: known triggers, reasons and outcomes, coupon shape, detail length, closed to clients. Not run yet (migration not applied).
 - Not verified: the flow in a browser, a real cancel or downgrade with the survey, the coupon check against live coupons.
+
+## 16.28 Database job scheduler
+
+- `sql/assertions/s16_037_job_scheduler.sql`: bad names and paths refused, closed to `anon` and `authenticated`. Run live with the rollback marker: passed, including "does nothing without the secret".
+- Live: `pg_cron` job `kd-email-queue` active, `pg_net` installed. After the owner sets `cron_secret`: `select status_code, created from net._http_response order by created desc limit 5;` shows 200.
+- Not verified: a real call to the app (the secret is not set yet), mail delivery.
