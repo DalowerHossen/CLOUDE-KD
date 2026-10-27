@@ -247,3 +247,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 
 - The script reads `docs/source/FEATURE_LIST.md`, the `Feature sources` ranges of each STEP and the source tree; it is not part of the repository. The thirteen features of group A of `CANDIDATE_GAPS.md` were searched for again with exact words.
 - Not verified: any feature in a browser; the Bengali-only lines; whether a matched file really does what the feature says.
+
+## 16.30 Feature list audit, second pass
+
+- `MANUAL_SUMMARY.md` counts 810 rows: present 466, partial 95, not found 108, not built 19 (16 recorded by owners or by design, 3 by decision), check in browser 121. Nothing was opened in a browser.
+- Live, 2026-10-27 15:10 to 15:12 UTC: the database job `kd-email-queue` called `/api/cron/email-queue` three times and each answered 200 (`net._http_response`): the Bearer secret in the vault matches `CRON_SECRET` of the deployment.
+- Not verified: any "check in browser" row; whether queued messages leave once `SMTP_FROM` is in the running deployment.
