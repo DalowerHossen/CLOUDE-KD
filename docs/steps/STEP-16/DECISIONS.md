@@ -192,3 +192,10 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 
 - The secret scan reported `labelKey: 's16Growth.nav.retention'` in a navigation file as a key (generic rule, entropy 3.76). The project already allowed such lines, but a gitleaks regex is matched against the found value alone by default, so the pattern for the whole line never matched and only low-entropy names passed by luck. `.gitleaks.toml` now sets `regexTarget = "line"`. This was not reproduced locally (the scanner cannot be run in this session); CI is the check.
 - The new "What's new" page was missing from the core menu list and from the crawler rules; both verify scripts caught it. Lesson recorded: run the whole `scripts/verify-all.sh` before pushing, not only the scripts of the sub-step.
+
+## D52 Database job scheduler (2026-10-27)
+
+- The e-mail queue (`email-queue`, every minute) is called from the database clock: `pg_cron` runs `kd_cron_ping('email-queue')`, which posts to `/api/cron/email-queue` with `pg_net`. Vercel Hobby cannot run a cron more often than daily, and the route needs a POST with a Bearer secret, so the host cron was not an option.
+- The address (`app_url`) and the secret (`cron_secret`, equal to `CRON_SECRET` of the app) are read from the Supabase vault, never from a file. The ping returns false and does nothing while either is missing. The secret is set by the owner in the Supabase SQL editor, so it does not pass through a chat or a file.
+- Only `email-queue` is scheduled. The other jobs of `cron/schedule.generated.ts` (invoices, payouts, reminders, retention and so on) are not; each can be added with one `cron.schedule` line that calls `kd_cron_ping('<job>')`.
+- The migration skips `pg_net` and `pg_cron` when the server has none (local PostgreSQL), so the CI database job is not affected.

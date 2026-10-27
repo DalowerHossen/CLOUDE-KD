@@ -311,3 +311,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: FEATURE_LIST M2 2792 and 2793. Decisions are D50.
 - Files: `migrations/S16_036_retention.sql` (+ `_down`), `sql/assertions/s16_036_retention.sql`, `lib/platform/retention.ts`, `services/platform/retention.ts`, `app/api/retention/{offer,saved}/route.ts`, `app/api/admin/retention/route.ts`, `app/api/subscriptions/{cancel,change}/route.ts`, `app/(dashboard)/subscriptions/billing` (flow), `app/(admin)/admin/retention`, `config/permissions/s16-retention.ts`, navigation, strings, `scripts/verify/step16-retention.ts`.
+
+## 16.28 Database job scheduler for the e-mail queue (owner request, 2026-10-27)
+
+- Goal: held and scheduled messages go out without a scheduler on the host (Vercel Hobby runs a cron once a day at most). Decisions are D52.
+- Files: `migrations/S16_037_job_scheduler.sql` (+ `_down`), `sql/assertions/s16_037_job_scheduler.sql`.
