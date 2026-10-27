@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { SkipLink } from '@/components/layout/skip-link';
 import type { NavItem } from '@/config/nav-types';
 import type { PixelSettings } from '@/lib/analytics/providers';
+import { NoticeBanner } from '@/components/shared/notice-banner';
 import { ConsentBanner } from './consent-banner';
 import { EasterEgg } from './easter-egg';
 import { SiteFooter } from './site-footer';
@@ -24,6 +25,7 @@ export function PublicFrame({ headerItems, footerItems, children, pixels }: Prop
         <SkipLink />
       </div>
       <SiteHeader items={headerItems} />
+      <NoticeBanner endpoint="/api/public-site/notices" />
       <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
         {children}
       </main>

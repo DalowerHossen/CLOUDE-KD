@@ -60,6 +60,9 @@ export async function listLive(role: string): Promise<AnnouncementView[]> {
   return (data ?? []).map(view);
 }
 
+/** The notices meant for everyone, shown on the public site and the sign-in pages too. */
+export const listPublic = (): Promise<AnnouncementView[]> => listLive('visitor');
+
 export async function runAnnouncementAction(
   actor: Actor,
   input: AnnouncementAction,

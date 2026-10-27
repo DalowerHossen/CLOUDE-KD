@@ -1,6 +1,7 @@
 // path: app/(dashboard)/layout.tsx
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { NoticeBanner } from '@/components/shared/notice-banner';
 import { StepUpGate } from '@/components/auth/step-up-gate';
 import { AppShell } from '@/components/layout/app-shell';
 import { visibleNavItems } from '@/components/layout/nav-utils';
@@ -74,6 +75,7 @@ export default async function DashboardLayout({
         </p>
       ) : null}
       <ImpersonationBanner />
+      <NoticeBanner endpoint="/api/announcements" />
       {children}
     </AppShell>
   );
