@@ -253,3 +253,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `MANUAL_SUMMARY.md` counts 810 rows: present 466, partial 95, not found 108, not built 19 (16 recorded by owners or by design, 3 by decision), check in browser 121. Nothing was opened in a browser.
 - Live, 2026-10-27 15:10 to 15:12 UTC: the database job `kd-email-queue` called `/api/cron/email-queue` three times and each answered 200 (`net._http_response`): the Bearer secret in the vault matches `CRON_SECRET` of the deployment.
 - Not verified: any "check in browser" row; whether queued messages leave once `SMTP_FROM` is in the running deployment.
+
+## 16.31 Database schedules for the remaining jobs
+
+- Live, 2026-10-27 15:55 UTC: 66 `kd-` jobs in `cron.job`, all active; 31 calls in 8 minutes, all answered 200 (`net._http_response`).
+- `scripts/verify-all.sh`: 123 scripts, 0 failed (with the `smtp.ts` change).
+- Not verified: the SMTP refusal text of the queued `notification.generic` messages; it appears in their stored error after the next deploy.

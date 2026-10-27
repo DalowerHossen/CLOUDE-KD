@@ -326,3 +326,9 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: the lines that the script could not read are read by a person against the code, part by part, and checked against what each STEP owner wrote down as not built. Report only. Decisions are D54.
 - Files: `docs/steps/STEP-16/AUDIT/MANUAL-PART-NN.md` (parts 1 to 41), `MANUAL_SUMMARY.md`, `KNOWN_GAPS.md`, `CONFIRMED_FINDINGS.md`.
+
+## 16.31 Database schedules for the remaining jobs (owner request, 2026-10-27)
+
+- Goal: the jobs of `cron/schedule.generated.ts` run without a scheduler on the host. Decisions are D55.
+- Files: `migrations/S16_038_job_schedules.sql` (+ `_down`), `sql/assertions/s16_038_job_schedules.sql`.
+- Also: `lib/email/adapters/smtp.ts` now says what the mail server answered (without addresses or links) when it refuses a message, so that a queued message with a permanent refusal can be explained.

@@ -16,6 +16,19 @@ import {
 interface SmtpError extends Error {
   code?: string;
   responseCode?: number;
+  command?: string;
+  response?: string;
+}
+
+/** What the server said, without addresses or links, so a refusal can be read from the outbox without leaking anyone's data. */
+function serverSaid(e: SmtpError): string {
+  const raw = typeof e.response === 'string' ? e.response : '';
+  return raw
+    .replace(/\S+@\S+/g, '(address)')
+    .replace(/https?:\/\/\S+/gi, '(link)')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
 }
 
 export function mapSmtpError(error: unknown): Error {
@@ -26,8 +39,10 @@ export function mapSmtpError(error: unknown): Error {
   }
   if (code >= 500 && code < 600) {
     const recipient = code === 550 || code === 551 || code === 553 || code === 552;
+    const said = serverSaid(e);
+    const where = typeof e.command === 'string' && e.command !== '' ? ` at ${e.command}` : '';
     return new PermanentEmailError(
-      `The mail server refused the message (${code}).`,
+      `The mail server refused the message (${code}${where}${said !== '' ? `: ${said}` : ''}).`,
       recipient ? 'message' : 'config',
     );
   }
