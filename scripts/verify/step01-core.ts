@@ -193,6 +193,14 @@ async function main(): Promise<void> {
       'message',
     ]);
     assert.equal(body.error.code, 'conflict');
+    // An error of ours made by another copy of the classes keeps its meaning instead of turning into a server error.
+    const foreign = Object.assign(new Error('Please confirm your identity to continue.'), {
+      code: 'step_up_required',
+      status: 401,
+      expose: true,
+    });
+    assert.equal(normalizeError(foreign).status, 401);
+    assert.equal(normalizeError(foreign).code, 'step_up_required');
     const unknown = normalizeError(new Error('database password is hunter2'));
     assert.equal(unknown.status, 500);
     assert.ok(!toErrorBody(unknown, 'x').error.message.includes('hunter2'));

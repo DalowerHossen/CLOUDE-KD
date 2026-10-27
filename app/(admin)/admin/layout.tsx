@@ -1,6 +1,7 @@
 // path: app/(admin)/admin/layout.tsx
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { StepUpGate } from '@/components/auth/step-up-gate';
 import { AppShell } from '@/components/layout/app-shell';
 import { visibleNavItems } from '@/components/layout/nav-utils';
 import { getShellContext } from '@/components/layout/shell-user';
@@ -28,6 +29,7 @@ export default async function AdminLayout({
       notificationsHref={notifications}
       badge={t('s01Core.nav.adminBadge')}
     >
+      <StepUpGate />
       {children}
     </AppShell>
   );
