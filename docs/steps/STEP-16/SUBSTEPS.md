@@ -352,3 +352,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: a company can have its own merchant account at a processor and be paid into it; for NMI the merchant's keys are created from the platform once NMI has boarded the merchant. Decisions are D59.
 - Files: `migrations/S16_040_company_processor_accounts.sql` (+ `_down`), `sql/assertions/s16_040_company_processor_accounts.sql`, `services/payment/company-accounts.ts`, `lib/payment/company-accounts-rules.ts`, `app/api/admin/processors/accounts/`, `app/(admin)/admin/processors/accounts/`, `app/api/webhooks/account/[processor]/[account]/route.ts`, changes in `services/payment/` (payments, refunds, links, webhook core, payment store), `lib/payment/onboarding/nmi-signup.ts` (`createMerchantKey`), `services/payment/onboarding.ts` (`createMerchantAccount`), `scripts/verify/step16-company-accounts.ts`.
+
+## 16.36 Plan form, processor panel help, webhook addresses, company stores for staff (owner request, 2026-10-27)
+
+- Goal: every plan can be saved; the processor panel says where each key comes from and which webhook address to give the processor; platform staff can connect a company's Shopify or WooCommerce store and register its webhooks. Decisions are D60.
+- Files: `lib/payment/plan-rules.ts`, `lib/payment/credentials.ts`, `services/payment/processors.ts`, `components/payment/admin/processor-panel.tsx`, `services/integration/admin-stores.ts`, `app/api/admin/stores/`, `app/(admin)/admin/stores/`, `components/integration/commerce-forms.tsx`, `config/permissions/s16-commerce.ts` (`commerce.admin`), `scripts/verify/step14-plans.ts`.

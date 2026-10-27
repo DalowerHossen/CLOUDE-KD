@@ -5,6 +5,7 @@ import { getService } from '@/lib/container';
 import { ForbiddenError, ValidationError } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { getContext } from '@/lib/logger/correlation';
+import { getPublicEnv } from '@/lib/env/public';
 import { hasSecureForm } from '@/config/processors';
 import { describeCredentials, type CredentialFieldStatus } from '@/lib/payment/credentials';
 import { describeSwitch, hasChoice, requireMode } from '@/lib/payment/modes';
@@ -57,6 +58,8 @@ export interface ProcessorSummary {
 }
 
 export interface ProcessorDetail extends ProcessorSummary {
+  /** The address to give to the processor for its payment webhooks. */
+  webhookUrl: string;
   version: number;
   credentialsVersion: number;
   credentialsUpdatedAt: string | null;
@@ -100,6 +103,10 @@ export async function listProcessors(): Promise<ProcessorSummary[]> {
   return listRegistry().map((entry) => summaryOf(entry, byId.get(entry.metadata.id)));
 }
 
+function webhookUrlOf(id: string): string {
+  return `${getPublicEnv().NEXT_PUBLIC_APP_URL.replace(/\/+$/, '')}/api/webhooks/${id}`;
+}
+
 export async function getProcessorDetail(id: string): Promise<ProcessorDetail> {
   if (!isKnownProcessor(id)) throw new ValidationError('Unknown payment processor.');
   const entry = listRegistry().find((e) => e.metadata.id === id);
@@ -107,6 +114,7 @@ export async function getProcessorDetail(id: string): Promise<ProcessorDetail> {
   if (!hasAdapter(id)) {
     return {
       ...summaryOf(entry, undefined),
+      webhookUrl: webhookUrlOf(id),
       version: 0,
       credentialsVersion: 0,
       credentialsUpdatedAt: null,
@@ -159,6 +167,7 @@ export async function getProcessorDetail(id: string): Promise<ProcessorDetail> {
   const caps = adapter.capabilities;
   return {
     ...summaryOf(entry, row),
+    webhookUrl: webhookUrlOf(id),
     version: row.version,
     credentialsVersion: row.credentials_version,
     credentialsUpdatedAt: meta?.updated_at ?? null,

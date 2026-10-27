@@ -74,6 +74,26 @@ async function main(): Promise<void> {
     assert.equal(planInput.parse({ slug: 'starter', name: 'S' }).visible, false);
   });
 
+  await check(
+    'the admin form sends empty boxes as null: no description and no badge are accepted',
+    () => {
+      const form = {
+        name: 'Pro',
+        description: null,
+        priceMonthly: '19.99',
+        priceYearly: '199.99',
+        seatPriceMonthly: '39.89',
+        trialDays: 7,
+        sortOrder: 20,
+        badge: null,
+        visible: true,
+      };
+      const parsed = planUpdateInput.safeParse(form);
+      assert.ok(parsed.success);
+      assert.equal(parsed.data.description, '');
+    },
+  );
+
   await check('feature input: switches are on or off, limits are numbers or no limit', () => {
     assert.ok(
       entitlementsInput.safeParse({

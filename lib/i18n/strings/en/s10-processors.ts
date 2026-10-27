@@ -190,6 +190,10 @@ export const strings = {
     change: 'Change environment',
     changeHelp: 'Changing the environment disables the processor until a new test passes.',
   },
+  webhook: {
+    title: 'Webhook address',
+    help: 'In the {name} dashboard create a webhook (endpoint) that points to this address and choose the payment events. Copy the signing key {name} shows for it into the webhook field of the credentials below. Each company merchant account has its own address on the Company merchant accounts page.',
+  },
   credentials: {
     title: 'Credentials',
     help: 'Saved values are never shown again. Leave this form closed to keep the current keys. Saving new keys disables the processor until a new test passes.',

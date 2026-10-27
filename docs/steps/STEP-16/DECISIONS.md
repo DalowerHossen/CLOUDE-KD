@@ -252,3 +252,10 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - NMI: once an application is `boarded`, "Create merchant keys" creates the private (`transaction`) and public (`tokenization`) keys through the Partner API with the new credential `partnerKey` and saves them as the company's account (off until tested). The keys never reach the browser.
 - The platform-wide processor connection, routing and health stay as they were. A company account is not part of the health check.
 - Other processors: any processor with an adapter can have company accounts by entering its keys by hand in "Company merchant accounts". Automatic onboarding exists for NMI only; each other processor needs its own documentation read (rule 8).
+
+## D60 Plan form, help texts, webhook addresses, company stores (2026-10-27)
+
+- Cause of "The request contains invalid data" on every plan: the admin form sends an empty box as null (`emptyAsNull`) and the plan schema took the description as text only. A plan without a description is now the empty text. Other forms that use `emptyAsNull` (payouts, payroll, accounting, social) were listed but not checked one by one.
+- The processor panel showed only the label of each credential field; the help text that says where the value comes from (written in the adapters) never reached the screen. It now does, with a "required" mark, and a box with the webhook address of the processor (`/api/webhooks/<processor>`). When a processor cannot be loaded the panel now says why when the server said why (a blocked network address showed only "could not be loaded").
+- Online stores (Shopify, WooCommerce) were visible to the company owner only (Integrations, Online stores, "Register webhooks" exists). Platform staff now have `/admin/stores` (permission `commerce.admin`, super admin): all stores, connect a store for a company, check, register webhooks. It calls the company's own connection service for the chosen company.
+- Registering a webhook at a payment processor through its API is not built: NMI's pages give no such call (webhooks are created in the merchant portal); other processors need their documentation read.

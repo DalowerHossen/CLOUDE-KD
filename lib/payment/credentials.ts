@@ -77,6 +77,9 @@ export interface CredentialFieldStatus {
   label: string;
   secret: boolean;
   saved: boolean;
+  required: boolean;
+  /** Where in the processor's own dashboard this value comes from. */
+  helpText: string | null;
   /** Four mask characters plus the last characters for long secrets, null for short ones. Non-secret fields show their value. */
   display: string | null;
 }
@@ -91,6 +94,14 @@ export function describeCredentials(
     const saved = fieldKeys.includes(f.key);
     const raw = saved ? (lastChars[f.key] ?? null) : null;
     const display = raw === null ? null : f.secret ? `${MASK}${raw}` : raw;
-    return { key: f.key, label: f.label, secret: f.secret, saved, display };
+    return {
+      key: f.key,
+      label: f.label,
+      secret: f.secret,
+      saved,
+      required: f.required,
+      helpText: f.helpText ?? null,
+      display,
+    };
   });
 }

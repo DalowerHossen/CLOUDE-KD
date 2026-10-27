@@ -67,7 +67,14 @@ const field = (
 );
 
 /** Connects a Shopify or WooCommerce store. The credentials are sent once and are not shown again. */
-export function ConnectStoreForm(): JSX.Element {
+export function ConnectStoreForm({
+  endpoint = '/api/integrations/commerce/connections',
+  companyId,
+}: {
+  endpoint?: string;
+  /** Platform staff connect a store for a company: the company is sent with the store details. */
+  companyId?: string;
+} = {}): JSX.Element {
   const router = useRouter();
   const [provider, setProvider] = useState<'shopify' | 'woocommerce'>('shopify');
   const [name, setName] = useState('');
@@ -86,12 +93,13 @@ export function ConnectStoreForm(): JSX.Element {
     event.preventDefault();
     setBusy(true);
     setNotice(null);
+    const store = shopify
+      ? { provider, name, shopDomain, accessToken, clientSecret, syncMode }
+      : { provider, name, storeUrl, consumerKey, consumerSecret, syncMode };
     const result = await send(
-      '/api/integrations/commerce/connections',
+      endpoint,
       'POST',
-      shopify
-        ? { provider, name, shopDomain, accessToken, clientSecret, syncMode }
-        : { provider, name, storeUrl, consumerKey, consumerSecret, syncMode },
+      companyId === undefined ? store : { companyId, store },
       false,
     );
     if (!result.ok) setNotice({ ok: false, text: result.text });

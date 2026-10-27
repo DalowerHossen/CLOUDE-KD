@@ -1,7 +1,18 @@
 // path: lib/i18n/strings/en/s16-commerce.ts
 // Strings of the store connection pages (STEP 16.5). English only.
 export const strings = {
-  nav: { commerce: 'Online stores' },
+  nav: { commerce: 'Online stores', adminStores: 'Company stores' },
+  admin: {
+    title: 'Online stores of the companies',
+    description:
+      'Connect a Shopify or WooCommerce store for a company, check it and register the order webhooks at the store. Every company also sees its own stores under Integrations, Online stores.',
+    connectHelp:
+      'Choose the company, then enter the store details. For Shopify use a custom app with read access to orders and customers and the permission to manage webhooks; for WooCommerce a REST API key with read and write access. The platform sets the webhooks up at the store when you press "Register webhooks".',
+    company: 'Company',
+    chooseCompany: 'Choose a company',
+    empty: 'No company has connected a store yet.',
+    loadError: 'The stores could not be loaded.',
+  },
   common: {
     loadError: 'The data could not be loaded. Try again.',
     done: 'Done.',

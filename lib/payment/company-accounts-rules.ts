@@ -26,7 +26,15 @@ export interface AccountView {
   environment: 'sandbox' | 'live';
   status: 'active' | 'disabled';
   merchantReference: string | null;
-  fields: { key: string; label: string; secret: boolean; saved: boolean; display: string | null }[];
+  fields: {
+    key: string;
+    label: string;
+    secret: boolean;
+    saved: boolean;
+    required: boolean;
+    helpText: string | null;
+    display: string | null;
+  }[];
   lastTestAt: string | null;
   lastTestOk: boolean | null;
   lastTestMessage: string | null;

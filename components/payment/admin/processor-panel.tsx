@@ -34,7 +34,16 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
       const json: unknown = await response.json().catch(() => null);
       const parsed = dataBody.safeParse(json);
       if (response.ok && parsed.success) setDetail(parsed.data.data as unknown as ProcessorDetail);
-      else setFeedback({ ok: false, text: t('s10Processors.loadError') });
+      else {
+        // Say why when the server said why (for example a blocked network address), not only that loading failed.
+        const failed = errorBody.safeParse(json);
+        setFeedback({
+          ok: false,
+          text: failed.success
+            ? `${t('s10Processors.loadError')} ${failed.data.error.message}`
+            : t('s10Processors.loadError'),
+        });
+      }
     } catch {
       setFeedback({ ok: false, text: t('s10Processors.loadError') });
     } finally {
@@ -197,6 +206,13 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
               {state.disabledReason && !state.enabled ? (
                 <p className="text-sm text-muted-foreground">{state.disabledReason}</p>
               ) : null}
+              <div className="space-y-1 rounded-md border p-sp-12 text-sm">
+                <p className="font-medium">{t('s10Processors.webhook.title')}</p>
+                <p className="break-all font-mono text-caption">{state.webhookUrl}</p>
+                <p className="text-caption text-muted-foreground">
+                  {t('s10Processors.webhook.help', { name: summary.name })}
+                </p>
+              </div>
               <form
                 onSubmit={(e) => void submitCredentials(e)}
                 className="space-y-sp-12"
@@ -215,7 +231,10 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
                 ) : null}
                 {state.fields.map((field) => (
                   <div key={field.key} className="space-y-1">
-                    <Label htmlFor={`${summary.id}-${field.key}`}>{field.label}</Label>
+                    <Label htmlFor={`${summary.id}-${field.key}`}>
+                      {field.label}
+                      {field.required ? ' *' : ''}
+                    </Label>
                     <Input
                       id={`${summary.id}-${field.key}`}
                       name={field.key}
@@ -227,6 +246,9 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
                         field.saved ? (field.display ?? t('s10Processors.credentials.saved')) : ''
                       }
                     />
+                    {field.helpText ? (
+                      <p className="text-caption text-muted-foreground">{field.helpText}</p>
+                    ) : null}
                   </div>
                 ))}
                 <Button type="submit" disabled={busy}>
