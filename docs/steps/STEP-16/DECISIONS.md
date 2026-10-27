@@ -199,3 +199,9 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - The address (`app_url`) and the secret (`cron_secret`, equal to `CRON_SECRET` of the app) are read from the Supabase vault, never from a file. The ping returns false and does nothing while either is missing. The secret is set by the owner in the Supabase SQL editor, so it does not pass through a chat or a file.
 - Only `email-queue` is scheduled. The other jobs of `cron/schedule.generated.ts` (invoices, payouts, reminders, retention and so on) are not; each can be added with one `cron.schedule` line that calls `kd_cron_ping('<job>')`.
 - The migration skips `pg_net` and `pg_cron` when the server has none (local PostgreSQL), so the CI database job is not affected.
+
+## D53 Feature list audit, first pass (2026-10-27)
+
+- The audit is a script that looks for the English words of each feature in the code. It gives a map to the likely files, not a verdict, and says so in every part file. About 830 lines are Bengali only and need a person.
+- The owner chose to report all 41 parts first and then build by importance, so no feature code is changed by this sub-step.
+- Findings worth a decision are in `CANDIDATE_GAPS.md`: thirteen features not found by exact search, and 36 features (the performance section 3357 to 3391 and 1260) that no STEP owns.

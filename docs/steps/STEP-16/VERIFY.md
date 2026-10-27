@@ -242,3 +242,8 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `sql/assertions/s16_037_job_scheduler.sql`: bad names and paths refused, closed to `anon` and `authenticated`. Run live with the rollback marker: passed, including "does nothing without the secret".
 - Live: `pg_cron` job `kd-email-queue` active, `pg_net` installed. After the owner sets `cron_secret`: `select status_code, created from net._http_response order by created desc limit 5;` shows 200.
 - Not verified: a real call to the app (the secret is not set yet), mail delivery.
+
+## 16.29 Feature list audit, first pass
+
+- The script reads `docs/source/FEATURE_LIST.md`, the `Feature sources` ranges of each STEP and the source tree; it is not part of the repository. The thirteen features of group A of `CANDIDATE_GAPS.md` were searched for again with exact words.
+- Not verified: any feature in a browser; the Bengali-only lines; whether a matched file really does what the feature says.

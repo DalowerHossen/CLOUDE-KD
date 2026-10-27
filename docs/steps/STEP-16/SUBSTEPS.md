@@ -316,3 +316,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: held and scheduled messages go out without a scheduler on the host (Vercel Hobby runs a cron once a day at most). Decisions are D52.
 - Files: `migrations/S16_037_job_scheduler.sql` (+ `_down`), `sql/assertions/s16_037_job_scheduler.sql`.
+
+## 16.29 Feature list audit, first pass (owner request, 2026-10-27)
+
+- Goal: the 4029 numbered features in 41 parts, each looked for in the code, so that the owner can decide what to build first. Report only; no feature code. Decisions are D53.
+- Files: `docs/steps/STEP-16/AUDIT/` (`PART-01.md` to `PART-41.md`, `SUMMARY.md`, `CANDIDATE_GAPS.md`).
