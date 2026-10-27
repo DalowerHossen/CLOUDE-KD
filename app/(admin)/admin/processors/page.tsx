@@ -29,6 +29,9 @@ export default async function ProcessorsPage(): Promise<JSX.Element> {
         actions={
           <div className="flex gap-2">
             <Button asChild variant="outline">
+              <Link href="/admin/processors/accounts">{t('s10Processors.accounts.title')}</Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link href="/admin/processors/onboarding">{t('s10Processors.onboarding.title')}</Link>
             </Button>
             <Button asChild variant="outline">

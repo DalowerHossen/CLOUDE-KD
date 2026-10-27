@@ -133,8 +133,11 @@ export function valueFromInput(type: string, raw: string): FieldValue {
   if (text === '') return null;
   // The text is checked first, then read as a JSON number: the value is passed on to the API, no arithmetic is done on it.
   if (type === 'integer') return /^-?\d{1,15}$/.test(text) ? (JSON.parse(text) as number) : text;
-  if (type === 'decimal')
-    return /^-?\d{1,15}(\.\d{1,6})?$/.test(text) ? (JSON.parse(text) as number) : text;
+  if (type === 'decimal') {
+    const [whole = '', fraction = ''] = text.split('.');
+    const valid = /^-?\d{1,15}$/.test(whole) && (fraction === '' || /^\d{1,6}$/.test(fraction));
+    return valid && text.split('.').length <= 2 ? (JSON.parse(text) as number) : text;
+  }
   if (type === 'boolean') return text === 'true';
   return text;
 }

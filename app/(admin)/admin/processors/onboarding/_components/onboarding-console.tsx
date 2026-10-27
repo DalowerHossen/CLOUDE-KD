@@ -466,6 +466,17 @@ export function OnboardingConsole({
                     </Button>
                   </>
                 ) : null}
+                {a.status === 'boarded' ? (
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() =>
+                      void post(`${a.id}/keys`, t('s10Processors.onboarding.keysCreated'))
+                    }
+                  >
+                    {t('s10Processors.onboarding.actions.keys')}
+                  </Button>
+                ) : null}
                 {a.status === 'draft' || a.status === 'underwriter_requested_information' ? (
                   <Button
                     size="sm"

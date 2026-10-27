@@ -95,10 +95,10 @@ export const adapter: ProcessorAdapter = defineAdapter({
       key: 'webhookSigningKey',
       label: 'Webhook signing key',
       secret: true,
-      required: true,
+      required: false,
       pattern: '^[A-Za-z0-9._~+/=-]{8,200}$',
       helpText:
-        'NMI Merchant Portal, Settings, Webhooks: the signing key shown on that page. Create a webhook there that points to this platform at /api/webhooks/nmi.',
+        "NMI Merchant Portal, Settings, Webhooks: the signing key shown on that page. Create a webhook there that points to this platform (the address is shown on the account). Without it, payment results are read from NMI's direct answers only.",
     },
     {
       key: 'liveApiBase',
@@ -108,6 +108,15 @@ export const adapter: ProcessorAdapter = defineAdapter({
       pattern: '^https://[a-z0-9.-]{1,60}\\.(nmi|networkmerchants)\\.com/api$',
       helpText:
         'The address of the NMI REST API for live payments, as NMI gave it to you (it ends in /api). Leave empty for the sandbox.',
+    },
+    {
+      key: 'partnerKey',
+      label: 'Partner API key (creates merchant keys)',
+      secret: true,
+      required: false,
+      pattern: '^[A-Za-z0-9._~+/=-]{16,200}$',
+      helpText:
+        'NMI "My Keys", box "Partner Keys" (API: Gateway). Used once a merchant is ready to process, to create that merchant\'s private and tokenization keys.',
     },
     {
       key: 'partnerClientId',

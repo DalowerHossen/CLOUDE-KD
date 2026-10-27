@@ -347,3 +347,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: platform staff onboard a company as an NMI merchant from the admin panel: open an application, fill the form NMI defines, add documents, get the merchant agreement, submit it, and follow NMI's decision by webhook. Decisions are D58.
 - Files: `migrations/S16_039_processor_applications.sql` (+ `_down`), `sql/assertions/s16_039_processor_applications.sql`, `lib/payment/onboarding/` (rules, NMI client), `services/payment/onboarding.ts`, `app/api/admin/processors/onboarding/`, `app/api/webhooks/nmi-signup/route.ts`, `app/(admin)/admin/processors/onboarding/`, `lib/payment/http-client.ts` (PATCH and bytes), `scripts/verify/step16-nmi-onboarding.ts`.
+
+## 16.35 Company merchant accounts and merchant keys (owner request, 2026-10-27)
+
+- Goal: a company can have its own merchant account at a processor and be paid into it; for NMI the merchant's keys are created from the platform once NMI has boarded the merchant. Decisions are D59.
+- Files: `migrations/S16_040_company_processor_accounts.sql` (+ `_down`), `sql/assertions/s16_040_company_processor_accounts.sql`, `services/payment/company-accounts.ts`, `lib/payment/company-accounts-rules.ts`, `app/api/admin/processors/accounts/`, `app/(admin)/admin/processors/accounts/`, `app/api/webhooks/account/[processor]/[account]/route.ts`, changes in `services/payment/` (payments, refunds, links, webhook core, payment store), `lib/payment/onboarding/nmi-signup.ts` (`createMerchantKey`), `services/payment/onboarding.ts` (`createMerchantAccount`), `scripts/verify/step16-company-accounts.ts`.

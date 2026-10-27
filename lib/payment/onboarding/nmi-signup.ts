@@ -164,3 +164,43 @@ export function multipartDocument(
 }
 
 export const asJson = asObject;
+
+const GATEWAY_ID = /^[A-Za-z0-9_-]{1,30}$/;
+
+/**
+ * Creates one key on a merchant account through the Partner API (docs/processors/nmi.md section 13a): POST
+ * /v4/merchants/{gateway_id}/security_keys with the partner key in the Authorization header. `permission` is "transaction" (a
+ * private key for the payment API) or "tokenization" (the public key of the browser form). The key text is returned once.
+ */
+export async function createMerchantKey(input: {
+  apiBase: string;
+  partnerKey: string;
+  gatewayId: string;
+  description: string;
+  permission: 'transaction' | 'tokenization';
+}): Promise<string> {
+  if (!GATEWAY_ID.test(input.gatewayId))
+    throw new ValidationError('The merchant gateway id is not valid.');
+  const response = await sendHttp({
+    method: 'POST',
+    url: `${input.apiBase}/v4/merchants/${encodeURIComponent(input.gatewayId)}/security_keys`,
+    headers: {
+      authorization: input.partnerKey,
+      accept: 'application/json',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      description: input.description.slice(0, 100),
+      permissions: [input.permission],
+    }),
+  });
+  if (response.status === 401 || response.status === 403)
+    throw new ValidationError('NMI did not accept the Partner API key (the "Partner Keys" box).');
+  if (response.status >= 500 || response.status === 429)
+    throw new Error(`nmi partner api unavailable (${response.status})`);
+  const body = parseJson(response.text);
+  const key = typeof body?.keyText === 'string' ? body.keyText : '';
+  if (response.status < 200 || response.status >= 300 || key === '')
+    throw new ValidationError(problemOf(body ?? {}));
+  return key;
+}

@@ -25,6 +25,7 @@ import {
 } from '@/lib/payment/onboarding/rules';
 import {
   asJson,
+  createMerchantKey,
   failIfRefused,
   multipartDocument,
   signupCall,
@@ -33,6 +34,8 @@ import {
 } from '@/lib/payment/onboarding/nmi-signup';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor } from '@/types/contracts';
+import { apiBase } from '@/lib/payment/adapters/nmi/shared-server';
+import { saveAccount } from './company-accounts';
 import { getProcessorRow, loadCurrentCredentials } from './credential-store';
 import { mapPaymentDbError } from './rpc';
 
@@ -584,4 +587,56 @@ export async function handleSignupWebhook(
   });
   log.info('processor application event applied', { eventType: event.event_type, status });
   return 'applied';
+}
+
+/**
+ * For an application that NMI has boarded: creates the merchant's private and tokenization keys through the Partner API and
+ * saves them as the company's own merchant account (switched off until a test passes). The keys never reach the browser.
+ */
+export async function createMerchantAccount(
+  actor: Actor,
+  id: string,
+): Promise<{ accountId: string }> {
+  const row = await loadRow(id);
+  if (statusOf(row.status) !== 'boarded' || !row.gateway_id)
+    throw new ConflictError('The merchant is not ready to process yet. Wait for NMI to board it.');
+  const processor = await getProcessorRow(PROCESSOR);
+  const { values } = await loadCurrentCredentials(PROCESSOR);
+  const partnerKey = values.partnerKey ?? '';
+  if (partnerKey === '')
+    throw new ValidationError(
+      'Save the "Partner API key" (NMI "My Keys", box "Partner Keys") in Payment processors, NMI, Credentials first.',
+    );
+  const base = apiBase(processor.environment, values);
+  const label = row.business_name !== '' ? row.business_name : row.company_id;
+  const privateKey = await createMerchantKey({
+    apiBase: base,
+    partnerKey,
+    gatewayId: row.gateway_id,
+    description: `KD SOLUTION IT private key for ${label}`,
+    permission: 'transaction',
+  });
+  const tokenizationKey = await createMerchantKey({
+    apiBase: base,
+    partnerKey,
+    gatewayId: row.gateway_id,
+    description: `KD SOLUTION IT public key for ${label}`,
+    permission: 'tokenization',
+  });
+  const account = await saveAccount(actor, {
+    companyId: row.company_id,
+    processorId: PROCESSOR,
+    environment: processor.environment,
+    values: {
+      privateKey,
+      tokenizationKey,
+      ...(processor.environment === 'live' && values.liveApiBase
+        ? { liveApiBase: values.liveApiBase }
+        : {}),
+    },
+    merchantReference: row.merchant_id ?? row.gateway_id,
+    applicationId: row.id,
+  });
+  await audit(actor, 'processor_application.keys_created', row, { accountId: account.id });
+  return { accountId: account.id };
 }

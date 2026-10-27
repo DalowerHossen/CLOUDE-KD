@@ -276,3 +276,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `scripts/verify/step16-nmi-onboarding.ts`: 9 checks with a fake transport (token reuse and renewal, idempotency key, refusal messages, live address, multipart document, webhook signature, event states, form values, strict inputs).
 - Live database: migration `s16_039_processor_applications` applied; `sql/assertions/s16_039_processor_applications.sql` passed with the rollback marker.
 - Not verified: any call to NMI (no partner Client ID and Secret in this environment); the pages in a browser; a webhook delivery from NMI.
+
+## 16.35 Company merchant accounts
+
+- `scripts/verify/step16-company-accounts.ts`: 3 checks; `scripts/verify/step16-nmi-onboarding.ts`: 10 checks (merchant key creation added).
+- Live database: migration `s16_040_company_processor_accounts` applied; `sql/assertions/s16_040_company_processor_accounts.sql` passed with the rollback marker.
+- Not verified: a payment made with a company account against a real processor; the pages in a browser; key creation at NMI (no partner key here).

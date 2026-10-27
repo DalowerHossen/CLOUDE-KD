@@ -129,6 +129,7 @@ async function main(): Promise<void> {
         ['tokenizationKey', false],
         ['webhookSigningKey', true],
         ['liveApiBase', false],
+        ['partnerKey', true],
         ['partnerClientId', false],
         ['partnerClientSecret', true],
         ['partnerWebhookSecret', true],

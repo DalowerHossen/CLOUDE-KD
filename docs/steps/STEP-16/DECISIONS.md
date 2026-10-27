@@ -242,3 +242,13 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - The legal consent page is opened in a new tab: the only helper script address in NMI's pages is the sandbox one, and the production address is not stated.
 - Not done: a company's own payment keys after boarding. The Sign-Up API reports the merchant id and gateway id; creating the merchant's private and tokenization keys needs the separate Partner API (Partner Key) or the merchant's own portal, and charging a payment into that merchant account needs routing per company, which the platform does not have (processors are platform-wide). Both are the next increment.
 - Other processors: each has its own sign-up or sub-merchant API (Stripe Connect, Adyen for Platforms, and so on). None is built; each needs its official documentation read first (rule 8).
+
+## D59 Company merchant accounts (2026-10-27)
+
+- Table `company_processor_accounts` (one per company and processor, sealed credentials like the platform's, environment, on or off, last test). `payments.account_id` remembers the account a payment was made with.
+- Which account a payment uses: the company's active account at the routed processor, else the platform's own account (unchanged behaviour). Capture, refund, resume and webhook use the account stored on the payment, even after the account is switched off or removed.
+- The processor must still be enabled platform-wide (it has a form and passed a test); a company account is switched on only after its own passing test.
+- Webhooks of a company account come to `/api/webhooks/account/<processor>/<account id>` and are checked with that account's webhook key. For NMI the webhook key is optional (no page read gives a call that creates it).
+- NMI: once an application is `boarded`, "Create merchant keys" creates the private (`transaction`) and public (`tokenization`) keys through the Partner API with the new credential `partnerKey` and saves them as the company's account (off until tested). The keys never reach the browser.
+- The platform-wide processor connection, routing and health stay as they were. A company account is not part of the health check.
+- Other processors: any processor with an adapter can have company accounts by entering its keys by hand in "Company merchant accounts". Automatic onboarding exists for NMI only; each other processor needs its own documentation read (rule 8).

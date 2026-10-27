@@ -28,6 +28,7 @@ import { sha256Hex } from '@/lib/utils/hash';
 import { Money } from '@/lib/utils/currency';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor, InvoiceForPayment } from '@/types/contracts';
+import { resolveCredentials } from './company-accounts';
 import { getProcessorRow, loadCurrentCredentials } from './credential-store';
 import { getRow, toSummary } from './payment-store';
 import { resumePayment, startPayment, type PaymentResult } from './payments';
@@ -262,12 +263,20 @@ export async function checkoutFor(token: string): Promise<CheckoutView> {
   if (!processor.enabled || !hasSecureForm(decision.processorId))
     throw new ConflictError('Online payment is not available for this invoice right now.');
   const adapter = await loadAdapter(decision.processorId);
-  const { values } = await loadCurrentCredentials(decision.processorId);
+  const used = await resolveCredentials({
+    processorId: decision.processorId,
+    companyId: link.company_id,
+    platform: async () => ({
+      values: (await loadCurrentCredentials(decision.processorId)).values,
+      environment: processor.environment,
+    }),
+  });
+  const values = used.values;
   const surcharge = surchargeFor(amount);
   const session = await adapter.createCheckoutSession(
     {
       credentials: values,
-      environment: processor.environment,
+      environment: used.environment,
       mode: processor.active_mode || defaultMode(adapter).id,
       correlationId: getContext()?.correlationId ?? link.id,
     },

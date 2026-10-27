@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { setTransportForVerification, type HttpRequest } from '@/lib/payment/http-client';
 import {
+  createMerchantKey,
   failIfRefused,
   multipartDocument,
   problemOf,
@@ -192,6 +193,42 @@ async function main(): Promise<void> {
         dataBase64: 'AAAAAAAA',
       }).success,
       false,
+    );
+  });
+
+  await check('merchant keys come from the Partner API with the partner key', async () => {
+    seen.length = 0;
+    setTransportForVerification(async (request) => {
+      seen.push(request);
+      return {
+        status: 200,
+        text: JSON.stringify({ objectType: 'securityKey', id: '9', keyText: 'KEY-TEXT-1' }),
+        headers: {},
+      };
+    });
+    const key = await createMerchantKey({
+      apiBase: 'https://sandbox.nmi.com/api',
+      partnerKey: 'partner-key-12345678',
+      gatewayId: 'G123',
+      description: 'd',
+      permission: 'transaction',
+    });
+    assert.equal(key, 'KEY-TEXT-1');
+    assert.equal(seen[0]?.url, 'https://sandbox.nmi.com/api/v4/merchants/G123/security_keys');
+    assert.equal(seen[0]?.headers.authorization, 'partner-key-12345678');
+    assert.deepEqual(JSON.parse(seen[0]?.body ?? '{}'), {
+      description: 'd',
+      permissions: ['transaction'],
+    });
+    await assert.rejects(
+      createMerchantKey({
+        apiBase: 'https://sandbox.nmi.com/api',
+        partnerKey: 'k',
+        gatewayId: '../x',
+        description: 'd',
+        permission: 'tokenization',
+      }),
+      /gateway id/,
     );
   });
 
