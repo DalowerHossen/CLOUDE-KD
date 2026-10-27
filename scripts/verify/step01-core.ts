@@ -14,6 +14,7 @@ import {
 } from '@/lib/container';
 import { createConfigEntitlementService } from '@/lib/entitlement/config-entitlement';
 import {
+  AppError,
   ConflictError,
   NotFoundError,
   RateLimitError,
@@ -199,6 +200,12 @@ async function main(): Promise<void> {
       status: 401,
       expose: true,
     });
+    const copyOf = (code: string, status: number): Error =>
+      Object.assign(new Error('x'), { code, status, expose: true });
+    assert.ok(copyOf('not_found', 404) instanceof NotFoundError);
+    assert.ok(copyOf('not_found', 404) instanceof AppError);
+    assert.ok(!(copyOf('forbidden', 403) instanceof NotFoundError));
+    assert.ok(!(new Error('plain') instanceof AppError));
     assert.equal(normalizeError(foreign).status, 401);
     assert.equal(normalizeError(foreign).code, 'step_up_required');
     const unknown = normalizeError(new Error('database password is hunter2'));
