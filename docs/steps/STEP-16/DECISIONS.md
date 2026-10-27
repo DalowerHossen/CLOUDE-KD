@@ -205,3 +205,9 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - The audit is a script that looks for the English words of each feature in the code. It gives a map to the likely files, not a verdict, and says so in every part file. About 830 lines are Bengali only and need a person.
 - The owner chose to report all 41 parts first and then build by importance, so no feature code is changed by this sub-step.
 - Findings worth a decision are in `CANDIDATE_GAPS.md`: thirteen features not found by exact search, and 36 features (the performance section 3357 to 3391 and 1260) that no STEP owns.
+
+## D54 Audit, second pass (2026-10-27)
+
+- The owner chose to read the Bengali-only lines first, part by part. Each part file has one row per such line with a result (present, partial, not found, check in browser) and the file or note that supports it.
+- A first reading that only searched the code was wrong three times (features 42 and 43 exist in the branding editor; feature 472 is the SPF, DKIM and DMARC check; the company security settings exist but nothing reads them). From part 5 on, every row is checked against the STEP decisions and against who reads a setting, not only against a file that mentions it. `KNOWN_GAPS.md` collects what the owners recorded.
+- `CONFIRMED_FINDINGS.md` lists what was proved: almost no scheduled job runs, company security settings are not enforced at sign-in, PDFs have no Unicode font, e-mail lacks `SMTP_FROM`, the verification link lives one hour.

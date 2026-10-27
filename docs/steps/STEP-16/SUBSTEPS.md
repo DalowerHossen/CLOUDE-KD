@@ -321,3 +321,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: the 4029 numbered features in 41 parts, each looked for in the code, so that the owner can decide what to build first. Report only; no feature code. Decisions are D53.
 - Files: `docs/steps/STEP-16/AUDIT/` (`PART-01.md` to `PART-41.md`, `SUMMARY.md`, `CANDIDATE_GAPS.md`).
+
+## 16.30 Feature list audit, second pass: the Bengali-only lines (owner request, 2026-10-27)
+
+- Goal: the lines that the script could not read are read by a person against the code, part by part, and checked against what each STEP owner wrote down as not built. Report only. Decisions are D54.
+- Files: `docs/steps/STEP-16/AUDIT/MANUAL-PART-NN.md` (parts 1 to 9 so far), `KNOWN_GAPS.md`, `CONFIRMED_FINDINGS.md`.
