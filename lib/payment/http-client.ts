@@ -4,11 +4,13 @@
 import 'server-only';
 
 export interface HttpRequest {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** Absolute https URL built by the adapter from its fixed base address. */
   url: string;
   headers: Readonly<Record<string, string>>;
   body?: string;
+  /** Raw bytes (a multipart upload). Used instead of `body` when set. */
+  bodyBytes?: Uint8Array;
   timeoutMs?: number;
 }
 
@@ -30,7 +32,7 @@ const fetchTransport: HttpTransport = async (request) => {
     const response = await fetch(request.url, {
       method: request.method,
       headers: request.headers,
-      body: request.body,
+      body: request.bodyBytes ? new Blob([new Uint8Array(request.bodyBytes)]) : request.body,
       signal: controller.signal,
       redirect: 'error',
       cache: 'no-store',

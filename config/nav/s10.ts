@@ -21,6 +21,15 @@ export const nav: NavItem[] = [
     order: 501,
   },
   {
+    id: 'admin-processor-onboarding',
+    labelKey: 's10Processors.nav.onboarding',
+    href: '/admin/processors/onboarding',
+    icon: 'credit-card',
+    group: 'admin',
+    roles: ['super_admin'],
+    order: 502,
+  },
+  {
     id: 'admin-payment-review',
     labelKey: 's10Payments.nav.review',
     href: '/admin/payments/review',

@@ -105,7 +105,7 @@ export const adapter: ProcessorAdapter = defineAdapter({
       label: 'Live API address (live accounts only)',
       secret: false,
       required: false,
-      pattern: '^https://([a-z0-9-]+\\.)+(nmi|networkmerchants)\\.com/api$',
+      pattern: '^https://[a-z0-9.-]{1,60}\\.(nmi|networkmerchants)\\.com/api$',
       helpText:
         'The address of the NMI REST API for live payments, as NMI gave it to you (it ends in /api). Leave empty for the sandbox.',
     },

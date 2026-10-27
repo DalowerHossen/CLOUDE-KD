@@ -342,3 +342,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: the NMI processor can be enabled and a card payment can be taken; every credential field says which box of NMI's key page it comes from. Decisions are D57.
 - Files: `docs/processors/nmi.md` (sections 0, 4, 13, 14), `docs/steps/STEP-12/BLOCKERS.md`, `components/payment/processors/nmi/index.tsx`, `lib/payment/adapters/nmi.ts`, `lib/payment/adapters/nmi/shared-server.ts`, `config/processors.ts`, `scripts/verify/step12-nmi.ts`.
+
+## 16.34 NMI merchant onboarding with the Sign-Up API (owner request, 2026-10-27)
+
+- Goal: platform staff onboard a company as an NMI merchant from the admin panel: open an application, fill the form NMI defines, add documents, get the merchant agreement, submit it, and follow NMI's decision by webhook. Decisions are D58.
+- Files: `migrations/S16_039_processor_applications.sql` (+ `_down`), `sql/assertions/s16_039_processor_applications.sql`, `lib/payment/onboarding/` (rules, NMI client), `services/payment/onboarding.ts`, `app/api/admin/processors/onboarding/`, `app/api/webhooks/nmi-signup/route.ts`, `app/(admin)/admin/processors/onboarding/`, `lib/payment/http-client.ts` (PATCH and bytes), `scripts/verify/step16-nmi-onboarding.ts`.

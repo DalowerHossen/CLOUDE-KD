@@ -233,3 +233,12 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - Blocker B2 stays open in the documentation (no production address of the payments REST API is stated). The operator enters the address NMI gave them in the credential `liveApiBase`; it must be an https host of nmi.com or networkmerchants.com ending in `/api`. Without it a live account is refused before any call.
 - The Payment Component mode still waits for the packages `@nmipayments/nmi-pay-react` and `@nmipayments/nmi-pay` (1.1.1 on npm) to be added by the Integrator.
 - Three optional credential fields (partner client id, partner client secret, sign-up webhook secret) prepare merchant onboarding with the Sign-Up API (next sub-step).
+
+## D58 NMI onboarding (2026-10-27)
+
+- The platform acts as an NMI partner: the Client ID and Secret of the "Partner OAuth2 Apps" box (Sign-Up) are credential fields of the NMI processor, so they are encrypted and handled like every other processor key. The access token lives in the memory of one server process for 60 minutes and is renewed once on a 401.
+- One open application per company and processor (database index); a declined, cancelled or closed one frees the slot. Each application row keeps NMI's application id, the status, and once boarded the merchant id and gateway id. Form data (including bank and tax identifiers) goes from the admin's browser through this server to NMI and is not stored here.
+- NMI's decisions arrive at `/api/webhooks/nmi-signup` (signature header `Signature`, hex HMAC-SHA256 of the raw body under the sign-up webhook secret); each event is stored once by its event id. The status can also be refreshed by hand.
+- The legal consent page is opened in a new tab: the only helper script address in NMI's pages is the sandbox one, and the production address is not stated.
+- Not done: a company's own payment keys after boarding. The Sign-Up API reports the merchant id and gateway id; creating the merchant's private and tokenization keys needs the separate Partner API (Partner Key) or the merchant's own portal, and charging a payment into that merchant account needs routing per company, which the platform does not have (processors are platform-wide). Both are the next increment.
+- Other processors: each has its own sign-up or sub-merchant API (Stripe Connect, Adyen for Platforms, and so on). None is built; each needs its official documentation read first (rule 8).

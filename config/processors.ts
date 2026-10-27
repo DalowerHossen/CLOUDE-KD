@@ -192,6 +192,7 @@ export const PROCESSORS_WITH_SECURE_FORM: readonly ProcessorId[] = [
   'braintree',
   'custom',
   'fastspring',
+  'nmi',
   'payarc',
   'paypal',
   'payproglobal',

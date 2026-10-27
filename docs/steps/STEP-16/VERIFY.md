@@ -270,3 +270,9 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 
 - `scripts/verify/step12-nmi.ts`: 15 checks (credential fields, Collect.js session, live address accepted only from an nmi.com host).
 - Not verified: the card form in a browser against a sandbox account (no sandbox keys in this environment); a live payment.
+
+## 16.34 NMI onboarding
+
+- `scripts/verify/step16-nmi-onboarding.ts`: 9 checks with a fake transport (token reuse and renewal, idempotency key, refusal messages, live address, multipart document, webhook signature, event states, form values, strict inputs).
+- Live database: migration `s16_039_processor_applications` applied; `sql/assertions/s16_039_processor_applications.sql` passed with the rollback marker.
+- Not verified: any call to NMI (no partner Client ID and Secret in this environment); the pages in a browser; a webhook delivery from NMI.

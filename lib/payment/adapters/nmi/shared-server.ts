@@ -17,7 +17,7 @@ export const list = (v: unknown): Json[] =>
   Array.isArray(v) ? v.map(obj).filter((x): x is Json => x !== null) : [];
 
 /** An address NMI may answer from: https, a host of nmi.com or networkmerchants.com, path "/api" only. */
-export const LIVE_API_BASE = /^https:\/\/([a-z0-9-]+\.)+(nmi|networkmerchants)\.com\/api$/;
+export const LIVE_API_BASE = /^https:\/\/[a-z0-9.-]{1,60}\.(nmi|networkmerchants)\.com\/api$/;
 
 /**
  * The sandbox address of the REST API is documented. NMI's pages do not state the production address (blocker B2 of
