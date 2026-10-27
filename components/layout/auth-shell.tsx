@@ -1,6 +1,7 @@
 // path: components/layout/auth-shell.tsx
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { NoticeBanner } from '@/components/shared/notice-banner';
 import { t } from '@/lib/i18n';
 import { Logo } from './logo';
 import { SkipLink } from './skip-link';
@@ -21,6 +22,7 @@ export function AuthShell({ children }: { children: ReactNode }): JSX.Element {
         </Link>
         <ThemeToggle />
       </header>
+      <NoticeBanner endpoint="/api/public-site/notices" />
       <main
         id="main-content"
         tabIndex={-1}

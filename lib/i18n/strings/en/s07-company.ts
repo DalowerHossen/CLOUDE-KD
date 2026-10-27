@@ -314,7 +314,7 @@ export const strings = {
     kindMaintenance: 'Planned maintenance',
     kindWarning: 'Warning',
     audience: 'Who sees it',
-    audienceAll: 'Everyone in the company',
+    audienceAll: 'Everyone (visitors and company users)',
     audienceOwners: 'Owners only',
     startsAt: 'Starts (UTC)',
     endsAt: 'Ends (UTC)',
