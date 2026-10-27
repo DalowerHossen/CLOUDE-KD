@@ -225,3 +225,11 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - For platform roles `withApi` now cleans the input (same sanitizer) and records the markup as a low-severity event (`markup_in_staff_input`); it does not ban. Every other caller keeps the zero-tolerance reaction. The text is sanitized again when it is shown, and strict validation still refuses bad values.
 - The platform brand (name, tagline, footer line, logo from the media library) is stored as the `brand` row of `seo_settings` (no new table) and edited at `/admin/branding` (`seo.read` and `seo.edit`, super admin and CEO). The public header and footer read it; the built-in brand is the fallback.
 - Not done: the logo on e-mails, PDFs and the sign-in pages still uses the built-in mark.
+
+## D57 NMI documentation read through curl; Collect.js form; live address (2026-10-27)
+
+- The WebFetch tool of this environment refuses `*.nmi.com`; `curl` through the agent proxy reaches `docs.nmi.com`, `secure.nmi.com` and `registry.npmjs.org`. Rule 8 asks for the official documentation to be read in the session; reading it with `curl` meets that, and the record `docs/processors/nmi.md` names the method.
+- Blocker B1 is resolved: Collect.js starts a submission from the button named in `paymentSelector` and returns the token to `callback`. The form uses it. One script address serves both environments.
+- Blocker B2 stays open in the documentation (no production address of the payments REST API is stated). The operator enters the address NMI gave them in the credential `liveApiBase`; it must be an https host of nmi.com or networkmerchants.com ending in `/api`. Without it a live account is refused before any call.
+- The Payment Component mode still waits for the packages `@nmipayments/nmi-pay-react` and `@nmipayments/nmi-pay` (1.1.1 on npm) to be added by the Integrator.
+- Three optional credential fields (partner client id, partner client secret, sign-up webhook secret) prepare merchant onboarding with the Sign-Up API (next sub-step).

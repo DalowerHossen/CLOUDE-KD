@@ -10,6 +10,7 @@ import { Money } from '@/lib/utils/currency';
 import type { AdapterContext, ProcessorAdapter, ProcessorTransaction } from '@/types/contracts';
 import { failureFromError, fromPayment, mapNmiDecline, moneyOf } from './nmi/mapping';
 import {
+  COLLECTJS_SCRIPT_URL,
   NMI_SCRIPT_URLS,
   authPath,
   jsonWithAmounts,
@@ -79,7 +80,7 @@ export const adapter: ProcessorAdapter = defineAdapter({
       required: true,
       pattern: '^[A-Za-z0-9._~+/=-]{16,200}$',
       helpText:
-        'Merchant Portal, Settings, Security Keys: a private API key with payment permissions (sandbox key for the sandbox).',
+        'NMI "My Keys", box "Merchant Keys": the key with the permission "api (Payment and Query APIs)" and sensitivity "private". Use the sandbox key for the sandbox.',
     },
     {
       key: 'tokenizationKey',
@@ -88,7 +89,7 @@ export const adapter: ProcessorAdapter = defineAdapter({
       required: true,
       pattern: '^[A-Za-z0-9-]{16,64}$',
       helpText:
-        'Merchant Portal, Settings, Security Keys, Merchant keys: the public key for the browser form.',
+        'NMI "My Keys", box "Merchant Keys": the key with the permission "tokenization (payment component)" and sensitivity "public". The payer\'s browser uses it to make a payment token.',
     },
     {
       key: 'webhookSigningKey',
@@ -96,7 +97,43 @@ export const adapter: ProcessorAdapter = defineAdapter({
       secret: true,
       required: true,
       pattern: '^[A-Za-z0-9._~+/=-]{8,200}$',
-      helpText: 'Merchant Portal, Settings, Webhooks: the signing key shown on that page.',
+      helpText:
+        'NMI Merchant Portal, Settings, Webhooks: the signing key shown on that page. Create a webhook there that points to this platform at /api/webhooks/nmi.',
+    },
+    {
+      key: 'liveApiBase',
+      label: 'Live API address (live accounts only)',
+      secret: false,
+      required: false,
+      pattern: '^https://([a-z0-9-]+\\.)+(nmi|networkmerchants)\\.com/api$',
+      helpText:
+        'The address of the NMI REST API for live payments, as NMI gave it to you (it ends in /api). Leave empty for the sandbox.',
+    },
+    {
+      key: 'partnerClientId',
+      label: 'Partner OAuth2 client ID (merchant sign-up)',
+      secret: false,
+      required: false,
+      pattern: '^[A-Za-z0-9._~+/=-]{8,100}$',
+      helpText:
+        'NMI "My Keys", box "Partner OAuth2 Apps" (API: Sign-Up), column Client ID. Needed only to onboard sub-merchants from Payment processors, Merchant applications.',
+    },
+    {
+      key: 'partnerClientSecret',
+      label: 'Partner OAuth2 client secret (merchant sign-up)',
+      secret: true,
+      required: false,
+      pattern: '^[A-Za-z0-9._~+/=-]{8,100}$',
+      helpText: 'NMI "My Keys", box "Partner OAuth2 Apps" (API: Sign-Up), column Client Secret.',
+    },
+    {
+      key: 'partnerWebhookSecret',
+      label: 'Sign-up webhook secret (merchant sign-up)',
+      secret: true,
+      required: false,
+      pattern: '^[A-Za-z0-9._~+/=-]{6,64}$',
+      helpText:
+        'A secret you choose (6 to 64 characters). The platform gives it to NMI when it subscribes to application events and uses it to check each delivery.',
     },
   ],
 
@@ -124,6 +161,11 @@ export const adapter: ProcessorAdapter = defineAdapter({
   async createCheckoutSession(ctx) {
     if (!MODE_IDS.has(ctx.mode)) throw new ValidationError('Unknown NMI mode.');
     const tokenizationKey = requireTokenizationKey(ctx);
+    if (ctx.mode === 'collectjs')
+      return {
+        clientConfig: { tokenizationKey, mode: ctx.mode, scriptUrl: COLLECTJS_SCRIPT_URL },
+        expiresAt: null,
+      };
     const scriptUrl = NMI_SCRIPT_URLS[ctx.environment];
     if (!scriptUrl)
       throw new ValidationError(

@@ -337,3 +337,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: blog posts, authors, pages and price lists can be saved from the admin panel, and the super admin can set the platform name, logo, tagline and footer line. Decisions are D56.
 - Files: `lib/api/with-api.ts`, `lib/brand/platform.ts`, `services/branding/platform.ts`, `app/api/admin/branding/route.ts`, `app/(admin)/admin/branding/`, `components/marketing/` (header, footer, frame), `components/layout/logo.tsx`, `scripts/verify/step16-platform-brand.ts`.
+
+## 16.33 NMI: documentation record, Collect.js card form, key placement help (owner request, 2026-10-27)
+
+- Goal: the NMI processor can be enabled and a card payment can be taken; every credential field says which box of NMI's key page it comes from. Decisions are D57.
+- Files: `docs/processors/nmi.md` (sections 0, 4, 13, 14), `docs/steps/STEP-12/BLOCKERS.md`, `components/payment/processors/nmi/index.tsx`, `lib/payment/adapters/nmi.ts`, `lib/payment/adapters/nmi/shared-server.ts`, `config/processors.ts`, `scripts/verify/step12-nmi.ts`.

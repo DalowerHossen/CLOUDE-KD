@@ -265,3 +265,8 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `scripts/verify/step16-platform-brand.ts`: 5 checks.
 - Live: `ip_blocks` had one active ban (reason `zero tolerance: xss_attempt`, address 114.130.156.0/24) and none after the unblock.
 - Not verified: saving a post, an author, a page or the branding in a browser; the logo shown on the public site after an upload.
+
+## 16.33 NMI
+
+- `scripts/verify/step12-nmi.ts`: 15 checks (credential fields, Collect.js session, live address accepted only from an nmi.com host).
+- Not verified: the card form in a browser against a sandbox account (no sandbox keys in this environment); a live payment.

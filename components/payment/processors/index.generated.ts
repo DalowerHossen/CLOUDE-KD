@@ -12,6 +12,7 @@ export const secureFormLoaders: Partial<Record<ProcessorId, SecureFormLoader>> =
   braintree: () => import('./braintree'),
   custom: () => import('./custom'),
   fastspring: () => import('./fastspring'),
+  nmi: () => import('./nmi'),
   payproglobal: () => import('./payproglobal'),
   rapyd: () => import('./rapyd'),
   payarc: () => import('./payarc'),
