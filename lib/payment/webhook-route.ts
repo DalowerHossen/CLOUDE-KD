@@ -16,6 +16,7 @@ const MAX_BODY_BYTES = 1_000_000;
 
 export function processorWebhookRoute(
   processorId: ProcessorId,
+  accountId: string | null = null,
 ): (request: NextRequest) => Promise<Response> {
   return async (request) => {
     const correlationId = resolveCorrelationId(request.headers.get('x-correlation-id'));
@@ -37,7 +38,7 @@ export function processorWebhookRoute(
         request.headers.forEach((value, key) => {
           headers[key.toLowerCase()] = value;
         });
-        const outcome = await receiveWebhook(processorId, { headers, rawBody });
+        const outcome = await receiveWebhook(processorId, { headers, rawBody }, accountId);
         switch (outcome.kind) {
           case 'unknown_processor':
             return new Response(null, { status: 404 });

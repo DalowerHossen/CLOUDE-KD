@@ -33,11 +33,14 @@ export const planInput = z
       .min(1)
       .max(80)
       .refine((v) => !/[<>]/.test(v), { message: 'Angle brackets are not allowed.' }),
+    // The admin form sends an empty box as null; no description is the empty text.
     description: z
       .string()
       .trim()
       .max(500)
       .refine((v) => !/[<>]/.test(v), { message: 'Angle brackets are not allowed.' })
+      .nullable()
+      .transform((v) => v ?? '')
       .default(''),
     priceMonthly: moneyText.default('0'),
     priceYearly: moneyText.default('0'),

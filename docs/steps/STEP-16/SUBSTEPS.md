@@ -326,3 +326,34 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: the lines that the script could not read are read by a person against the code, part by part, and checked against what each STEP owner wrote down as not built. Report only. Decisions are D54.
 - Files: `docs/steps/STEP-16/AUDIT/MANUAL-PART-NN.md` (parts 1 to 41), `MANUAL_SUMMARY.md`, `KNOWN_GAPS.md`, `CONFIRMED_FINDINGS.md`.
+
+## 16.31 Database schedules for the remaining jobs (owner request, 2026-10-27)
+
+- Goal: the jobs of `cron/schedule.generated.ts` run without a scheduler on the host. Decisions are D55.
+- Files: `migrations/S16_038_job_schedules.sql` (+ `_down`), `sql/assertions/s16_038_job_schedules.sql`.
+- Also: `lib/email/adapters/smtp.ts` now says what the mail server answered (without addresses or links) when it refuses a message, so that a queued message with a permanent refusal can be explained.
+
+## 16.32 Staff input no longer bans staff; platform branding editor (owner request, 2026-10-27)
+
+- Goal: blog posts, authors, pages and price lists can be saved from the admin panel, and the super admin can set the platform name, logo, tagline and footer line. Decisions are D56.
+- Files: `lib/api/with-api.ts`, `lib/brand/platform.ts`, `services/branding/platform.ts`, `app/api/admin/branding/route.ts`, `app/(admin)/admin/branding/`, `components/marketing/` (header, footer, frame), `components/layout/logo.tsx`, `scripts/verify/step16-platform-brand.ts`.
+
+## 16.33 NMI: documentation record, Collect.js card form, key placement help (owner request, 2026-10-27)
+
+- Goal: the NMI processor can be enabled and a card payment can be taken; every credential field says which box of NMI's key page it comes from. Decisions are D57.
+- Files: `docs/processors/nmi.md` (sections 0, 4, 13, 14), `docs/steps/STEP-12/BLOCKERS.md`, `components/payment/processors/nmi/index.tsx`, `lib/payment/adapters/nmi.ts`, `lib/payment/adapters/nmi/shared-server.ts`, `config/processors.ts`, `scripts/verify/step12-nmi.ts`.
+
+## 16.34 NMI merchant onboarding with the Sign-Up API (owner request, 2026-10-27)
+
+- Goal: platform staff onboard a company as an NMI merchant from the admin panel: open an application, fill the form NMI defines, add documents, get the merchant agreement, submit it, and follow NMI's decision by webhook. Decisions are D58.
+- Files: `migrations/S16_039_processor_applications.sql` (+ `_down`), `sql/assertions/s16_039_processor_applications.sql`, `lib/payment/onboarding/` (rules, NMI client), `services/payment/onboarding.ts`, `app/api/admin/processors/onboarding/`, `app/api/webhooks/nmi-signup/route.ts`, `app/(admin)/admin/processors/onboarding/`, `lib/payment/http-client.ts` (PATCH and bytes), `scripts/verify/step16-nmi-onboarding.ts`.
+
+## 16.35 Company merchant accounts and merchant keys (owner request, 2026-10-27)
+
+- Goal: a company can have its own merchant account at a processor and be paid into it; for NMI the merchant's keys are created from the platform once NMI has boarded the merchant. Decisions are D59.
+- Files: `migrations/S16_040_company_processor_accounts.sql` (+ `_down`), `sql/assertions/s16_040_company_processor_accounts.sql`, `services/payment/company-accounts.ts`, `lib/payment/company-accounts-rules.ts`, `app/api/admin/processors/accounts/`, `app/(admin)/admin/processors/accounts/`, `app/api/webhooks/account/[processor]/[account]/route.ts`, changes in `services/payment/` (payments, refunds, links, webhook core, payment store), `lib/payment/onboarding/nmi-signup.ts` (`createMerchantKey`), `services/payment/onboarding.ts` (`createMerchantAccount`), `scripts/verify/step16-company-accounts.ts`.
+
+## 16.36 Plan form, processor panel help, webhook addresses, company stores for staff (owner request, 2026-10-27)
+
+- Goal: every plan can be saved; the processor panel says where each key comes from and which webhook address to give the processor; platform staff can connect a company's Shopify or WooCommerce store and register its webhooks. Decisions are D60.
+- Files: `lib/payment/plan-rules.ts`, `lib/payment/credentials.ts`, `services/payment/processors.ts`, `components/payment/admin/processor-panel.tsx`, `services/integration/admin-stores.ts`, `app/api/admin/stores/`, `app/(admin)/admin/stores/`, `components/integration/commerce-forms.tsx`, `config/permissions/s16-commerce.ts` (`commerce.admin`), `scripts/verify/step14-plans.ts`.

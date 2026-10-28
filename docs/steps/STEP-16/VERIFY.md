@@ -253,3 +253,37 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 - `MANUAL_SUMMARY.md` counts 810 rows: present 466, partial 95, not found 108, not built 19 (16 recorded by owners or by design, 3 by decision), check in browser 121. Nothing was opened in a browser.
 - Live, 2026-10-27 15:10 to 15:12 UTC: the database job `kd-email-queue` called `/api/cron/email-queue` three times and each answered 200 (`net._http_response`): the Bearer secret in the vault matches `CRON_SECRET` of the deployment.
 - Not verified: any "check in browser" row; whether queued messages leave once `SMTP_FROM` is in the running deployment.
+
+## 16.31 Database schedules for the remaining jobs
+
+- Live, 2026-10-27 15:55 UTC: 66 `kd-` jobs in `cron.job`, all active; 31 calls in 8 minutes, all answered 200 (`net._http_response`).
+- `scripts/verify-all.sh`: 123 scripts, 0 failed (with the `smtp.ts` change).
+- Not verified: the SMTP refusal text of the queued `notification.generic` messages; it appears in their stored error after the next deploy.
+
+## 16.32 Staff input and platform branding
+
+- `scripts/verify/step16-platform-brand.ts`: 5 checks.
+- Live: `ip_blocks` had one active ban (reason `zero tolerance: xss_attempt`, address 114.130.156.0/24) and none after the unblock.
+- Not verified: saving a post, an author, a page or the branding in a browser; the logo shown on the public site after an upload.
+
+## 16.33 NMI
+
+- `scripts/verify/step12-nmi.ts`: 15 checks (credential fields, Collect.js session, live address accepted only from an nmi.com host).
+- Not verified: the card form in a browser against a sandbox account (no sandbox keys in this environment); a live payment.
+
+## 16.34 NMI onboarding
+
+- `scripts/verify/step16-nmi-onboarding.ts`: 9 checks with a fake transport (token reuse and renewal, idempotency key, refusal messages, live address, multipart document, webhook signature, event states, form values, strict inputs).
+- Live database: migration `s16_039_processor_applications` applied; `sql/assertions/s16_039_processor_applications.sql` passed with the rollback marker.
+- Not verified: any call to NMI (no partner Client ID and Secret in this environment); the pages in a browser; a webhook delivery from NMI.
+
+## 16.35 Company merchant accounts
+
+- `scripts/verify/step16-company-accounts.ts`: 3 checks; `scripts/verify/step16-nmi-onboarding.ts`: 10 checks (merchant key creation added).
+- Live database: migration `s16_040_company_processor_accounts` applied; `sql/assertions/s16_040_company_processor_accounts.sql` passed with the rollback marker.
+- Not verified: a payment made with a company account against a real processor; the pages in a browser; key creation at NMI (no partner key here).
+
+## 16.36
+
+- `scripts/verify/step14-plans.ts`: 9 checks (the form payload with empty description and badge is accepted).
+- Not verified: saving a plan, the processor panel and the stores page in a browser.

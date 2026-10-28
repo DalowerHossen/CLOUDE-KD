@@ -66,6 +66,15 @@ export const nav: NavItem[] = [
     order: 91,
   },
   {
+    id: 'admin-stores',
+    labelKey: 's16Commerce.nav.adminStores',
+    href: '/admin/stores',
+    icon: 'package',
+    group: 'admin',
+    roles: ['super_admin'],
+    order: 505,
+  },
+  {
     id: 'commerce',
     labelKey: 's16Commerce.nav.commerce',
     href: '/integrations/stores',

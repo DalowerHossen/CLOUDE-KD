@@ -20,6 +20,7 @@ import type {
   ProcessorId,
   WebhookRequest,
 } from '@/types/contracts';
+import { resolveCredentials } from './company-accounts';
 import { getProcessorRow, loadCurrentCredentials } from './credential-store';
 import { applyExternalVoid, resumePayment } from './payments';
 import { getRow, getRowByTransaction } from './payment-store';
@@ -53,13 +54,24 @@ export type WebhookOutcome =
   | { kind: 'duplicate' }
   | { kind: 'accepted'; status: StoredEvent['status'] };
 
-async function contextFor(processorId: ProcessorId): Promise<AdapterContext> {
+async function contextFor(
+  processorId: ProcessorId,
+  accountId: string | null,
+): Promise<AdapterContext> {
   const adapter = await loadAdapter(processorId);
   const processor = await getProcessorRow(processorId);
-  const { values } = await loadCurrentCredentials(processorId);
+  const used = await resolveCredentials({
+    processorId,
+    companyId: null,
+    accountId,
+    platform: async () => ({
+      values: (await loadCurrentCredentials(processorId)).values,
+      environment: processor.environment,
+    }),
+  });
   return {
-    credentials: values,
-    environment: processor.environment,
+    credentials: used.values,
+    environment: used.environment,
     mode: processor.active_mode || defaultMode(adapter).id,
     correlationId: getContext()?.correlationId ?? 'webhook',
   };
@@ -75,6 +87,7 @@ function boundedPayload(payload: Readonly<Record<string, unknown>>): Record<stri
 export async function receiveWebhook(
   processorId: string,
   request: WebhookRequest,
+  accountId: string | null = null,
 ): Promise<WebhookOutcome> {
   if (!isKnownProcessor(processorId) || !hasAdapter(processorId))
     return { kind: 'unknown_processor' };
@@ -86,7 +99,7 @@ export async function receiveWebhook(
   if (!processorRow || !processorRow.enabled) return { kind: 'unknown_processor' };
   let context: AdapterContext;
   try {
-    context = await contextFor(processorId);
+    context = await contextFor(processorId, accountId);
   } catch (error) {
     if (error instanceof NotFoundError) return { kind: 'unknown_processor' };
     throw error;

@@ -211,3 +211,51 @@ D16 (2026-10-23). Bank feed: Plaid and Salt Edge (16.7). Migration `S16_015_bank
 - The owner chose to read the Bengali-only lines first, part by part. Each part file has one row per such line with a result (present, partial, not found, check in browser) and the file or note that supports it.
 - A first reading that only searched the code was wrong three times (features 42 and 43 exist in the branding editor; feature 472 is the SPF, DKIM and DMARC check; the company security settings exist but nothing reads them). From part 5 on, every row is checked against the STEP decisions and against who reads a setting, not only against a file that mentions it. `KNOWN_GAPS.md` collects what the owners recorded.
 - `CONFIRMED_FINDINGS.md` lists what was proved: almost no scheduled job runs, company security settings are not enforced at sign-in, PDFs have no Unicode font, e-mail lacks `SMTP_FROM`, the verification link lives one hour.
+
+## D55 Job schedules in the database (2026-10-27)
+
+- 65 jobs are scheduled with `cron.schedule('kd-<job>', ...)` that call `kd_cron_ping('<job>')` (S16_037). With `kd-email-queue` there are 66 active `kd-` jobs.
+- A job that the schedule file runs every minute runs every five minutes here (only `email-queue` stays at one minute), to keep the number of calls to the host low.
+- Four jobs that delete data by a retention rule are not scheduled yet: retention-enforce, file-retention, email-purge, notification-purge. They wait for the owner's decision.
+- Not verified: the limits of the Vercel Hobby plan against the number of calls per day; what each newly enabled job does to live data beyond the HTTP 200 answer.
+
+## D56 Staff input and platform branding (2026-10-27)
+
+- Cause found in the live data: at 15:46 UTC a request of the super admin carried text that the injection heuristic reads as markup (`xss_attempt`). The zero-tolerance rule banned the address for 24 hours, so every admin action answered "This action is not available from your network." (six `network_blocked` events with reason `address_blocked`). The ban of that one address was lifted with `kd_ip_unblock`.
+- For platform roles `withApi` now cleans the input (same sanitizer) and records the markup as a low-severity event (`markup_in_staff_input`); it does not ban. Every other caller keeps the zero-tolerance reaction. The text is sanitized again when it is shown, and strict validation still refuses bad values.
+- The platform brand (name, tagline, footer line, logo from the media library) is stored as the `brand` row of `seo_settings` (no new table) and edited at `/admin/branding` (`seo.read` and `seo.edit`, super admin and CEO). The public header and footer read it; the built-in brand is the fallback.
+- Not done: the logo on e-mails, PDFs and the sign-in pages still uses the built-in mark.
+
+## D57 NMI documentation read through curl; Collect.js form; live address (2026-10-27)
+
+- The WebFetch tool of this environment refuses `*.nmi.com`; `curl` through the agent proxy reaches `docs.nmi.com`, `secure.nmi.com` and `registry.npmjs.org`. Rule 8 asks for the official documentation to be read in the session; reading it with `curl` meets that, and the record `docs/processors/nmi.md` names the method.
+- Blocker B1 is resolved: Collect.js starts a submission from the button named in `paymentSelector` and returns the token to `callback`. The form uses it. One script address serves both environments.
+- Blocker B2 stays open in the documentation (no production address of the payments REST API is stated). The operator enters the address NMI gave them in the credential `liveApiBase`; it must be an https host of nmi.com or networkmerchants.com ending in `/api`. Without it a live account is refused before any call.
+- The Payment Component mode still waits for the packages `@nmipayments/nmi-pay-react` and `@nmipayments/nmi-pay` (1.1.1 on npm) to be added by the Integrator.
+- Three optional credential fields (partner client id, partner client secret, sign-up webhook secret) prepare merchant onboarding with the Sign-Up API (next sub-step).
+
+## D58 NMI onboarding (2026-10-27)
+
+- The platform acts as an NMI partner: the Client ID and Secret of the "Partner OAuth2 Apps" box (Sign-Up) are credential fields of the NMI processor, so they are encrypted and handled like every other processor key. The access token lives in the memory of one server process for 60 minutes and is renewed once on a 401.
+- One open application per company and processor (database index); a declined, cancelled or closed one frees the slot. Each application row keeps NMI's application id, the status, and once boarded the merchant id and gateway id. Form data (including bank and tax identifiers) goes from the admin's browser through this server to NMI and is not stored here.
+- NMI's decisions arrive at `/api/webhooks/nmi-signup` (signature header `Signature`, hex HMAC-SHA256 of the raw body under the sign-up webhook secret); each event is stored once by its event id. The status can also be refreshed by hand.
+- The legal consent page is opened in a new tab: the only helper script address in NMI's pages is the sandbox one, and the production address is not stated.
+- Not done: a company's own payment keys after boarding. The Sign-Up API reports the merchant id and gateway id; creating the merchant's private and tokenization keys needs the separate Partner API (Partner Key) or the merchant's own portal, and charging a payment into that merchant account needs routing per company, which the platform does not have (processors are platform-wide). Both are the next increment.
+- Other processors: each has its own sign-up or sub-merchant API (Stripe Connect, Adyen for Platforms, and so on). None is built; each needs its official documentation read first (rule 8).
+
+## D59 Company merchant accounts (2026-10-27)
+
+- Table `company_processor_accounts` (one per company and processor, sealed credentials like the platform's, environment, on or off, last test). `payments.account_id` remembers the account a payment was made with.
+- Which account a payment uses: the company's active account at the routed processor, else the platform's own account (unchanged behaviour). Capture, refund, resume and webhook use the account stored on the payment, even after the account is switched off or removed.
+- The processor must still be enabled platform-wide (it has a form and passed a test); a company account is switched on only after its own passing test.
+- Webhooks of a company account come to `/api/webhooks/account/<processor>/<account id>` and are checked with that account's webhook key. For NMI the webhook key is optional (no page read gives a call that creates it).
+- NMI: once an application is `boarded`, "Create merchant keys" creates the private (`transaction`) and public (`tokenization`) keys through the Partner API with the new credential `partnerKey` and saves them as the company's account (off until tested). The keys never reach the browser.
+- The platform-wide processor connection, routing and health stay as they were. A company account is not part of the health check.
+- Other processors: any processor with an adapter can have company accounts by entering its keys by hand in "Company merchant accounts". Automatic onboarding exists for NMI only; each other processor needs its own documentation read (rule 8).
+
+## D60 Plan form, help texts, webhook addresses, company stores (2026-10-27)
+
+- Cause of "The request contains invalid data" on every plan: the admin form sends an empty box as null (`emptyAsNull`) and the plan schema took the description as text only. A plan without a description is now the empty text. Other forms that use `emptyAsNull` (payouts, payroll, accounting, social) were listed but not checked one by one.
+- The processor panel showed only the label of each credential field; the help text that says where the value comes from (written in the adapters) never reached the screen. It now does, with a "required" mark, and a box with the webhook address of the processor (`/api/webhooks/<processor>`). When a processor cannot be loaded the panel now says why when the server said why (a blocked network address showed only "could not be loaded").
+- Online stores (Shopify, WooCommerce) were visible to the company owner only (Integrations, Online stores, "Register webhooks" exists). Platform staff now have `/admin/stores` (permission `commerce.admin`, super admin): all stores, connect a store for a company, check, register webhooks. It calls the company's own connection service for the chosen company.
+- Registering a webhook at a payment processor through its API is not built: NMI's pages give no such call (webhooks are created in the merchant portal); other processors need their documentation read.

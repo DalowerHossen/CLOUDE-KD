@@ -27,7 +27,7 @@ check('every listed processor has its form file', () => {
 });
 check('processors without a form are refused and the rest are allowed', () => {
   const without = PROCESSOR_IDS.filter((id) => !hasSecureForm(id));
-  assert.ok(without.includes('nmi'));
+  assert.equal(hasSecureForm('nmi'), true);
   assert.ok(without.includes('paddle'));
   assert.ok(without.includes('payoneer'));
   assert.equal(hasSecureForm('stripe'), true);

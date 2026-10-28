@@ -16,10 +16,12 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import type { NavItem } from '@/config/nav-types';
+import { logoUrl, type PlatformBrand } from '@/lib/brand/platform';
 import { t, type StringKey } from '@/lib/i18n';
 
 interface Props {
   items: readonly NavItem[];
+  brand: PlatformBrand;
 }
 
 const label = (item: NavItem): string => t(item.labelKey as StringKey);
@@ -31,7 +33,7 @@ function description(item: NavItem): string | null {
 }
 
 /** Header with a mega menu. Top-level items with children open a panel; the children are items whose `parent` is the top item's id. */
-export function SiteHeader({ items }: Props): JSX.Element {
+export function SiteHeader({ items, brand }: Props): JSX.Element {
   const [open, setOpen] = useState(false);
   const top = items.filter((i) => !i.parent);
   const childrenOf = (id: string): NavItem[] => items.filter((i) => i.parent === id);
@@ -40,10 +42,10 @@ export function SiteHeader({ items }: Props): JSX.Element {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-sp-16">
         <Link
           href="/"
-          aria-label={t('s01Core.brand.name')}
+          aria-label={brand.name}
           className="inline-flex min-h-[44px] items-center rounded-md"
         >
-          <Logo />
+          <Logo name={brand.name} imageUrl={logoUrl(brand)} />
         </Link>
         <nav aria-label={t('s01Core.nav.mainNavigation')} className="ml-6 hidden flex-1 md:block">
           <ul className="flex items-center gap-1">

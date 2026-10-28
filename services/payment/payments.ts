@@ -53,6 +53,7 @@ import type {
   ProcessorTransaction,
 } from '@/types/contracts';
 import { blockCard, checkCard, cardStats, resolveIdentity } from './card-identities';
+import { resolveCredentials } from './company-accounts';
 import { getProcessorRow, loadCurrentCredentials } from './credential-store';
 import { auditPayment, publishPaymentEvent } from './payment-events';
 import {
@@ -114,12 +115,21 @@ function totalOf(row: PaymentRow): Money {
 async function bundleFor(row: PaymentRow): Promise<Bundle> {
   if (!row.processor_id) throw new ValidationError('This payment has no processor.');
   const adapter = await loadAdapter(row.processor_id);
-  const { values } = await loadCurrentCredentials(row.processor_id);
+  const processorId = row.processor_id;
+  const used = await resolveCredentials({
+    processorId,
+    companyId: row.company_id,
+    accountId: row.account_id,
+    platform: async () => ({
+      values: (await loadCurrentCredentials(processorId)).values,
+      environment: row.environment ?? 'sandbox',
+    }),
+  });
   return {
     adapter,
     ctx: {
-      credentials: values,
-      environment: row.environment ?? 'sandbox',
+      credentials: used.values,
+      environment: used.accountId ? used.environment : (row.environment ?? 'sandbox'),
       mode: row.mode_id ?? defaultMode(adapter).id,
       correlationId: getContext()?.correlationId ?? row.id,
     },
@@ -238,17 +248,25 @@ export async function startPayment(
     if (!processor.enabled) return failPayment(row, PROCESSOR_UNAVAILABLE);
     const adapter = await loadAdapter(decision.processorId);
     if (!supportsCurrency(adapter, 'USD')) return failPayment(row, 'currency_not_supported');
-    const { values } = await loadCurrentCredentials(decision.processorId);
+    const used = await resolveCredentials({
+      processorId: decision.processorId,
+      companyId: invoice.companyId,
+      platform: async () => ({
+        values: (await loadCurrentCredentials(decision.processorId)).values,
+        environment: processor.environment,
+      }),
+    });
     row = await patchPayment(row, {
       processor_id: decision.processorId,
       mode_id: processor.active_mode,
-      environment: processor.environment,
+      environment: used.environment,
+      account_id: used.accountId,
     });
     bundle = {
       adapter,
       ctx: {
-        credentials: values,
-        environment: processor.environment,
+        credentials: used.values,
+        environment: used.environment,
         mode: processor.active_mode,
         correlationId: getContext()?.correlationId ?? row.id,
       },

@@ -16,19 +16,31 @@ export const str = (v: unknown): string | null => (typeof v === 'string' && v !=
 export const list = (v: unknown): Json[] =>
   Array.isArray(v) ? v.map(obj).filter((x): x is Json => x !== null) : [];
 
+/** An address NMI may answer from: https, a host of nmi.com or networkmerchants.com, path "/api" only. */
+export const LIVE_API_BASE = /^https:\/\/[a-z0-9.-]{1,60}\.(nmi|networkmerchants)\.com\/api$/;
+
 /**
- * Only the sandbox address of the REST API is documented. The production address is blocker B2 of STEP 12
- * (docs/steps/STEP-12/BLOCKERS.md), so a live account is refused before any call.
+ * The sandbox address of the REST API is documented. NMI's pages do not state the production address (blocker B2 of
+ * STEP 12), so for a live account the owner enters the address NMI gave them in the credential `liveApiBase`; without it a
+ * live account is refused before any call.
  */
-export function apiBase(environment: 'sandbox' | 'live'): string {
-  if (environment === 'live')
+export function apiBase(
+  environment: 'sandbox' | 'live',
+  credentials: Readonly<Record<string, string>>,
+): string {
+  if (environment === 'sandbox') return 'https://sandbox.nmi.com/api';
+  const given = (credentials.liveApiBase ?? '').trim().replace(/\/+$/, '');
+  if (!LIVE_API_BASE.test(given))
     throw new ValidationError(
-      'The NMI REST API address for live payments is not available yet (see the STEP 12 blockers).',
+      'Enter the live REST API address that NMI gave you (the "Live API address" field) before using a live account.',
     );
-  return 'https://sandbox.nmi.com/api';
+  return given;
 }
 
-/** Browser scripts of the two modes (sandbox; the production Gateway.js address differs and is not used here). */
+/** Collect.js is loaded from this one address in both environments (docs.nmi.com, Collect.js quick start). */
+export const COLLECTJS_SCRIPT_URL = 'https://secure.nmi.com/token/Collect.js';
+
+/** Browser script of the Payment Component mode (sandbox only; the production address is not documented). */
 export const NMI_SCRIPT_URLS: Readonly<Record<'sandbox' | 'live', string | null>> = {
   sandbox: 'https://sandbox.nmi.com/js/v1/Gateway.js',
   live: null,
@@ -80,7 +92,7 @@ export async function nmiCall(
 ): Promise<ApiResult> {
   const response = await sendHttp({
     method,
-    url: `${apiBase(ctx.environment)}${path}`,
+    url: `${apiBase(ctx.environment, ctx.credentials)}${path}`,
     headers: {
       authorization: privateKey(ctx),
       accept: 'application/json',

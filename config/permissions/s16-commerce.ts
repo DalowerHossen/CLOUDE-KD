@@ -23,4 +23,11 @@ export const permissions: PermissionDefinition[] = [
     defaultRoles: ['owner'],
     approvalLevel: 'L0',
   },
+  {
+    action: 'commerce.admin',
+    description:
+      'Platform staff: see the stores of every company, connect a store for a company, check it and register its webhooks',
+    defaultRoles: ['super_admin'],
+    approvalLevel: 'L0',
+  },
 ];

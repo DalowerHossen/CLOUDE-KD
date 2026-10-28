@@ -22,6 +22,7 @@ import { refundable, statusAfterRefund } from '@/lib/payment/state-machine';
 import { Money } from '@/lib/utils/currency';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor, PaymentSummary } from '@/types/contracts';
+import { resolveCredentials } from './company-accounts';
 import { loadCurrentCredentials } from './credential-store';
 import { auditPayment, publishPaymentEvent } from './payment-events';
 import {
@@ -241,7 +242,17 @@ export async function executeRefund(
   refund = await getRefund(companyId, refundId);
 
   const adapter = await loadAdapter(payment.processor_id);
-  const { values } = await loadCurrentCredentials(payment.processor_id);
+  const refundProcessor = payment.processor_id;
+  const used = await resolveCredentials({
+    processorId: refundProcessor,
+    companyId: payment.company_id,
+    accountId: payment.account_id,
+    platform: async () => ({
+      values: (await loadCurrentCredentials(refundProcessor)).values,
+      environment: payment.environment ?? 'sandbox',
+    }),
+  });
+  const values = used.values;
   const amount = money(refund.amount);
   let ok = false;
   let processorRefundId: string | null = null;
@@ -250,7 +261,7 @@ export async function executeRefund(
     const tx = await adapter.refund(
       {
         credentials: values,
-        environment: payment.environment ?? 'sandbox',
+        environment: used.accountId ? used.environment : (payment.environment ?? 'sandbox'),
         mode: payment.mode_id ?? defaultMode(adapter).id,
         correlationId: getContext()?.correlationId ?? refund.id,
       },

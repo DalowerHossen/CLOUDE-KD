@@ -212,6 +212,18 @@ export const strings = {
     error: 'Something went wrong. Please try again.',
     nav: 'Blog',
   },
+  brandAdmin: {
+    title: 'Platform branding',
+    description: 'Set the name, logo, tagline and footer line that visitors see on the public site.',
+    name: 'Brand name',
+    tagline: 'Tagline (shown in the footer)',
+    footerNote: 'Extra footer line (optional)',
+    logo: 'Logo',
+    removeLogo: 'Use the built-in mark',
+    saved: 'Branding saved.',
+    error: 'The branding could not be saved. Check the values.',
+    nav: 'Branding',
+  },
   seoAdmin: {
     title: 'Search settings and audit',
     description:

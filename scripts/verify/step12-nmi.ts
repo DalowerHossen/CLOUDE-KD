@@ -128,10 +128,15 @@ async function main(): Promise<void> {
         ['privateKey', true],
         ['tokenizationKey', false],
         ['webhookSigningKey', true],
+        ['liveApiBase', false],
+        ['partnerKey', true],
+        ['partnerClientId', false],
+        ['partnerClientSecret', true],
+        ['partnerWebhookSecret', true],
       ],
     );
     for (const field of adapter.credentialFields)
-      if (field.pattern)
+      if (field.pattern && field.required)
         assert.ok(new RegExp(field.pattern).test(ctx.credentials[field.key] ?? ''), field.key);
   });
 
@@ -163,7 +168,10 @@ async function main(): Promise<void> {
       assert.deepEqual(session.clientConfig, {
         tokenizationKey: 'KXypee-Vq3y2f-K6c7Dy-Wq92R5',
         mode,
-        scriptUrl: 'https://sandbox.nmi.com/js/v1/Gateway.js',
+        scriptUrl:
+          mode === 'collectjs'
+            ? 'https://secure.nmi.com/token/Collect.js'
+            : 'https://sandbox.nmi.com/js/v1/Gateway.js',
       });
       assert.ok(!JSON.stringify(session).includes(ctx.credentials.privateKey ?? 'x'));
     }
@@ -176,7 +184,12 @@ async function main(): Promise<void> {
         returnUrl: input.returnUrl,
         threeDS: 'disabled',
       });
-    await assert.rejects(make({ ...ctx, environment: 'live' }), ValidationError);
+    await assert.rejects(
+      make({ ...ctx, environment: 'live', mode: 'payment_component' }),
+      ValidationError,
+    );
+    const live = await make({ ...ctx, environment: 'live' });
+    assert.equal(live.clientConfig.scriptUrl, 'https://secure.nmi.com/token/Collect.js');
     await assert.rejects(make({ ...ctx, mode: 'other' }), ValidationError);
     await assert.rejects(
       make({ ...ctx, credentials: { ...ctx.credentials, tokenizationKey: '' } }),
@@ -318,6 +331,29 @@ async function main(): Promise<void> {
     await assert.rejects(adapter.authorize(ctx, input), /unavailable/);
     await assert.rejects(
       adapter.authorize({ ...ctx, environment: 'live' }, input),
+      ValidationError,
+    );
+    // A live account works only with the address NMI gave the owner; a foreign host is refused.
+    route('POST /api/v5/payments/auth', {
+      status: 200,
+      body: payment({}, [action('auth')]),
+    });
+    seen.length = 0;
+    const liveCtx = {
+      ...ctx,
+      environment: 'live' as const,
+      credentials: { ...ctx.credentials, liveApiBase: 'https://secure.nmi.com/api' },
+    };
+    await adapter.authorize(liveCtx, input);
+    assert.ok(seen[0]?.url.startsWith('https://secure.nmi.com/api/v5/payments/auth'));
+    await assert.rejects(
+      adapter.authorize(
+        {
+          ...liveCtx,
+          credentials: { ...ctx.credentials, liveApiBase: 'https://evil.example.com/api' },
+        },
+        input,
+      ),
       ValidationError,
     );
     await assert.rejects(

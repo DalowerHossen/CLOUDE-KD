@@ -10,6 +10,7 @@ export const strings = {
     adminTenants: 'Companies',
     adminStaff: 'Admin staff',
     adminAnnouncements: 'Announcements',
+    adminBranding: 'Platform branding',
     adminFlags: 'Feature flags',
     adminSetup: 'Platform setup',
     notices: 'Notices',

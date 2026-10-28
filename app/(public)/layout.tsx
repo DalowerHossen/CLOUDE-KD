@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { visibleNavItems } from '@/components/layout/nav-utils';
 import { PublicFrame } from '@/components/marketing/public-frame';
 import { navMap } from '@/config/nav-map';
+import { readPlatformBrand } from '@/services/branding/platform';
 import { readPixels } from '@/services/analytics/pixels';
 import { readSeoSettings } from '@/services/seo/settings';
 
@@ -28,10 +29,11 @@ export default async function PublicLayout({
 }: {
   children: ReactNode;
 }): Promise<JSX.Element> {
-  const pixels = await readPixels();
+  const [pixels, brand] = await Promise.all([readPixels(), readPlatformBrand()]);
   return (
     <PublicFrame
       pixels={pixels}
+      brand={brand}
       headerItems={visibleNavItems(navMap, 'public-header', null)}
       footerItems={visibleNavItems(navMap, 'public-footer', null)}
     >

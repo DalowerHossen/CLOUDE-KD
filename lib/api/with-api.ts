@@ -5,6 +5,7 @@
 // Any failure becomes the standard error response { error: { code, message, details, correlation_id } }.
 import { z } from 'zod';
 import { isStrictObject } from '@/lib/security/zod-strict';
+import { detectInjectionDeep, sanitize as sanitizeInput } from '@/lib/security/sanitizer';
 import type { NextRequest } from 'next/server';
 import { getService } from '@/lib/container';
 import { moduleForApi } from '@/config/features';
@@ -272,7 +273,18 @@ export function withApi<
           options.body || mutating
             ? await readBody(request, maxBody)
             : { text: '', json: undefined };
-        const clean = <V>(value: V): V => security.sanitize(value);
+        // Platform staff write pages, posts and footers that legitimately contain markup. For them the input is cleaned and
+        // the markup is only logged (the text is sanitized again when it is shown); it must not ban the staff member's own address.
+        const staff = actor !== null && PLATFORM_ROLES.includes(actor.role);
+        const clean = <V>(value: V): V => {
+          if (!staff) return security.sanitize(value);
+          if (detectInjectionDeep(value) !== null)
+            void security.raiseSecurityEvent('other', {
+              source: 'sanitizer',
+              reason: 'markup_in_staff_input',
+            });
+          return sanitizeInput(value);
+        };
         const body = (
           options.body ? options.body.parse(clean(rawBody.json)) : undefined
         ) as z.output<B>;
