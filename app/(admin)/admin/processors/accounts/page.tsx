@@ -6,7 +6,12 @@ import { ErrorState } from '@/components/shared/state-views';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { requirePagePermission } from '@/services/base/page-guard';
-import { accountFormOptions, listAccounts } from '@/services/payment/company-accounts';
+import {
+  accountFormOptions,
+  listAccounts,
+  type AccountFormOption,
+} from '@/services/payment/company-accounts';
+import type { AccountView } from '@/lib/payment/company-accounts-rules';
 import { listCompanies } from '@/services/payment/onboarding';
 import { StepUpForm } from '../../account-locks/_components/step-up-form';
 import { AccountsConsole } from './_components/accounts-console';
@@ -16,7 +21,7 @@ export const metadata: Metadata = { title: 'Company merchant accounts' };
 
 export default async function CompanyAccountsPage(): Promise<JSX.Element> {
   await requirePagePermission('payment.processor.manage', 'platform', 'processor');
-  let data: Awaited<ReturnType<typeof load>> | null;
+  let data: PageData | null;
   try {
     data = await load();
   } catch {
@@ -43,7 +48,13 @@ export default async function CompanyAccountsPage(): Promise<JSX.Element> {
   );
 }
 
-async function load() {
+interface PageData {
+  accounts: AccountView[];
+  companies: { id: string; name: string }[];
+  processors: AccountFormOption[];
+}
+
+async function load(): Promise<PageData> {
   const [accounts, companies, processors] = await Promise.all([
     listAccounts(),
     listCompanies(),
