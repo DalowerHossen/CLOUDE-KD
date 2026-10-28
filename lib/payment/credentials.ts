@@ -36,8 +36,13 @@ export function tailOf(value: string): string | null {
 export async function sealCredentials(
   adapter: ProcessorAdapter,
   input: unknown,
+  /** Only these fields are accepted (a company account that adds a few fields to the platform's own). */
+  only?: readonly string[],
 ): Promise<SealedCredentials> {
-  const values = parseCredentials(adapter, input);
+  const fieldsOf = only
+    ? { ...adapter, credentialFields: adapter.credentialFields.filter((f) => only.includes(f.key)) }
+    : adapter;
+  const values = parseCredentials(fieldsOf, input);
   const secretKeys = new Set(adapter.credentialFields.filter((f) => f.secret).map((f) => f.key));
   const lastChars: Record<string, string | null> = {};
   for (const [key, value] of Object.entries(values)) {

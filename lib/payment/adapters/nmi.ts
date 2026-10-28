@@ -11,7 +11,6 @@ import type { AdapterContext, ProcessorAdapter, ProcessorTransaction } from '@/t
 import { failureFromError, fromPayment, mapNmiDecline, moneyOf } from './nmi/mapping';
 import {
   COLLECTJS_SCRIPT_URL,
-  NMI_SCRIPT_URLS,
   authPath,
   jsonWithAmounts,
   nmiCall,
@@ -107,7 +106,7 @@ export const adapter: ProcessorAdapter = defineAdapter({
       required: false,
       pattern: '^https://[a-z0-9.-]{1,60}\\.(nmi|networkmerchants)\\.com/api$',
       helpText:
-        'The address of the NMI REST API for live payments, as NMI gave it to you (it ends in /api). Leave empty for the sandbox.',
+        "The address of the NMI REST API for live payments (it ends in /api). NMI's pages do not state it; a test call on 2026-10-28 shows that https://secure.nmi.com/api answers in NMI's own format, so use that address once NMI confirms it for your account. Leave empty for the sandbox.",
     },
     {
       key: 'partnerKey',
@@ -170,20 +169,10 @@ export const adapter: ProcessorAdapter = defineAdapter({
   async createCheckoutSession(ctx) {
     if (!MODE_IDS.has(ctx.mode)) throw new ValidationError('Unknown NMI mode.');
     const tokenizationKey = requireTokenizationKey(ctx);
-    if (ctx.mode === 'collectjs')
-      return {
-        clientConfig: { tokenizationKey, mode: ctx.mode, scriptUrl: COLLECTJS_SCRIPT_URL },
-        expiresAt: null,
-      };
-    const scriptUrl = NMI_SCRIPT_URLS[ctx.environment];
-    if (!scriptUrl)
-      throw new ValidationError(
-        'The NMI browser scripts for live payments are not available yet (see the STEP 12 blockers).',
-      );
-    return {
-      clientConfig: { tokenizationKey, mode: ctx.mode, scriptUrl },
-      expiresAt: null,
-    };
+    const clientConfig: Record<string, string> = { tokenizationKey, mode: ctx.mode };
+    // Collect.js is loaded from one address; the Payment Component package loads its own scripts.
+    if (ctx.mode === 'collectjs') clientConfig.scriptUrl = COLLECTJS_SCRIPT_URL;
+    return { clientConfig, expiresAt: null };
   },
 
   async authorize(ctx, input) {

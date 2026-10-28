@@ -33,7 +33,7 @@ interface StripeJs {
   }>;
   handleNextAction(options: { clientSecret: string }): Promise<{ error?: { message?: string } }>;
 }
-type StripeFactory = (publishableKey: string) => StripeJs;
+type StripeFactory = (publishableKey: string, options?: { stripeAccount: string }) => StripeJs;
 declare global {
   interface Window {
     Stripe?: StripeFactory;
@@ -68,6 +68,7 @@ export default function StripeSecureForm(props: SecureFormProps): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const publishableKey = clientConfig.publishableKey ?? '';
+  const stripeAccount = clientConfig.stripeAccount ?? '';
   const amount = clientConfig.amount ?? '';
 
   useEffect(() => {
@@ -77,7 +78,9 @@ export default function StripeSecureForm(props: SecureFormProps): JSX.Element {
       try {
         const factory = await loadStripe();
         if (cancelled || !host.current || !/^\d{1,12}$/.test(amount)) return;
-        const stripe = factory(publishableKey);
+        const stripe = stripeAccount
+          ? factory(publishableKey, { stripeAccount })
+          : factory(publishableKey);
         const elements = stripe.elements({
           mode: 'payment',
           amount: +amount,
@@ -98,7 +101,7 @@ export default function StripeSecureForm(props: SecureFormProps): JSX.Element {
       cancelled = true;
       element?.destroy();
     };
-  }, [publishableKey, amount, clientConfig.currency]);
+  }, [publishableKey, stripeAccount, amount, clientConfig.currency]);
 
   useEffect(() => {
     const secret = challenge?.clientSecret;

@@ -40,12 +40,6 @@ export function apiBase(
 /** Collect.js is loaded from this one address in both environments (docs.nmi.com, Collect.js quick start). */
 export const COLLECTJS_SCRIPT_URL = 'https://secure.nmi.com/token/Collect.js';
 
-/** Browser script of the Payment Component mode (sandbox only; the production address is not documented). */
-export const NMI_SCRIPT_URLS: Readonly<Record<'sandbox' | 'live', string | null>> = {
-  sandbox: 'https://sandbox.nmi.com/js/v1/Gateway.js',
-  live: null,
-};
-
 /** Money as the `x.xx` number the API expects, printed from cents without any floating point step. */
 export function decimalText(amount: Money): string {
   const cents = toMinorUnits(amount).padStart(3, '0');

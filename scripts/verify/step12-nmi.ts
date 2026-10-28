@@ -165,14 +165,16 @@ async function main(): Promise<void> {
           threeDS: 'disabled',
         },
       );
-      assert.deepEqual(session.clientConfig, {
-        tokenizationKey: 'KXypee-Vq3y2f-K6c7Dy-Wq92R5',
-        mode,
-        scriptUrl:
-          mode === 'collectjs'
-            ? 'https://secure.nmi.com/token/Collect.js'
-            : 'https://sandbox.nmi.com/js/v1/Gateway.js',
-      });
+      assert.deepEqual(
+        session.clientConfig,
+        mode === 'collectjs'
+          ? {
+              tokenizationKey: 'KXypee-Vq3y2f-K6c7Dy-Wq92R5',
+              mode,
+              scriptUrl: 'https://secure.nmi.com/token/Collect.js',
+            }
+          : { tokenizationKey: 'KXypee-Vq3y2f-K6c7Dy-Wq92R5', mode },
+      );
       assert.ok(!JSON.stringify(session).includes(ctx.credentials.privateKey ?? 'x'));
     }
     const make = (c: AdapterContext): ReturnType<typeof adapter.createCheckoutSession> =>
@@ -184,12 +186,10 @@ async function main(): Promise<void> {
         returnUrl: input.returnUrl,
         threeDS: 'disabled',
       });
-    await assert.rejects(
-      make({ ...ctx, environment: 'live', mode: 'payment_component' }),
-      ValidationError,
-    );
     const live = await make({ ...ctx, environment: 'live' });
     assert.equal(live.clientConfig.scriptUrl, 'https://secure.nmi.com/token/Collect.js');
+    const liveComponent = await make({ ...ctx, environment: 'live', mode: 'payment_component' });
+    assert.equal(liveComponent.clientConfig.scriptUrl, undefined);
     await assert.rejects(make({ ...ctx, mode: 'other' }), ValidationError);
     await assert.rejects(
       make({ ...ctx, credentials: { ...ctx.credentials, tokenizationKey: '' } }),

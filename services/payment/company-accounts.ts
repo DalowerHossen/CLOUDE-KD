@@ -20,12 +20,13 @@ import {
   sealCredentials,
   type StoredCredentialRow,
 } from '@/lib/payment/credentials';
-import type { AccountView } from '@/lib/payment/company-accounts-rules';
+import { COMPANY_ACCOUNT_OVERLAY, type AccountView } from '@/lib/payment/company-accounts-rules';
 import { defaultMode } from '@/lib/payment/modes';
 import { hasAdapter, isKnownProcessor, listRegistry, loadAdapter } from '@/lib/payment/registry';
 import { credentialFormFields } from '@/schemas/payment/credentials';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import type { Actor, ProcessorEnvironment, ProcessorId } from '@/types/contracts';
+import { getProcessorRow, loadCurrentCredentials } from './credential-store';
 import { mapPaymentDbError } from './rpc';
 
 const COLUMNS =
@@ -45,6 +46,18 @@ interface Row extends StoredCredentialRow {
   last_test_ok: boolean | null;
   last_test_message: string | null;
   version: number;
+}
+
+/** Credentials of a company account; for an overlay processor the platform's own credentials sit underneath. */
+async function valuesOfAccount(
+  row: Row,
+  platform: () => Promise<{ values: Record<string, string>; environment: ProcessorEnvironment }>,
+): Promise<{ values: Record<string, string>; environment: ProcessorEnvironment }> {
+  const own = await openCredentials(row.processor_id as ProcessorId, row);
+  if (!(row.processor_id in COMPANY_ACCOUNT_OVERLAY))
+    return { values: own, environment: row.environment };
+  const base = await platform();
+  return { values: { ...base.values, ...own }, environment: base.environment };
 }
 
 export interface ResolvedCredentials {
@@ -106,11 +119,8 @@ export async function resolveCredentials(input: {
     row = await activeAccountOf(input.companyId, input.processorId);
   }
   if (row) {
-    return {
-      values: await openCredentials(input.processorId, row),
-      environment: row.environment,
-      accountId: row.id,
-    };
+    const used = await valuesOfAccount(row, input.platform);
+    return { values: used.values, environment: used.environment, accountId: row.id };
   }
   const platform = await input.platform();
   return { values: platform.values, environment: platform.environment, accountId: null };
@@ -203,7 +213,7 @@ export async function saveAccount(
   const values: Record<string, string> = {};
   for (const [key, value] of Object.entries(input.values))
     if (value.trim() !== '') values[key] = value.trim();
-  const sealed = await sealCredentials(adapter, values);
+  const sealed = await sealCredentials(adapter, values, COMPANY_ACCOUNT_OVERLAY[input.processorId]);
   const db = getAdminSupabase();
   const company = await db
     .from('companies')
@@ -279,14 +289,25 @@ export async function testAccount(
   let ok = false;
   let message = '';
   try {
+    const used = await valuesOfAccount(row, async () => ({
+      values: (await loadCurrentCredentials(processorId)).values,
+      environment: (await getProcessorRow(processorId)).environment,
+    }));
     const result = await adapter.testConnection({
-      credentials: await openCredentials(processorId, row),
-      environment: row.environment,
+      credentials: used.values,
+      environment: used.environment,
       mode,
       correlationId: getContext()?.correlationId ?? 'none',
     });
     ok = result.ok;
     message = clean(result.message);
+    if (ok && processorId === 'stripe') {
+      // A connected Stripe account takes payments only when card payments are active on it.
+      const { connectedAccountReady } = await import('./stripe-connect');
+      const ready = await connectedAccountReady(id);
+      ok = ready.ok;
+      message = clean(ready.message);
+    }
   } catch (error) {
     message = 'The connection test failed.';
     logger.warn('company account test threw', {
@@ -381,7 +402,12 @@ export async function accountFormOptions(): Promise<AccountFormOption[]> {
     out.push({
       processorId: entry.metadata.id,
       name: entry.metadata.name,
-      fields: credentialFormFields(adapter),
+      // Where a company account adds only a few fields to the platform's own keys, only those fields are shown.
+      fields: credentialFormFields(adapter).filter(
+        (f) =>
+          !(entry.metadata.id in COMPANY_ACCOUNT_OVERLAY) ||
+          COMPANY_ACCOUNT_OVERLAY[entry.metadata.id]?.includes(f.key),
+      ),
     });
   }
   return out;

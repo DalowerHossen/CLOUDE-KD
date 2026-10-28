@@ -287,3 +287,8 @@ Final run of the whole STEP: `scripts/db-apply.sh --clean` with all assertions o
 
 - `scripts/verify/step14-plans.ts`: 9 checks (the form payload with empty description and badge is accepted).
 - Not verified: saving a plan, the processor panel and the stores page in a browser.
+
+## 16.37
+
+- `scripts/verify/step16-stripe-connect.ts`: 7 checks (v2 account body, onboarding link and host check, capability status, webhook endpoint with the Connect flag, Stripe-Account header, account in the browser form, either webhook secret); `scripts/verify/step12-nmi.ts`: 15 checks.
+- Not verified: any call to Stripe or NMI with real keys; the Payment Component in a browser.

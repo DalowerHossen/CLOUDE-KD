@@ -40,3 +40,24 @@ export interface AccountView {
   lastTestMessage: string | null;
   version: number;
 }
+
+/**
+ * Processors whose company account holds only a few fields: the rest (the platform's own keys) stays the platform's and is
+ * used with them. For Stripe (Connect, direct charges) the company account is the connected account id; every call is made
+ * with the platform's keys and the header Stripe-Account.
+ */
+export const COMPANY_ACCOUNT_OVERLAY: Readonly<Record<string, readonly string[]>> = {
+  stripe: ['connectedAccountId'],
+};
+
+export const stripeConnectInput = z
+  .object({
+    companyId: z.string().uuid(),
+    email: z.string().trim().email().max(200),
+    displayName: z.string().trim().min(1).max(100),
+    country: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z]{2}$/),
+  })
+  .strict();

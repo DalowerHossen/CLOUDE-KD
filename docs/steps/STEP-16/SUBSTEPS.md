@@ -357,3 +357,8 @@ Support staff find a payment across all companies by the last four digits of the
 
 - Goal: every plan can be saved; the processor panel says where each key comes from and which webhook address to give the processor; platform staff can connect a company's Shopify or WooCommerce store and register its webhooks. Decisions are D60.
 - Files: `lib/payment/plan-rules.ts`, `lib/payment/credentials.ts`, `services/payment/processors.ts`, `components/payment/admin/processor-panel.tsx`, `services/integration/admin-stores.ts`, `app/api/admin/stores/`, `app/(admin)/admin/stores/`, `components/integration/commerce-forms.tsx`, `config/permissions/s16-commerce.ts` (`commerce.admin`), `scripts/verify/step14-plans.ts`.
+
+## 16.37 NMI Payment Component mode; Stripe Connect and webhook creation (owner request, 2026-10-28)
+
+- Goal: the second NMI mode works; a company can be paid into its own Stripe account (created and onboarded from the platform); the Stripe webhooks are created at Stripe from the processor panel. Decisions are D61.
+- Files: `package.json` and the lockfile (`@nmipayments/nmi-pay-react` 1.1.1), `components/payment/processors/nmi/payment-component.tsx`, `lib/payment/onboarding/stripe-connect.ts`, `services/payment/stripe-connect.ts`, `app/api/admin/processors/stripe/`, `app/api/admin/processors/accounts/[id]/onboarding-link/`, `lib/payment/adapters/stripe.ts` (Stripe-Account header, connect secret, account in the browser form), `components/payment/processors/stripe/index.tsx`, `services/payment/company-accounts.ts` (overlay of the platform keys), `scripts/verify/step16-stripe-connect.ts`.

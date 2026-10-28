@@ -71,6 +71,9 @@ async function call(
     'stripe-version': STRIPE_API_VERSION,
     accept: 'application/json',
   };
+  // A company's own Stripe account (Connect, direct charges): the call is made with the platform key for that account.
+  const connected = ctx.credentials.connectedAccountId ?? '';
+  if (connected !== '') headers['stripe-account'] = connected;
   let url = `${BASE}${path}`;
   let body: string | undefined;
   if (method === 'POST') {
@@ -328,7 +331,25 @@ export const adapter: ProcessorAdapter = defineAdapter({
       required: true,
       pattern: '^whsec_[A-Za-z0-9_]{16,}$',
       helpText:
-        'Starts with whsec_. Shown when you add the webhook endpoint in the Stripe Dashboard.',
+        'Starts with whsec_. Shown when you add the webhook endpoint in the Stripe Dashboard, or created for you by "Create webhooks at Stripe" below.',
+    },
+    {
+      key: 'connectWebhookSecret',
+      label: 'Webhook signing secret for connected accounts',
+      secret: true,
+      required: false,
+      pattern: '^whsec_[A-Za-z0-9_]{16,}$',
+      helpText:
+        'Needed when companies are paid into their own Stripe accounts: the signing secret of the Connect webhook endpoint (created by "Create webhooks at Stripe").',
+    },
+    {
+      key: 'connectedAccountId',
+      label: 'Connected account of a company (acct_...)',
+      secret: false,
+      required: false,
+      pattern: '^acct_[A-Za-z0-9]{8,40}$',
+      helpText:
+        'Used only in Company merchant accounts: the Stripe account of one company. Payments for that company are made on that account with the platform keys.',
     },
   ],
 
@@ -355,6 +376,8 @@ export const adapter: ProcessorAdapter = defineAdapter({
     return {
       clientConfig: {
         publishableKey: ctx.credentials.publishableKey ?? '',
+        // The browser form opens Stripe.js for the company's account when the payment is made on it.
+        stripeAccount: ctx.credentials.connectedAccountId ?? '',
         amount: toMinorUnits(input.amount),
         currency: 'usd',
         captureMethod: 'manual',
@@ -430,12 +453,23 @@ export const adapter: ProcessorAdapter = defineAdapter({
   getTransaction: retrieve,
 
   async verifyWebhook(ctx, request) {
-    return verifyStripeSignature(
+    const now = (Date.now() - (Date.now() % 1000)) / 1000;
+    // Events of the platform's own account and events of connected accounts have different endpoints and secrets.
+    for (const secret of [
       ctx.credentials.webhookSecret ?? '',
-      request.headers['stripe-signature'],
-      request.rawBody,
-      (Date.now() - (Date.now() % 1000)) / 1000,
-    );
+      ctx.credentials.connectWebhookSecret ?? '',
+    ])
+      if (
+        secret !== '' &&
+        (await verifyStripeSignature(
+          secret,
+          request.headers['stripe-signature'],
+          request.rawBody,
+          now,
+        ))
+      )
+        return true;
+    return false;
   },
   parseWebhook: (request) => parseStripeEvent(request.rawBody),
   cardIdentity: (transaction) => transaction.cardIdentity,

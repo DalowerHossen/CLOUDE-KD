@@ -147,7 +147,8 @@ export const PROCESSOR_ORIGINS: Readonly<Partial<Record<ProcessorId, readonly st
   // (docs/processors/verifone.md section 3).
   // NMI: sandbox browser scripts and frames; the production hosts are not confirmed (STEP 12 blockers B1, B2).
   // NMI: Collect.js script and frames (secure.nmi.com, docs.nmi.com Collect.js quick start) and the Gateway.js sandbox host.
-  nmi: ['https://sandbox.nmi.com', 'https://secure.nmi.com'],
+  // The Payment Component also loads Gateway.js from networkmerchants.com (read in the package, 2026-10-28).
+  nmi: ['https://sandbox.nmi.com', 'https://secure.nmi.com', 'https://secure.networkmerchants.com'],
   // FastSpring: Checkout Components script and the store checkout frames (docs/processors/fastspring.md section 12a).
   fastspring: ['https://cdn.onfastspring.com', 'https://*.onfastspring.com'],
   // Rapyd: Checkout Toolkit script and the hosted checkout frames (docs/processors/rapyd.md section 12a).

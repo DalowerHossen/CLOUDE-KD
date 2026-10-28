@@ -24,6 +24,7 @@ interface FormOption {
 
 const errorBody = z.object({ error: z.object({ message: z.string() }) });
 const testBody = z.object({ data: z.object({ ok: z.boolean(), message: z.string() }) });
+const linkBody = z.object({ data: z.object({ url: z.string().url() }) });
 const BASE = '/api/admin/processors/accounts';
 
 export function AccountsConsole({
@@ -40,6 +41,9 @@ export function AccountsConsole({
   const [processorId, setProcessorId] = useState('');
   const [environment, setEnvironment] = useState<'sandbox' | 'live'>('sandbox');
   const [reference, setReference] = useState('');
+  const [stripeEmail, setStripeEmail] = useState('');
+  const [stripeName, setStripeName] = useState('');
+  const [stripeCountry, setStripeCountry] = useState('US');
   const [values, setValues] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; bad: boolean } | null>(null);
@@ -66,6 +70,42 @@ export function AccountsConsole({
       }
       setMessage({ text: ok(json), bad: false });
       router.refresh();
+    } catch {
+      setMessage({ text: t('s10Processors.accounts.failed'), bad: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createStripeAccount(): Promise<void> {
+    await send(
+      '/api/admin/processors/stripe/connect',
+      { companyId, email: stripeEmail, displayName: stripeName, country: stripeCountry },
+      () => t('s10Processors.accounts.stripeCreated'),
+    );
+  }
+
+  async function openOnboarding(id: string): Promise<void> {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`${BASE}/${id}/onboarding-link`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      const json: unknown = await response.json().catch(() => null);
+      const parsed = linkBody.safeParse(json);
+      if (response.ok && parsed.success) {
+        window.open(parsed.data.data.url, '_blank', 'noopener,noreferrer');
+        setMessage({ text: t('s10Processors.accounts.stripeLinkOpened'), bad: false });
+      } else {
+        const failed = errorBody.safeParse(json);
+        setMessage({
+          text: failed.success ? failed.data.error.message : t('s10Processors.accounts.failed'),
+          bad: true,
+        });
+      }
     } catch {
       setMessage({ text: t('s10Processors.accounts.failed'), bad: true });
     } finally {
@@ -181,6 +221,46 @@ export function AccountsConsole({
             </label>
           </div>
         ) : null}
+        {processorId === 'stripe' ? (
+          <div className="space-y-sp-12 rounded-md border p-sp-12">
+            <p className="text-sm font-medium">{t('s10Processors.accounts.stripeTitle')}</p>
+            <p className="text-caption text-muted-foreground">
+              {t('s10Processors.accounts.stripeHelp')}
+            </p>
+            <div className="grid gap-sp-12 sm:grid-cols-3">
+              <label className="block space-y-1 text-sm">
+                <span>{t('s10Processors.accounts.stripeEmail')}</span>
+                <Input value={stripeEmail} onChange={(e) => setStripeEmail(e.target.value)} />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>{t('s10Processors.accounts.stripeName')}</span>
+                <Input value={stripeName} onChange={(e) => setStripeName(e.target.value)} />
+              </label>
+              <label className="block space-y-1 text-sm">
+                <span>{t('s10Processors.accounts.stripeCountry')}</span>
+                <Input
+                  value={stripeCountry}
+                  maxLength={2}
+                  onChange={(e) => setStripeCountry(e.target.value.toUpperCase())}
+                />
+              </label>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                busy ||
+                companyId === '' ||
+                stripeEmail.trim() === '' ||
+                stripeName.trim() === '' ||
+                stripeCountry.length !== 2
+              }
+              onClick={() => void createStripeAccount()}
+            >
+              {t('s10Processors.accounts.stripeCreate')}
+            </Button>
+          </div>
+        ) : null}
         <p className="text-caption text-muted-foreground">{t('s10Processors.accounts.help')}</p>
         <Button type="submit" disabled={busy || companyId === '' || processorId === ''}>
           {t('s10Processors.accounts.save')}
@@ -261,6 +341,16 @@ export function AccountsConsole({
                     ? t('s10Processors.accounts.actions.disable')
                     : t('s10Processors.accounts.actions.enable')}
                 </Button>
+                {a.processorId === 'stripe' ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => void openOnboarding(a.id)}
+                  >
+                    {t('s10Processors.accounts.stripeLink')}
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant="outline"

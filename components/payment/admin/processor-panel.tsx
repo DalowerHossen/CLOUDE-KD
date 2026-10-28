@@ -90,6 +90,33 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
     }
   }
 
+  async function createWebhooks(): Promise<void> {
+    setBusy(true);
+    setFeedback(null);
+    try {
+      const response = await fetch(`/api/admin/processors/${summary.id}/webhooks`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      const json: unknown = await response.json().catch(() => null);
+      if (response.ok) {
+        setFeedback({ ok: true, text: t('s10Processors.webhook.created') });
+        await load();
+      } else {
+        const parsed = errorBody.safeParse(json);
+        setFeedback({
+          ok: false,
+          text: parsed.success ? parsed.data.error.message : t('s10Processors.actions.failed'),
+        });
+      }
+    } catch {
+      setFeedback({ ok: false, text: t('s10Processors.actions.failed') });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submitCredentials(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (!detail) return;
@@ -212,6 +239,17 @@ export function ProcessorPanel({ summary }: { summary: ProcessorSummary }): JSX.
                 <p className="text-caption text-muted-foreground">
                   {t('s10Processors.webhook.help', { name: summary.name })}
                 </p>
+                {state.canCreateWebhooks ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => void createWebhooks()}
+                  >
+                    {t('s10Processors.webhook.create', { name: summary.name })}
+                  </Button>
+                ) : null}
               </div>
               <form
                 onSubmit={(e) => void submitCredentials(e)}

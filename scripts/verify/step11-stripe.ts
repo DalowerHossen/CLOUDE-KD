@@ -94,6 +94,8 @@ async function main(): Promise<void> {
         ['secretKey', true],
         ['publishableKey', false],
         ['webhookSecret', true],
+        ['connectWebhookSecret', true],
+        ['connectedAccountId', false],
       ],
     );
     for (const f of adapter.credentialFields) assert.ok(f.pattern);
@@ -461,6 +463,7 @@ async function main(): Promise<void> {
     });
     assert.deepEqual(session.clientConfig, {
       publishableKey: 'pk_test_ABCDEFGHIJKLMNOP1234',
+      stripeAccount: '',
       amount: '12050',
       currency: 'usd',
       captureMethod: 'manual',

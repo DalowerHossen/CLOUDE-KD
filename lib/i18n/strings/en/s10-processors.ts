@@ -116,6 +116,16 @@ export const strings = {
     testFailed: 'failed',
     notTested: 'Not tested yet',
     webhook: 'Payment webhook address for this merchant: {url}',
+    stripeTitle: 'Create a Stripe account for this company',
+    stripeHelp:
+      'Creates a connected account at Stripe for the company (Stripe Dashboard access, Stripe collects the fees and carries the loss liability) and saves it here. Then press "Stripe onboarding link": the company opens the link and gives Stripe its business and bank details. Open the link only for the authenticated account holder and never send it by e-mail or text. After that, test the connection (it checks that card payments are active) and switch the account on.',
+    stripeEmail: 'Contact e-mail of the company',
+    stripeName: 'Name of the company',
+    stripeCountry: 'Country (2 letters)',
+    stripeCreate: 'Create Stripe account',
+    stripeCreated: 'The Stripe account was created and saved. Press "Stripe onboarding link" next.',
+    stripeLink: 'Stripe onboarding link',
+    stripeLinkOpened: 'The Stripe onboarding page opened in a new tab.',
     actions: {
       test: 'Test connection',
       enable: 'Switch on',
@@ -192,6 +202,9 @@ export const strings = {
   },
   webhook: {
     title: 'Webhook address',
+    create: 'Create webhooks at {name}',
+    created:
+      'The webhooks were created at the processor and their signing secrets were saved. Test the connection and enable the processor again.',
     help: 'In the {name} dashboard create a webhook (endpoint) that points to this address and choose the payment events. Copy the signing key {name} shows for it into the webhook field of the credentials below. Each company merchant account has its own address on the Company merchant accounts page.',
   },
   credentials: {

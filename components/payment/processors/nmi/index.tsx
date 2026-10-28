@@ -4,11 +4,14 @@
 // hands back a single-use payment token (docs/processors/nmi.md section 4). This component never sees card data; it only
 // passes on the token. No key tracking, no analytics. The script comes from NMI's own host (never bundled) and is
 // configured by hand after it loaded, because Collect.js only configures itself on page load.
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import type { SecureFormProps } from '@/components/payment/secure-form-types';
+
+// The Payment Component package is loaded only when this mode is used.
+const PaymentComponentForm = lazy(() => import('./payment-component'));
 
 const SCRIPT_URL = 'https://secure.nmi.com/token/Collect.js';
 const TOKENIZATION_KEY = /^[A-Za-z0-9-]{16,64}$/;
@@ -77,7 +80,8 @@ export default function NmiSecureForm(props: SecureFormProps): JSX.Element {
     callbacks.current = { onToken, onError };
   });
   const tokenizationKey = clientConfig.tokenizationKey ?? '';
-  const usable = mode === 'collectjs' && TOKENIZATION_KEY.test(tokenizationKey);
+  const keyOk = TOKENIZATION_KEY.test(tokenizationKey);
+  const usable = mode === 'collectjs' && keyOk;
 
   useEffect(() => {
     if (!usable) return;
@@ -123,6 +127,12 @@ export default function NmiSecureForm(props: SecureFormProps): JSX.Element {
     };
   }, [usable, tokenizationKey]);
 
+  if (mode === 'payment_component' && keyOk)
+    return (
+      <Suspense fallback={<p className="text-sm">{t('s10Payments.checkout.loadingForm')}</p>}>
+        <PaymentComponentForm {...props} />
+      </Suspense>
+    );
   if (failed || !usable)
     return <Alert variant="destructive">{t('s10Payments.checkout.noForm')}</Alert>;
   return (

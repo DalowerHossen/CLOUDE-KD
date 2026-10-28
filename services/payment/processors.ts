@@ -60,6 +60,8 @@ export interface ProcessorSummary {
 export interface ProcessorDetail extends ProcessorSummary {
   /** The address to give to the processor for its payment webhooks. */
   webhookUrl: string;
+  /** True when the platform can create the webhook at the processor itself (its API has a call for it). */
+  canCreateWebhooks: boolean;
   version: number;
   credentialsVersion: number;
   credentialsUpdatedAt: string | null;
@@ -115,6 +117,7 @@ export async function getProcessorDetail(id: string): Promise<ProcessorDetail> {
     return {
       ...summaryOf(entry, undefined),
       webhookUrl: webhookUrlOf(id),
+      canCreateWebhooks: false,
       version: 0,
       credentialsVersion: 0,
       credentialsUpdatedAt: null,
@@ -168,6 +171,7 @@ export async function getProcessorDetail(id: string): Promise<ProcessorDetail> {
   return {
     ...summaryOf(entry, row),
     webhookUrl: webhookUrlOf(id),
+    canCreateWebhooks: id === 'stripe',
     version: row.version,
     credentialsVersion: row.credentials_version,
     credentialsUpdatedAt: meta?.updated_at ?? null,

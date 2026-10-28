@@ -50,6 +50,9 @@ const TYPE_MAP: Readonly<Record<string, NormalizedWebhookEventType>> = {
   'charge.dispute.closed': 'dispute.closed',
 };
 
+/** The Stripe event types the platform listens to (the keys of the mapping above). */
+export const STRIPE_EVENT_TYPES: readonly string[] = Object.keys(TYPE_MAP);
+
 function text(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null;
 }
